@@ -37,7 +37,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/molly-brown.jpg
+    - assets/molly-brown.png
 
   fonts:
     - family: Merriweather
