@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:deedum/content.dart';
+import 'package:deedum/net.dart';
 import 'package:deedum/shared.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'net.dart';
+import 'package:uni_links/uni_links.dart';
 
 void main() {
   runApp(BrowserApp());
@@ -75,19 +77,33 @@ class _BrowserState extends State<Browser> {
   Map<Uri, ContentData> _cache = {};
   List<Uri> _history = [];
   bool _loading = false;
+  StreamSubscription _sub;
 
   void initState() {
     super.initState();
     _controller = TextEditingController();
-    _handleInit();
+    init();
   }
 
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  init() async {
+    var uri = Uri.parse("gb://recent/");
 
-  void _handleInit() async {
+    _sub = getLinksStream().listen((String link) {
+      onURI("", link, _handleContent, _handleLoad, _handleDone, []);
+    }, onError: (err) {
+      log("oop");
+    });
+
+    try {
+      var link = await getInitialLink();
+      if (link != null) {
+        onURI("", link, _handleContent, _handleLoad, _handleDone, []);
+        return;
+      }
+    } on PlatformException {
+      log("oop");
+    }
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> recent = (prefs.getStringList('recent') ?? []);
     var content = recent.map((s) {
@@ -104,12 +120,17 @@ class _BrowserState extends State<Browser> {
     var contentData = ContentData(content: content, mode: "content");
 
     setState(() {
-      var uri = Uri.parse("gb://recent/");
       _controller.text = uri.toString();
       _history.add(uri);
       _cache[uri] = contentData;
       _content = contentData;
     });
+  }
+
+  void dispose() {
+    _controller.dispose();
+    _sub.cancel();
+    super.dispose();
   }
 
   void _handleLoad() async {
@@ -163,8 +184,9 @@ class _BrowserState extends State<Browser> {
     return WillPopScope(
         onWillPop: _handleBack,
         child: Scaffold(
-            backgroundColor:
-                (_content != null && _content.mode == "error") ? Colors.deepOrange : Colors.white,
+            backgroundColor: (_content != null && _content.mode == "error")
+                ? Colors.deepOrange
+                : Colors.white,
             appBar: AppBar(
                 backgroundColor: Colors.orange,
                 title: UriBar(

@@ -27,6 +27,7 @@ dependencies:
   shared_preferences: '>=0.5.7+3 <2.0.0'
   url_launcher: '5.4.10'
   cupertino_icons: ^0.1.3
+  uni_links: '0.4.0'
 
 dev_dependencies:
   flutter_test:
@@ -48,6 +49,6 @@ flutter:
           weight: 700
         - asset: assets/Merriweather-Light.ttf
           weight: 300
-    - family: Inconsolata
+    - family: DejaVu Sans Mono
       fonts:
-        - asset: assets/Inconsolata-Regular.ttf
+        - asset: assets/DejaVuSansMono.ttf

@@ -53,90 +53,82 @@ void onURI(
     s.write(uri.toString() + "\r\n");
     s.flush();
 
-    var x = s.timeout(Duration(seconds: 1), onTimeout: (x) {
+    var x = s.timeout(Duration(seconds: 2), onTimeout: (x) {
       log("TIMEOUT");
       x.close();
     });
 
-    List<int> chunks = [];
-
-    x
-        .listen(
-            (data) {
-              chunks.addAll(data);
-            },
-            cancelOnError: true,
-            onError: (e) {
-              log("$e");
-            },
-            onDone: () {
-              s.destroy();
-            })
-        .onDone(() {
-      var endofline = 1;
-      for (; endofline < chunks.length; endofline++) {
-        if (chunks[endofline - 1] == 13 && chunks[endofline] == 10) {
-          break;
-        }
+    List<Uint8List> chunksList = await x.toList();
+    List<int> chunks = <int>[];
+    chunks = chunksList.fold(chunks, (chunks, element) => chunks + element);
+    s.destroy();
+    var endofline = 1;
+    for (; endofline < chunks.length; endofline++) {
+      if (chunks[endofline - 1] == 13 && chunks[endofline] == 10) {
+        break;
       }
-      var statusBytes = chunks.sublist(0, endofline - 1);
-      var status;
-      var meta;
+    }
+    var statusBytes = chunks.sublist(0, endofline - 1);
+    var status;
+    var meta;
 
-      var statusMeta = Utf8Decoder(allowMalformed: true).convert(statusBytes);
+    var statusMeta = Utf8Decoder(allowMalformed: true).convert(statusBytes);
 
-      var m = RegExp(r'^(\S+)\s*(.*)$').firstMatch(statusMeta);
-      if (m != null) {
-        status = int.parse(m.group(1));
-        meta = m.group(2);
-      }
+    var m = RegExp(r'^(\S+)\s*(.*)$').firstMatch(statusMeta);
+    if (m != null) {
+      status = int.parse(m.group(1));
+      meta = m.group(2);
+    }
 
-      if (m == null) {
-        var content = LineSplitter.split(
-            Utf8Decoder(allowMalformed: true).convert(chunks));
+    if (m == null) {
+      Iterable<String> content =
+          LineSplitter.split(Utf8Decoder(allowMalformed: true).convert(chunks));
+      handleContent(
+          uri,
+          ContentData(mode: "error", content: [
+            "NO RESPONSE LINE",
+            "--------------",
+            content.join("\n")
+          ]));
+    } else if (status >= 10 && status < 20) {
+      handleContent(uri, ContentData(mode: "search", content: [meta]));
+    } else if (status >= 20 && status < 30) {
+      var bytes = chunks.sublist(endofline + 1);
+      var contentType = ContentType.parse(meta);
+
+      if (contentType.mimeType == "text/gemini") {
+        var lines = bytesToLines(contentType, bytes);
+        handleContent(uri, ContentData(content: lines, mode: "content"));
+      } else if (contentType.mimeType.startsWith("text/")) {
+        var lines = bytesToLines(contentType, bytes);
+        handleContent(uri, ContentData(content: lines, mode: "plain"));
+      } else if (contentType.mimeType.startsWith("image/")) {
         handleContent(
-            uri,
-            ContentData(
-                mode: "error",
-                content: ["NO RESPONSE LINE", "--------------"] + content));
-      } else if (status >= 10 && status < 20) {
-        handleContent(uri, ContentData(mode: "search", content: [meta]));
-      } else if (status >= 20 && status < 30) {
-        var bytes = chunks.sublist(endofline + 1);
-        var contentType = ContentType.parse(meta);
-
-        if (contentType.mimeType == "text/gemini") {
-          var lines = bytesToLines(contentType, bytes);
-          handleContent(uri, ContentData(content: lines, mode: "content"));
-        } else if (contentType.mimeType.startsWith("text/")) {
-          var lines = bytesToLines(contentType, bytes);
-          handleContent(uri, ContentData(content: lines, mode: "plain"));
-        } else if (contentType.mimeType.startsWith("image/")) {
-          handleContent(uri,
-              ContentData(bytes: Uint8List.fromList(bytes), mode: "image"));
-        } else {
-          handleContent(uri,
-              ContentData(bytes: Uint8List.fromList(bytes), mode: "binary"));
-        }
-      } else if (status >= 30 && status < 40) {
-        if (redirects.contains(meta) || redirects.length >= 5) {
-          handleContent(
-              Uri.parse(meta),
-              ContentData(
-                  mode: "error", content: ["Redirect loop:"] + redirects));
-        } else {
-          redirects.add(meta);
-          onURI(currentLink, meta, handleContent, handleLoad, handleDone,
-              redirects);
-        }
+            uri, ContentData(bytes: Uint8List.fromList(bytes), mode: "image"));
       } else {
-        handleContent(uri, ContentData(mode: "error", content: [statusMeta]));
+        handleContent(
+            uri, ContentData(bytes: Uint8List.fromList(bytes), mode: "binary"));
       }
-    });
+    } else if (status >= 30 && status < 40) {
+      if (redirects.contains(meta) || redirects.length >= 5) {
+        handleContent(
+            Uri.parse(meta),
+            ContentData(
+                mode: "error", content: ["Redirect loop:"] + redirects));
+      } else {
+        redirects.add(meta);
+        onURI(currentLink, meta, handleContent, handleLoad, handleDone,
+            redirects);
+      }
+    } else {
+      handleContent(uri, ContentData(mode: "error", content: [statusMeta]));
+    }
   }).catchError((e) {
+    log("TOP ERROR");
     log(e.toString());
     throw e;
   }).whenComplete(() {
+    log("Done");
     handleDone();
   });
 }

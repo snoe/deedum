@@ -14,28 +14,13 @@ class Content extends StatelessWidget {
 
   final _contentKey = GlobalKey();
 
-  textSize(length) {
-    final TextPainter textPainter = TextPainter(
-        text: TextSpan(
-            text: "".padLeft(length + 1),
-            style: TextStyle(fontFamily: "Inconsolata", fontSize: 1)),
-        maxLines: 1,
-        textDirection: TextDirection.ltr)
-      ..layout(minWidth: 0, maxWidth: double.infinity);
-    log("$length");
-    return textPainter.size.width;
-  }
-
   @override
   Widget build(BuildContext context) {
-    var availableWidth =
-        MediaQuery.of(context).size.width.floor() - ((_padding + 20) * 2);
-
     List<Widget> widgets;
     if (contentData == null) {
       widgets = [Text("Nothing to see here")];
     } else if (contentData.mode == "content") {
-      widgets = buildFold(availableWidth);
+      widgets = buildFold(context);
     } else if (contentData.mode == "search") {
       widgets = [
         Text(contentData.content.join("\n")),
@@ -52,7 +37,7 @@ class Content extends StatelessWidget {
       widgets = [Image.memory(contentData.bytes)];
     } else if (contentData.mode == "plain") {
       contentData.content.insert(0, "```");
-      widgets = buildFold(availableWidth);
+      widgets = buildFold(context);
     } else {
       widgets = [Text("Unknown mode ${contentData.mode}")];
     }
@@ -65,7 +50,7 @@ class Content extends StatelessWidget {
         ));
   }
 
-  buildFold(double availableWidth) {
+  buildFold(context) {
     var lineInfo =
         contentData.content.fold({"lines": [], "parse?": true}, (r, line) {
       if (line.startsWith("```")) {
@@ -74,17 +59,18 @@ class Content extends StatelessWidget {
         if (r["lines"].isNotEmpty && r["lines"].last["type"] == "pre") {
           var last = r["lines"].removeLast();
           last["prelines"].add(line);
-          int lastMax = last["max"];
-          last["max"] = math.max(lastMax, line.length);
+          var lastLine = last["max"];
+          if (lastLine.length < line.length) {
+            last["max"] = line;
+          }
           r["lines"].add(last);
         } else {
           r["lines"].add({
             "type": "pre",
             "prelines": [line],
-            "max": line.length
+            "max": line
           });
         }
-        ;
       } else if (line.startsWith(">")) {
         r["lines"].add({"type": "quote", "line": line.substring(1)});
       } else if (line.startsWith("#")) {
@@ -110,12 +96,13 @@ class Content extends StatelessWidget {
     return lines.fold(<Widget>[], (widgets, r) {
       var type = r["type"];
       if (type == "pre") {
-        widgets.add(Wrap(children: [
-          Text(r["prelines"].join("\n"),
-              style: TextStyle(
-                  fontFamily: "Inconsolata",
-                  fontSize: availableWidth / textSize(r["max"])))
-        ]));
+        var availableWidth = MediaQuery.of(context).size.width;
+        widgets.add(Container(
+            width: availableWidth,
+            child: FittedBox(
+                fit: BoxFit.fill,
+                child: Text(r["prelines"].join("\n"),
+                    style: TextStyle(fontFamily: "DejaVu Sans Mono")))));
       } else if (type == "header") {
         var extraSize = (15 - math.max(r["size"] * 5, 15));
         widgets.add(Padding(
