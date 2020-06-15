@@ -4,15 +4,37 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:deedum/shared.dart';
 
-class Content extends StatelessWidget {
+class Content extends StatefulWidget {
   Content({this.contentData, this.onLink, this.onSearch});
+
   final ContentData contentData;
   final Function onLink;
   final Function onSearch;
+
+  @override
+  _ContentState createState() => _ContentState(contentData: contentData, onLink: onLink, onSearch: onSearch);
+}
+
+class _ContentState extends State<Content> {
+  _ContentState({this.contentData, this.onLink, this.onSearch});
+
+  final ContentData contentData;
+  final Function onLink;
+  final Function onSearch;
+
   final baseFontSize = 17.0;
   final _padding = 25.0;
+  bool _inputError = false;
+  int _inputLength = 0;
 
   final _contentKey = GlobalKey();
+
+  _setInputError(value, length) {
+    setState(() {
+      _inputError = value;
+      _inputLength = length;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,23 +45,33 @@ class Content extends StatelessWidget {
       widgets = buildFold(context);
     } else if (contentData.mode == "search") {
       widgets = [
-        Text(contentData.content.join("\n")),
-        TextField(onSubmitted: (value) {
-          onSearch(value);
-        })
-      ];
+        SelectableText(contentData.content.join("\n")),
+        DecoratedBox(
+            decoration: BoxDecoration(color: _inputError ? Colors.deepOrange : null),
+            child: TextField(onSubmitted: (value) {
+              var encodedSearch = Uri.encodeComponent(value);
+              if (encodedSearch.length <= 1024) {
+                onSearch(encodedSearch);
+                _setInputError(false, encodedSearch.length);
+              } else {
+                _setInputError(true, encodedSearch.length);
+              }
+            }))
+      ] + (_inputError ? [SelectableText("\n\nInput too long: $_inputLength")] : []);
     } else if (contentData.mode == "error") {
-      widgets = [
-        Text("An error occurred\n\n"),
-        Text(contentData.content.join("\n"))
-      ];
+      widgets = [SelectableText("An error occurred\n\n"), SelectableText(contentData.content.join("\n"))];
     } else if (contentData.mode == "image") {
-      widgets = [Image.memory(contentData.bytes)];
+
+
+        widgets = [Image.memory(contentData.bytes,
+        errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+
+           return SelectableText("broken image ¯\\_(ツ)_/¯");})];
     } else if (contentData.mode == "plain") {
       contentData.content.insert(0, "```");
       widgets = buildFold(context);
     } else {
-      widgets = [Text("Unknown mode ${contentData.mode}")];
+      widgets = [SelectableText("Unknown mode ${contentData.mode}")];
     }
     return Padding(
         padding: EdgeInsets.all(_padding),
@@ -51,8 +83,7 @@ class Content extends StatelessWidget {
   }
 
   buildFold(context) {
-    var lineInfo =
-        contentData.content.fold({"lines": [], "parse?": true}, (r, line) {
+    var lineInfo = contentData.content.fold({"lines": [], "parse?": true}, (r, line) {
       if (line.startsWith("```")) {
         r["parse?"] = !r["parse?"];
       } else if (!r["parse?"]) {
@@ -76,8 +107,7 @@ class Content extends StatelessWidget {
       } else if (line.startsWith("#")) {
         var m = RegExp(r'^(#*)\s*(.*)$').firstMatch(line);
         var hashCount = math.min(m.group(1).length, 3);
-        r["lines"]
-            .add({"type": "header", "line": m.group(2), "size": hashCount});
+        r["lines"].add({"type": "header", "line": m.group(2), "size": hashCount});
       } else if (line.startsWith("=>")) {
         var m = RegExp(r'^=>\s*(\S+)\s*(.*)$').firstMatch(line);
         if (m != null) {
@@ -101,26 +131,20 @@ class Content extends StatelessWidget {
             width: availableWidth,
             child: FittedBox(
                 fit: BoxFit.fill,
-                child: Text(r["prelines"].join("\n"),
-                    style: TextStyle(fontFamily: "DejaVu Sans Mono")))));
+                child: SelectableText(r["prelines"].join("\n"), style: TextStyle(fontFamily: "DejaVu Sans Mono")))));
       } else if (type == "header") {
         var extraSize = (15 - math.max(r["size"] * 5, 15));
         widgets.add(Padding(
-            padding: EdgeInsets.fromLTRB(
-                0, baseFontSize + extraSize, 0, baseFontSize + extraSize),
-            child: Text(r["line"],
+            padding: EdgeInsets.fromLTRB(0, baseFontSize + extraSize, 0, baseFontSize + extraSize),
+            child: SelectableText(r["line"],
                 style: TextStyle(
-                    fontFamily: "Merriweather",
-                    fontWeight: FontWeight.bold,
-                    fontSize: (baseFontSize + extraSize)))));
+                    fontFamily: "Merriweather", fontWeight: FontWeight.bold, fontSize: (baseFontSize + extraSize)))));
       } else if (type == "quote") {
         widgets.add(DecoratedBox(
-            decoration: BoxDecoration(
-                border:
-                    Border(left: BorderSide(color: Colors.orange, width: 3))),
+            decoration: BoxDecoration(border: Border(left: BorderSide(color: Colors.orange, width: 3))),
             child: Padding(
                 padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
-                child: Text(r["line"],
+                child: SelectableText(r["line"],
                     style: TextStyle(
                         fontSize: baseFontSize,
                         fontWeight: FontWeight.w300,
@@ -132,19 +156,14 @@ class Content extends StatelessWidget {
                 padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
                 child: Text(r["title"],
                     style: TextStyle(
-                        fontSize: baseFontSize,
-                        fontFamily: "Merriweather",
-                        color: Color.fromARGB(255, 0, 0, 255)))),
+                        fontSize: baseFontSize, fontFamily: "Merriweather", color: Color.fromARGB(255, 0, 0, 255)))),
             onTap: () {
               onLink(r["link"]);
             }));
       } else {
-        widgets.add(Text(r["line"],
+        widgets.add(SelectableText(r["line"],
             style: TextStyle(
-                fontSize: baseFontSize,
-                fontWeight: FontWeight.w300,
-                fontFamily: "Merriweather",
-                height: 1.7)));
+                fontSize: baseFontSize, fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7)));
       }
       return widgets;
     });

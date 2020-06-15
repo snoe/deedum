@@ -8,26 +8,21 @@ import 'package:url_launcher/url_launcher.dart';
 
 List<String> bytesToLines(ContentType contentType, List<int> bytes) {
   var rest;
-  if (contentType.charset == null ||
-      contentType.charset.isEmpty ||
-      contentType.charset == "utf-8") {
-    rest = Utf8Decoder().convert(bytes);
+  if (contentType.charset == null || contentType.charset.isEmpty || contentType.charset == "utf-8") {
+    rest = Utf8Decoder(allowMalformed: true).convert(bytes);
   } else if (contentType.charset == "iso-8859-1") {
-    rest = Latin1Decoder().convert(bytes);
+    rest = Latin1Decoder(allowInvalid: true).convert(bytes);
+  } else if (contentType.charset == "us-ascii") {
+    rest = Latin1Decoder(allowInvalid: true).convert(bytes);
   } else {
-    rest = AsciiDecoder().convert(bytes);
+    rest = Utf8Decoder(allowMalformed: true).convert(bytes);
   }
 
   return LineSplitter.split(rest).toList();
 }
 
-void onURI(
-    String currentLink,
-    String link,
-    void Function(Uri, ContentData) handleContent,
-    void Function() handleLoad,
-    void Function() handleDone,
-    List<String> redirects) async {
+void onURI(String currentLink, String link, void Function(Uri, ContentData) handleContent, void Function() handleLoad,
+    void Function() handleDone, List<String> redirects) async {
   handleLoad();
 
   var uri = Uri.parse(link);
@@ -45,16 +40,16 @@ void onURI(
     return;
   }
 
-  SecureSocket.connect(uri.host, uri.hasPort ? uri.port : 1965,
-      timeout: Duration(seconds: 5), onBadCertificate: (X509Certificate cert) {
+  SecureSocket.connect(uri.host, uri.hasPort ? uri.port : 1965, timeout: Duration(seconds: 5),
+      onBadCertificate: (X509Certificate cert) {
     // TODO Pin
     return true;
   }).then((SecureSocket s) async {
     s.write(uri.toString() + "\r\n");
     s.flush();
 
-    var x = s.timeout(Duration(seconds: 2), onTimeout: (x) {
-      log("TIMEOUT");
+    var x = s.timeout(Duration(milliseconds: 500), onTimeout: (x) {
+      log("Timeout");
       x.close();
     });
 
@@ -74,22 +69,21 @@ void onURI(
 
     var statusMeta = Utf8Decoder(allowMalformed: true).convert(statusBytes);
 
-    var m = RegExp(r'^(\S+)\s*(.*)$').firstMatch(statusMeta);
+    var m = RegExp(r'^(\d\d)\s(.+)$').firstMatch(statusMeta);
     if (m != null) {
       status = int.parse(m.group(1));
       meta = m.group(2);
     }
 
-    if (m == null) {
-      Iterable<String> content =
-          LineSplitter.split(Utf8Decoder(allowMalformed: true).convert(chunks));
+    if (statusMeta == null) {
+      handleContent(uri, ContentData(mode: "error", content: ["NO RESPONSE", "--------------"]));
+    } else if (m == null) {
+      Iterable<String> content = LineSplitter.split(Utf8Decoder(allowMalformed: true).convert(chunks));
       handleContent(
-          uri,
-          ContentData(mode: "error", content: [
-            "NO RESPONSE LINE",
-            "--------------",
-            content.join("\n")
-          ]));
+          uri, ContentData(mode: "error", content: ["INVALID RESPONSE", "--------------", content.join("\n")]));
+    } else if (meta.length > 1024) {
+      Iterable<String> content = LineSplitter.split(Utf8Decoder(allowMalformed: true).convert(chunks));
+      handleContent(uri, ContentData(mode: "error", content: ["META TOO LONG", "--------------", content.join("\n")]));
     } else if (status >= 10 && status < 20) {
       handleContent(uri, ContentData(mode: "search", content: [meta]));
     } else if (status >= 20 && status < 30) {
@@ -103,30 +97,25 @@ void onURI(
         var lines = bytesToLines(contentType, bytes);
         handleContent(uri, ContentData(content: lines, mode: "plain"));
       } else if (contentType.mimeType.startsWith("image/")) {
-        handleContent(
-            uri, ContentData(bytes: Uint8List.fromList(bytes), mode: "image"));
+        handleContent(uri, ContentData(bytes: Uint8List.fromList(bytes), mode: "image"));
       } else {
-        handleContent(
-            uri, ContentData(bytes: Uint8List.fromList(bytes), mode: "binary"));
+        handleContent(uri, ContentData(bytes: Uint8List.fromList(bytes), mode: "binary"));
       }
     } else if (status >= 30 && status < 40) {
       if (redirects.contains(meta) || redirects.length >= 5) {
         handleContent(
-            Uri.parse(meta),
-            ContentData(
-                mode: "error", content: ["Redirect loop:"] + redirects));
+            Uri.parse(meta), ContentData(mode: "error", content: ["REDIRECT LOOP", "--------------"] + redirects));
       } else {
         redirects.add(meta);
-        onURI(currentLink, meta, handleContent, handleLoad, handleDone,
-            redirects);
+        onURI(currentLink, meta, handleContent, handleLoad, handleDone, redirects);
       }
     } else {
-      handleContent(uri, ContentData(mode: "error", content: [statusMeta]));
+      handleContent(uri, ContentData(mode: "error", content: ["UNHANDLED STATUS", "--------------", statusMeta]));
     }
   }).catchError((e) {
+    handleContent(uri, ContentData(mode: "error", content: ["INTERNAL EXCEPTION", "--------------", e.message]));
     log("TOP ERROR");
     log(e.toString());
-    throw e;
   }).whenComplete(() {
     log("Done");
     handleDone();

@@ -36,14 +36,8 @@ class Browser extends StatefulWidget {
   _BrowserState createState() => _BrowserState();
 }
 
-class UriBar extends StatelessWidget {
-  UriBar(
-      {this.controller,
-      this.loading,
-      this.onContent,
-      this.onSearch,
-      this.onLoad,
-      this.onDone});
+class TopBar extends StatelessWidget {
+  TopBar({this.controller, this.loading, this.onContent, this.onSearch, this.onLoad, this.onDone});
   final TextEditingController controller;
   final loading;
   final onContent;
@@ -58,15 +52,14 @@ class UriBar extends StatelessWidget {
           flex: 1,
           child: DecoratedBox(
               decoration: BoxDecoration(
-                  color: loading ? Colors.purple : Colors.white,
-                  borderRadius: BorderRadius.all(Radius.circular(5))),
+                  color: loading ? Colors.purple : Colors.white, borderRadius: BorderRadius.all(Radius.circular(5))),
               child: Padding(
                   padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
                   child: TextField(
                       controller: controller,
                       onSubmitted: (value) {
                         onURI("", value, onContent, onLoad, onDone, []);
-                      }))))
+                      })))),
     ]);
   }
 }
@@ -184,12 +177,10 @@ class _BrowserState extends State<Browser> {
     return WillPopScope(
         onWillPop: _handleBack,
         child: Scaffold(
-            backgroundColor: (_content != null && _content.mode == "error")
-                ? Colors.deepOrange
-                : Colors.white,
+            backgroundColor: (_content != null && _content.mode == "error") ? Colors.deepOrange : Colors.white,
             appBar: AppBar(
                 backgroundColor: Colors.orange,
-                title: UriBar(
+                title: TopBar(
                   controller: _controller,
                   onLoad: _handleLoad,
                   onDone: _handleDone,
@@ -200,18 +191,17 @@ class _BrowserState extends State<Browser> {
                 key: ObjectKey(_history.isEmpty ? "first" : _history.last),
                 child: Content(
                   contentData: _content,
-                  onSearch: (String search) {
-                    if (search.trim().isNotEmpty) {
+                  onSearch: (String encodedSearch) {
+                    if (encodedSearch.isNotEmpty) {
                       var uri = Uri.parse(_controller.text);
-                      var x = Uri(queryParameters: {search: null});
+                      var u =
+                          Uri(scheme: uri.scheme, host: uri.host, port: uri.port, path: uri.path, query: encodedSearch);
 
-                      onURI("", uri.toString() + x.toString(), _handleContent,
-                          _handleLoad, _handleDone, []);
+                      onURI("", u.toString(), _handleContent, _handleLoad, _handleDone, []);
                     }
                   },
                   onLink: (String link) {
-                    onURI(_controller.text, link, _handleContent, _handleLoad,
-                        _handleDone, []);
+                    onURI(_controller.text, link, _handleContent, _handleLoad, _handleDone, []);
                   },
                 ))));
   }
