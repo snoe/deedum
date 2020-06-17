@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:deedum/shared.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 List<String> bytesToLines(ContentType contentType, List<int> bytes) {
@@ -21,6 +22,43 @@ List<String> bytesToLines(ContentType contentType, List<int> bytes) {
   return LineSplitter.split(rest).toList();
 }
 
+Future<ContentData> homepageContent() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  List<String> bookmarks = (prefs.getStringList('bookmarks') ?? []);
+  var intro = [
+    "```",
+    "██████╗ ███████╗███████╗██████╗ ██╗   ██╗███╗   ███╗",
+    "██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║████╗ ████║",
+    "██║  ██║█████╗  █████╗  ██║  ██║██║   ██║██╔████╔██║",
+    "██║  ██║██╔══╝  ██╔══╝  ██║  ██║██║   ██║██║╚██╔╝██║",
+    "██████╔╝███████╗███████╗██████╔╝╚██████╔╝██║ ╚═╝ ██║",
+    "╚═════╝ ╚══════╝╚══════╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝",
+    "```",
+    "Welcome to the Geminiverse."
+  ];
+  var bookmarkLines = ["# Bookmarks"] +
+      bookmarks.map((s) {
+        return "=> $s";
+      }).toList();
+
+  List<String> recent = (prefs.getStringList('recent') ?? []);
+  var recentLines = ["# Recent"] +
+      recent.map((s) {
+        return "=> $s";
+      }).toList();
+  var content = intro +
+      [
+        "# Links",
+        "=> gemini://gemini.circumlunar.space/ Project Gemini",
+        "=> gemini://typed-hole.org/ Typed Hole",
+        "=> gemini://gus.guru/ Gemini Universal Search",
+      ] +
+      bookmarkLines +
+      recentLines;
+
+  return ContentData(content: content, mode: "content");
+}
+
 void onURI(String currentLink, String link, void Function(Uri, ContentData) handleContent, void Function() handleLoad,
     void Function() handleDone, List<String> redirects) async {
   handleLoad();
@@ -30,7 +68,12 @@ void onURI(String currentLink, String link, void Function(Uri, ContentData) hand
     uri = Uri.parse(currentLink).resolve(link);
   }
 
-  if (uri.scheme != "gemini") {
+  if (uri.scheme == "about") {
+    var homepage = await homepageContent();
+    handleContent(uri, homepage);
+    handleDone();
+    return;
+  } else if (uri.scheme != "gemini") {
     if (await canLaunch(uri.toString())) {
       launch(uri.toString());
     } else {

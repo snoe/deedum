@@ -67,10 +67,10 @@ class TopBar extends StatelessWidget {
 class _BrowserState extends State<Browser> {
   TextEditingController _controller;
   ContentData _content;
-  Map<Uri, ContentData> _cache = {};
   List<Uri> _history = [];
   bool _loading = false;
   StreamSubscription _sub;
+  bool _bookmarked = false;
 
   void initState() {
     super.initState();
@@ -79,8 +79,6 @@ class _BrowserState extends State<Browser> {
   }
 
   init() async {
-    var uri = Uri.parse("gb://recent/");
-
     _sub = getLinksStream().listen((String link) {
       onURI("", link, _handleContent, _handleLoad, _handleDone, []);
     }, onError: (err) {
@@ -97,27 +95,7 @@ class _BrowserState extends State<Browser> {
       log("oop");
     }
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> recent = (prefs.getStringList('recent') ?? []);
-    var content = recent.map((s) {
-      return "=> $s";
-    }).toList();
-    content.insertAll(0, [
-      "# Links",
-      "=> gemini://gemini.circumlunar.space/ Project Gemini",
-      "=> gemini://typed-hole.org/ Typed Hole",
-      "=> gemini://gus.guru/ Gemini Universal Search",
-      "# Recent"
-    ]);
-
-    var contentData = ContentData(content: content, mode: "content");
-
-    setState(() {
-      _controller.text = uri.toString();
-      _history.add(uri);
-      _cache[uri] = contentData;
-      _content = contentData;
-    });
+    onURI("", "about://homepage/", _handleContent, _handleLoad, _handleDone, []);
   }
 
   void dispose() {
@@ -149,9 +127,11 @@ class _BrowserState extends State<Browser> {
 
     prefs.setStringList('recent', recent);
 
+    Set<String> bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
+
     setState(() {
+      _bookmarked = bookmarks.contains(uri.toString());
       _controller.text = uri.toString();
-      _cache[uri] = contentData;
       if (_history.isEmpty || _history.last != uri) {
         _history.add(uri);
       }
@@ -161,14 +141,11 @@ class _BrowserState extends State<Browser> {
 
   Future<bool> _handleBack() async {
     if (_history.length > 1) {
-      setState(() {
-        _history.removeLast();
-        _content = _cache[_history.last];
-      });
-      _controller.text = _history.last.toString();
+      _history.removeLast();
+      onURI("", _history.last.toString(), _handleContent, _handleLoad, _handleDone, []);
       return false;
     } else {
-      return false;
+      return true;
     }
   }
 
@@ -179,16 +156,38 @@ class _BrowserState extends State<Browser> {
         child: Scaffold(
             backgroundColor: (_content != null && _content.mode == "error") ? Colors.deepOrange : Colors.white,
             appBar: AppBar(
-                backgroundColor: Colors.orange,
-                title: TopBar(
-                  controller: _controller,
-                  onLoad: _handleLoad,
-                  onDone: _handleDone,
-                  onContent: _handleContent,
-                  loading: _loading,
-                )),
+              backgroundColor: Colors.orange,
+              title: TopBar(
+                controller: _controller,
+                onLoad: _handleLoad,
+                onDone: _handleDone,
+                onContent: _handleContent,
+                loading: _loading,
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.star,
+                  color: _bookmarked ? Colors.yellow : null
+                  ),
+                  onPressed: () async {
+                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    Set<String> bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
+                    var text = _controller.text;
+                    if (bookmarks.contains(_controller.text)) {
+                      bookmarks.remove(text);
+                      setState(() {_bookmarked = false;});
+                    } else {
+                      bookmarks.add(text);
+                      setState(() {_bookmarked = true;});
+                    }
+
+                    prefs.setStringList('bookmarks', bookmarks.toList());
+                  },
+                ),
+              ],
+            ),
             body: SingleChildScrollView(
-                key: ObjectKey(_history.isEmpty ? "first" : _history.last),
+                key: ObjectKey(_controller.text),
                 child: Content(
                   contentData: _content,
                   onSearch: (String encodedSearch) {

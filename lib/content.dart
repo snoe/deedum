@@ -1,6 +1,5 @@
 import 'dart:developer';
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:deedum/shared.dart';
 
@@ -40,33 +39,33 @@ class _ContentState extends State<Content> {
   Widget build(BuildContext context) {
     List<Widget> widgets;
     if (contentData == null) {
-      widgets = [Text("Nothing to see here")];
+      widgets = [Text("")];
     } else if (contentData.mode == "content") {
       widgets = buildFold(context);
     } else if (contentData.mode == "search") {
       widgets = [
-        SelectableText(contentData.content.join("\n")),
-        DecoratedBox(
-            decoration: BoxDecoration(color: _inputError ? Colors.deepOrange : null),
-            child: TextField(onSubmitted: (value) {
-              var encodedSearch = Uri.encodeComponent(value);
-              if (encodedSearch.length <= 1024) {
-                onSearch(encodedSearch);
-                _setInputError(false, encodedSearch.length);
-              } else {
-                _setInputError(true, encodedSearch.length);
-              }
-            }))
-      ] + (_inputError ? [SelectableText("\n\nInput too long: $_inputLength")] : []);
+            SelectableText(contentData.content.join("\n")),
+            DecoratedBox(
+                decoration: BoxDecoration(color: _inputError ? Colors.deepOrange : null),
+                child: TextField(onSubmitted: (value) {
+                  var encodedSearch = Uri.encodeComponent(value);
+                  if (encodedSearch.length <= 1024) {
+                    onSearch(encodedSearch);
+                    _setInputError(false, encodedSearch.length);
+                  } else {
+                    _setInputError(true, encodedSearch.length);
+                  }
+                }))
+          ] +
+          (_inputError ? [SelectableText("\n\nInput too long: $_inputLength")] : []);
     } else if (contentData.mode == "error") {
       widgets = [SelectableText("An error occurred\n\n"), SelectableText(contentData.content.join("\n"))];
     } else if (contentData.mode == "image") {
-
-
-        widgets = [Image.memory(contentData.bytes,
-        errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
-
-           return SelectableText("broken image ¯\\_(ツ)_/¯");})];
+      widgets = [
+        Image.memory(contentData.bytes, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+          return SelectableText("broken image ¯\\_(ツ)_/¯");
+        })
+      ];
     } else if (contentData.mode == "plain") {
       contentData.content.insert(0, "```");
       widgets = buildFold(context);
