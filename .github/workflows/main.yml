@@ -12,6 +12,8 @@ jobs:
     - run: flutter pub get
     - run: flutter test
     - run: flutter build apk --debug
+    if: contains(github.ref, "release")
+    steps:
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
