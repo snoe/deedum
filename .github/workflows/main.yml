@@ -12,9 +12,8 @@ jobs:
     - run: flutter pub get
     - run: flutter test
     - run: flutter build apk --debug
-    if: contains(github.ref, "release")
-    steps:
     - name: Create Release
+      if: contains(github.ref, "release")
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -26,6 +25,7 @@ jobs:
         prerelease: false
     - name: Upload Release Asset
       id: upload-release-asset
+      if: contains(github.ref, "release")
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
