@@ -11,8 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:flutter/foundation.dart' as foundation;
 
-bool get isIos =>
-    foundation.defaultTargetPlatform == foundation.TargetPlatform.iOS;
+bool get isIos => foundation.defaultTargetPlatform == foundation.TargetPlatform.iOS;
 
 void main() {
   runApp(BrowserApp());
@@ -45,6 +44,7 @@ class _BrowserState extends State<Browser> {
   TextEditingController _controller;
   ContentData _content;
   List<Uri> _history = [];
+  int _historyIndex = -1;
   bool _loading = false;
   StreamSubscription _sub;
   bool _bookmarked = false;
@@ -110,17 +110,30 @@ class _BrowserState extends State<Browser> {
     setState(() {
       _bookmarked = bookmarks.contains(uri.toString());
       _controller.text = uri.toString();
-      if (_history.isEmpty || _history.last != uri) {
+
+      if (_history.isEmpty || _history[_historyIndex] != uri) {
+        _history = _history.sublist(0, _historyIndex + 1);
         _history.add(uri);
+        _historyIndex = _history.length - 1;
       }
       _content = contentData;
     });
   }
 
   Future<bool> _handleBack() async {
-    if (_history.length > 1) {
-      _history.removeLast();
-      onLocation(_history.last);
+    if (_historyIndex > 0) {
+      _historyIndex -= 1;
+      onLocation(_history[_historyIndex]);
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  Future<bool> _handleForward() async {
+    if (_historyIndex < (_history.length - 1)) {
+      _historyIndex += 1;
+      onLocation(_history[_historyIndex]);
       return false;
     } else {
       return true;
@@ -129,12 +142,7 @@ class _BrowserState extends State<Browser> {
 
   onSearch(String encodedSearch) {
     if (encodedSearch.isNotEmpty) {
-      var u = Uri(
-          scheme: _uri.scheme,
-          host: _uri.host,
-          port: _uri.port,
-          path: _uri.path,
-          query: encodedSearch);
+      var u = Uri(scheme: _uri.scheme, host: _uri.host, port: _uri.port, path: _uri.path, query: encodedSearch);
       onLocation(u);
     }
   }
@@ -162,22 +170,27 @@ class _BrowserState extends State<Browser> {
           child: ButtonBar(
         children: [
           FlatButton(
-              onPressed: _history.length == 1
+              onPressed: _historyIndex == 0
                   ? null
                   : () {
                       _handleBack();
                     },
-              child: Icon(Icons.keyboard_arrow_left, size: 30))
+              child: Icon(Icons.keyboard_arrow_left, size: 30)),
+          FlatButton(
+              onPressed: _historyIndex == (_history.length - 1)
+                  ? null
+                  : () {
+                      _handleForward();
+                    },
+              child: Icon(Icons.keyboard_arrow_right, size: 30))
         ],
-        alignment: MainAxisAlignment.start,
+        alignment: MainAxisAlignment.spaceBetween,
       ));
     }
     return WillPopScope(
         onWillPop: _handleBack,
         child: Scaffold(
-            backgroundColor: (_content != null && _content.mode == "error")
-                ? Colors.deepOrange
-                : Colors.white,
+            backgroundColor: (_content != null && _content.mode == "error") ? Colors.deepOrange : Colors.white,
             bottomNavigationBar: bottomBar,
             appBar: AppBar(
               backgroundColor: Colors.orange,
@@ -188,13 +201,10 @@ class _BrowserState extends State<Browser> {
               ),
               actions: [
                 IconButton(
-                  icon: Icon(Icons.star,
-                      color: _bookmarked ? Colors.yellow : null),
+                  icon: Icon(Icons.star, color: _bookmarked ? Colors.yellow : null),
                   onPressed: () async {
-                    SharedPreferences prefs =
-                        await SharedPreferences.getInstance();
-                    Set<String> bookmarks =
-                        (prefs.getStringList('bookmarks') ?? []).toSet();
+                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    Set<String> bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
                     var text = _controller.text;
                     if (bookmarks.contains(_controller.text)) {
                       bookmarks.remove(text);
@@ -210,7 +220,21 @@ class _BrowserState extends State<Browser> {
 
                     prefs.setStringList('bookmarks', bookmarks.toList());
                   },
-                ),
+                ), // overflow menu
+                PopupMenuButton<String>(
+                  onSelected: (result) {
+                    if (result == "forward") {
+                      _handleForward();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                     PopupMenuItem<String>(
+                      enabled: (_historyIndex != (_history.length - 1)),
+                      value: "forward",
+                      child: Text('Forward'),
+                    )
+                  ],
+                )
               ],
             ),
             body: SingleChildScrollView(
@@ -236,8 +260,7 @@ class TopBar extends StatelessWidget {
           flex: 1,
           child: DecoratedBox(
               decoration: BoxDecoration(
-                  color: loading ? Colors.purple : Colors.white,
-                  borderRadius: BorderRadius.all(Radius.circular(5))),
+                  color: loading ? Colors.purple : Colors.white, borderRadius: BorderRadius.all(Radius.circular(5))),
               child: Padding(
                   padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
                   child: TextField(

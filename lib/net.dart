@@ -86,8 +86,11 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
     s.write(uri.toString() + "\r\n");
     s.flush();
 
-    var x = s.timeout(Duration(milliseconds: 500), onTimeout: (x) {
+    var timeout = false;
+
+    var x = s.timeout(Duration(milliseconds: 1500), onTimeout: (x) {
       log("Timeout");
+      timeout = true;
       x.close();
     });
 
@@ -114,11 +117,14 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
     }
 
     if (statusMeta == null) {
-      handleContent(uri, ContentData(mode: "error", content: ["NO RESPONSE", "--------------"]));
+      handleContent(uri, ContentData(mode: "error", content: ["NO RESPONSE (timeout: $timeout)", "--------------"]));
     } else if (m == null) {
       Iterable<String> content = LineSplitter.split(Utf8Decoder(allowMalformed: true).convert(chunks));
       handleContent(
-          uri, ContentData(mode: "error", content: ["INVALID RESPONSE", "--------------", content.join("\n")]));
+          uri,
+          ContentData(
+              mode: "error",
+              content: ["INVALID RESPONSE (timeout: $timeout)", "$statusMeta", "--------------", content.join("\n")]));
     } else if (meta.length > 1024) {
       Iterable<String> content = LineSplitter.split(Utf8Decoder(allowMalformed: true).convert(chunks));
       handleContent(uri, ContentData(mode: "error", content: ["META TOO LONG", "--------------", content.join("\n")]));
