@@ -1,5 +1,7 @@
 import 'dart:developer';
 import 'dart:math' as math;
+import 'package:extended_text/extended_text.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:deedum/shared.dart';
 
@@ -11,8 +13,7 @@ class Content extends StatefulWidget {
   final Function onSearch;
 
   @override
-  _ContentState createState() => _ContentState(
-      contentData: contentData, onLink: onLink, onSearch: onSearch);
+  _ContentState createState() => _ContentState(contentData: contentData, onLink: onLink, onSearch: onSearch);
 }
 
 class _ContentState extends State<Content> {
@@ -45,8 +46,7 @@ class _ContentState extends State<Content> {
       widgets = [
             SelectableText(contentData.content.join("\n")),
             DecoratedBox(
-                decoration: BoxDecoration(
-                    color: _inputError ? Colors.deepOrange : null),
+                decoration: BoxDecoration(color: _inputError ? Colors.deepOrange : null),
                 child: TextField(onSubmitted: (value) {
                   var encodedSearch = Uri.encodeComponent(value);
                   if (encodedSearch.length <= 1024) {
@@ -57,18 +57,12 @@ class _ContentState extends State<Content> {
                   }
                 }))
           ] +
-          (_inputError
-              ? [SelectableText("\n\nInput too long: $_inputLength")]
-              : []);
+          (_inputError ? [SelectableText("\n\nInput too long: $_inputLength")] : []);
     } else if (contentData.mode == "error") {
-      widgets = [
-        SelectableText("An error occurred\n\n"),
-        SelectableText(contentData.content.join("\n"))
-      ];
+      widgets = [SelectableText("An error occurred\n\n"), SelectableText(contentData.content.join("\n"))];
     } else if (contentData.mode == "image") {
       widgets = [
-        Image.memory(contentData.bytes, errorBuilder:
-            (BuildContext context, Object exception, StackTrace stackTrace) {
+        Image.memory(contentData.bytes, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
           return SelectableText("broken image ¯\\_(ツ)_/¯");
         })
       ];
@@ -87,8 +81,7 @@ class _ContentState extends State<Content> {
   }
 
   buildFold(context) {
-    var lineInfo =
-        contentData.content.fold({"lines": [], "parse?": true}, (r, line) {
+    var lineInfo = contentData.content.fold({"lines": [], "parse?": true}, (r, line) {
       if (line.startsWith("```")) {
         r["parse?"] = !r["parse?"];
       } else if (!r["parse?"]) {
@@ -112,8 +105,7 @@ class _ContentState extends State<Content> {
       } else if (line.startsWith("#")) {
         var m = RegExp(r'^(#*)\s*(.*)$').firstMatch(line);
         var hashCount = math.min(m.group(1).length, 3);
-        r["lines"]
-            .add({"type": "header", "line": m.group(2), "size": hashCount});
+        r["lines"].add({"type": "header", "line": m.group(2), "size": hashCount});
       } else if (line.startsWith("=>")) {
         var m = RegExp(r'^=>\s*(\S+)\s*(.*)$').firstMatch(line);
         if (m != null) {
@@ -136,18 +128,13 @@ class _ContentState extends State<Content> {
       } else if (type == "header") {
         var extraSize = (15 - math.max(r["size"] * 5, 15));
         widgets.add(Padding(
-            padding: EdgeInsets.fromLTRB(
-                0, baseFontSize + extraSize, 0, baseFontSize + extraSize),
+            padding: EdgeInsets.fromLTRB(0, baseFontSize + extraSize, 0, baseFontSize + extraSize),
             child: SelectableText(r["line"],
                 style: TextStyle(
-                    fontFamily: "Merriweather",
-                    fontWeight: FontWeight.bold,
-                    fontSize: (baseFontSize + extraSize)))));
+                    fontFamily: "Merriweather", fontWeight: FontWeight.bold, fontSize: (baseFontSize + extraSize)))));
       } else if (type == "quote") {
         widgets.add(DecoratedBox(
-            decoration: BoxDecoration(
-                border:
-                    Border(left: BorderSide(color: Colors.orange, width: 3))),
+            decoration: BoxDecoration(border: Border(left: BorderSide(color: Colors.orange, width: 3))),
             child: Padding(
                 padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
                 child: SelectableText(r["line"],
@@ -162,19 +149,14 @@ class _ContentState extends State<Content> {
                 padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
                 child: Text(r["title"],
                     style: TextStyle(
-                        fontSize: baseFontSize,
-                        fontFamily: "Merriweather",
-                        color: Color.fromARGB(255, 0, 0, 255)))),
+                        fontSize: baseFontSize, fontFamily: "Merriweather", color: Color.fromARGB(255, 0, 0, 255)))),
             onTap: () {
               onLink(r["link"]);
             }));
       } else {
         widgets.add(SelectableText(r["line"],
             style: TextStyle(
-                fontSize: baseFontSize,
-                fontWeight: FontWeight.w300,
-                fontFamily: "Merriweather",
-                height: 1.7)));
+                fontSize: baseFontSize, fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7)));
       }
       return widgets;
     });
@@ -194,7 +176,9 @@ class PreText extends StatelessWidget {
         width: availableWidth,
         child: FittedBox(
             fit: BoxFit.fill,
-            child: SelectableText(prelines.join("\n"),
+            child: ExtendedText(prelines.join("\n"),
+                selectionEnabled: true,
+                textSelectionControls: materialTextSelectionControls,
                 style: TextStyle(fontFamily: "DejaVu Sans Mono"))));
   }
 }
