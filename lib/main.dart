@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:deedum/content.dart';
 import 'package:deedum/net.dart';
@@ -8,6 +9,10 @@ import 'package:deedum/shared.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
+import 'package:flutter/foundation.dart' as foundation;
+
+bool get isIos =>
+    foundation.defaultTargetPlatform == foundation.TargetPlatform.iOS;
 
 void main() {
   runApp(BrowserApp());
@@ -36,34 +41,6 @@ class Browser extends StatefulWidget {
   _BrowserState createState() => _BrowserState();
 }
 
-class TopBar extends StatelessWidget {
-  TopBar({this.controller, this.loading, this.onContent, this.onSearch, this.onLoad, this.onDone});
-  final TextEditingController controller;
-  final loading;
-  final onContent;
-  final onSearch;
-  final onDone;
-  final onLoad;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(children: [
-      Expanded(
-          flex: 1,
-          child: DecoratedBox(
-              decoration: BoxDecoration(
-                  color: loading ? Colors.purple : Colors.white, borderRadius: BorderRadius.all(Radius.circular(5))),
-              child: Padding(
-                  padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
-                  child: TextField(
-                      controller: controller,
-                      onSubmitted: (value) {
-                        onURI("", value, onContent, onLoad, onDone, []);
-                      })))),
-    ]);
-  }
-}
-
 class _BrowserState extends State<Browser> {
   TextEditingController _controller;
   ContentData _content;
@@ -71,6 +48,7 @@ class _BrowserState extends State<Browser> {
   bool _loading = false;
   StreamSubscription _sub;
   bool _bookmarked = false;
+  Uri _uri;
 
   void initState() {
     super.initState();
@@ -80,7 +58,7 @@ class _BrowserState extends State<Browser> {
 
   init() async {
     _sub = getLinksStream().listen((String link) {
-      onURI("", link, _handleContent, _handleLoad, _handleDone, []);
+      onLocation(Uri.parse(link));
     }, onError: (err) {
       log("oop");
     });
@@ -88,14 +66,14 @@ class _BrowserState extends State<Browser> {
     try {
       var link = await getInitialLink();
       if (link != null) {
-        onURI("", link, _handleContent, _handleLoad, _handleDone, []);
+        onLocation(Uri.parse(link));
         return;
       }
     } on PlatformException {
       log("oop");
     }
-
-    onURI("", "about://homepage/", _handleContent, _handleLoad, _handleDone, []);
+    _uri = Uri.parse("about://homepage/");
+    onLocation(_uri);
   }
 
   void dispose() {
@@ -142,43 +120,92 @@ class _BrowserState extends State<Browser> {
   Future<bool> _handleBack() async {
     if (_history.length > 1) {
       _history.removeLast();
-      onURI("", _history.last.toString(), _handleContent, _handleLoad, _handleDone, []);
+      onLocation(_history.last);
       return false;
     } else {
       return true;
     }
   }
 
+  onSearch(String encodedSearch) {
+    if (encodedSearch.isNotEmpty) {
+      var u = Uri(
+          scheme: _uri.scheme,
+          host: _uri.host,
+          port: _uri.port,
+          path: _uri.path,
+          query: encodedSearch);
+      onLocation(u);
+    }
+  }
+
+  onLink(String link) {
+    var location = Uri.parse(link);
+    if (!location.hasScheme) {
+      location = _uri.resolve(link);
+    }
+    onLocation(location);
+  }
+
+  onLocation(Uri location) {
+    onURI(location, _handleContent, _handleLoad, _handleDone, []);
+    setState(() {
+      _uri = location;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    var bottomBar;
+    if (isIos) {
+      bottomBar = BottomAppBar(
+          child: ButtonBar(
+        children: [
+          FlatButton(
+              onPressed: _history.length == 1
+                  ? null
+                  : () {
+                      _handleBack();
+                    },
+              child: Icon(Icons.keyboard_arrow_left, size: 30))
+        ],
+        alignment: MainAxisAlignment.start,
+      ));
+    }
     return WillPopScope(
         onWillPop: _handleBack,
         child: Scaffold(
-            backgroundColor: (_content != null && _content.mode == "error") ? Colors.deepOrange : Colors.white,
+            backgroundColor: (_content != null && _content.mode == "error")
+                ? Colors.deepOrange
+                : Colors.white,
+            bottomNavigationBar: bottomBar,
             appBar: AppBar(
               backgroundColor: Colors.orange,
               title: TopBar(
                 controller: _controller,
-                onLoad: _handleLoad,
-                onDone: _handleDone,
-                onContent: _handleContent,
+                onLocation: onLocation,
                 loading: _loading,
               ),
               actions: [
                 IconButton(
                   icon: Icon(Icons.star,
-                  color: _bookmarked ? Colors.yellow : null
-                  ),
+                      color: _bookmarked ? Colors.yellow : null),
                   onPressed: () async {
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                    Set<String> bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    Set<String> bookmarks =
+                        (prefs.getStringList('bookmarks') ?? []).toSet();
                     var text = _controller.text;
                     if (bookmarks.contains(_controller.text)) {
                       bookmarks.remove(text);
-                      setState(() {_bookmarked = false;});
+                      setState(() {
+                        _bookmarked = false;
+                      });
                     } else {
                       bookmarks.add(text);
-                      setState(() {_bookmarked = true;});
+                      setState(() {
+                        _bookmarked = true;
+                      });
                     }
 
                     prefs.setStringList('bookmarks', bookmarks.toList());
@@ -187,21 +214,37 @@ class _BrowserState extends State<Browser> {
               ],
             ),
             body: SingleChildScrollView(
-                key: ObjectKey(_controller.text),
+                key: ObjectKey(_content),
                 child: Content(
                   contentData: _content,
-                  onSearch: (String encodedSearch) {
-                    if (encodedSearch.isNotEmpty) {
-                      var uri = Uri.parse(_controller.text);
-                      var u =
-                          Uri(scheme: uri.scheme, host: uri.host, port: uri.port, path: uri.path, query: encodedSearch);
-
-                      onURI("", u.toString(), _handleContent, _handleLoad, _handleDone, []);
-                    }
-                  },
-                  onLink: (String link) {
-                    onURI(_controller.text, link, _handleContent, _handleLoad, _handleDone, []);
-                  },
+                  onLink: onLink,
+                  onSearch: onSearch,
                 ))));
+  }
+}
+
+class TopBar extends StatelessWidget {
+  TopBar({this.controller, this.loading, this.onLocation});
+  final TextEditingController controller;
+  final loading;
+  final onLocation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Expanded(
+          flex: 1,
+          child: DecoratedBox(
+              decoration: BoxDecoration(
+                  color: loading ? Colors.purple : Colors.white,
+                  borderRadius: BorderRadius.all(Radius.circular(5))),
+              child: Padding(
+                  padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                  child: TextField(
+                      controller: controller,
+                      onSubmitted: (value) {
+                        onLocation(Uri.parse(value));
+                      })))),
+    ]);
   }
 }

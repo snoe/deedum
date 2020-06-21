@@ -59,14 +59,9 @@ Future<ContentData> homepageContent() async {
   return ContentData(content: content, mode: "content");
 }
 
-void onURI(String currentLink, String link, void Function(Uri, ContentData) handleContent, void Function() handleLoad,
+void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function() handleLoad,
     void Function() handleDone, List<String> redirects) async {
   handleLoad();
-
-  var uri = Uri.parse(link);
-  if (!uri.hasScheme) {
-    uri = Uri.parse(currentLink).resolve(link);
-  }
 
   if (uri.scheme == "about") {
     var homepage = await homepageContent();
@@ -150,7 +145,7 @@ void onURI(String currentLink, String link, void Function(Uri, ContentData) hand
             Uri.parse(meta), ContentData(mode: "error", content: ["REDIRECT LOOP", "--------------"] + redirects));
       } else {
         redirects.add(meta);
-        onURI(currentLink, meta, handleContent, handleLoad, handleDone, redirects);
+        onURI(Uri.parse(meta), handleContent, handleLoad, handleDone, redirects);
       }
     } else {
       handleContent(uri, ContentData(mode: "error", content: ["UNHANDLED STATUS", "--------------", statusMeta]));
