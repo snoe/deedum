@@ -26,6 +26,8 @@ Future<ContentData> homepageContent() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   List<String> bookmarks = (prefs.getStringList('bookmarks') ?? []);
   var intro = [
+    "Welcome to the Geminiverse.",
+    "",
     "```",
     "██████╗ ███████╗███████╗██████╗ ██╗   ██╗███╗   ███╗",
     "██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║████╗ ████║",
@@ -34,7 +36,6 @@ Future<ContentData> homepageContent() async {
     "██████╔╝███████╗███████╗██████╔╝╚██████╔╝██║ ╚═╝ ██║",
     "╚═════╝ ╚══════╝╚══════╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝",
     "```",
-    "Welcome to the Geminiverse."
   ];
   var bookmarkLines = ["# Bookmarks"] +
       bookmarks.map((s) {

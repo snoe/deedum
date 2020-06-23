@@ -1,27 +1,108 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 
+import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:deedum/content.dart';
 import 'package:deedum/net.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:flutter/foundation.dart' as foundation;
 
 bool get isIos => foundation.defaultTargetPlatform == foundation.TargetPlatform.iOS;
+final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
+final GlobalKey<_AppState> appKey = new GlobalKey();
 void main() {
-  runApp(BrowserApp());
+  runApp(App());
 }
 
-class BrowserApp extends StatelessWidget {
+class App extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BrowserApp(key: appKey);
+  }
+}
+
+class BrowserApp extends StatefulWidget {
+  BrowserApp({Key key}) : super(key: key);
+
+  @override
+  _AppState createState() => _AppState();
+}
+
+class _AppState extends State<BrowserApp> with AutomaticKeepAliveClientMixin {
+  List tabs = [];
+  int tabIndex = 0;
+  int previousTabIndex = 0;
+
+  Set<String> bookmarks = Set();
+
+  void initState() {
+    super.initState();
+
+    tabIndex = 0;
+    init();
+  }
+
+  init() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
+  }
+
+  onBookmark(uriString) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      if (bookmarks.contains(uriString)) {
+        bookmarks.remove(uriString);
+      } else {
+        bookmarks.add(uriString);
+      }
+
+      prefs.setStringList('bookmarks', bookmarks.toList());
+    });
+  }
+
+  onNewTab() {
+    if (tabIndex == 0) {
+      setState(() {
+        var key = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
+        tabs.add({"key": key, "widget": Browser(onNewTab, key: key)});
+        tabIndex = tabs.length;
+      });
+    } else {
+      setState(() {
+        previousTabIndex = tabIndex;
+        tabIndex = 0;
+      });
+    }
+  }
+
+  onSelectTab(newIndex) {
+    setState(() {
+      tabIndex = newIndex;
+    });
+  }
+
+  onDeleteTab(dropIndex) {
+    setState(() {
+      tabs.removeAt(dropIndex);
+      if (previousTabIndex == dropIndex + 1) {
+        previousTabIndex = 0;
+      } else if (previousTabIndex > dropIndex) {
+        previousTabIndex -= 1;
+      }
+    });
+  }
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return MaterialApp(
       title: 'deedum',
       theme: ThemeData(
@@ -29,16 +110,113 @@ class BrowserApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: Browser(),
+      home: IndexedStack(
+          index: tabIndex,
+          children: <Widget>[Tabs(tabs, onNewTab, onSelectTab, onDeleteTab, onBookmark)] +
+              tabs.map<Widget>((t) => t["widget"]).toList()),
     );
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+}
+
+class Tabs extends StatelessWidget {
+  final onNewTab;
+  final onSelectTab;
+  final onDeleteTab;
+  final onBookmark;
+  final List tabs;
+
+  final tabKey = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
+
+  Tabs(this.tabs, this.onNewTab, this.onSelectTab, this.onDeleteTab, this.onBookmark);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.orange,
+          centerTitle: true,
+          title: Text([
+            "████████╗ █████╗ ██████╗ ███████╗", 
+            "╚══██╔══╝██╔══██╗██╔══██╗██╔════╝", 
+            "   ██║   ███████║██████╔╝███████╗",
+            "   ██║   ██╔══██║██╔══██╗╚════██║",
+            "   ██║   ██║  ██║██████╔╝███████║",
+            "   ╚═╝   ╚═╝  ╚═╝╚═════╝ ╚══════╝"].join("\n"),
+              style: TextStyle(fontSize: 5.5, fontFamily: "DejaVu Sans Mono")),
+        ),
+        body: SingleChildScrollView(
+            child: Column(
+                children: <Widget>[
+                      Card(
+                        color: Colors.black12,
+                        child: ListTile(
+                          onTap: () => onNewTab(),
+                          leading: Icon(
+                            Icons.add,
+                            color: Colors.white,
+                          ),
+                          title: Text("New Tab", style: TextStyle(color: Colors.white)),
+                        ),
+                      )
+                    ] +
+                    tabs
+                        //.map((tab) => Text("${tab["key"]} ${tab["key"].currentState}")).toList()
+
+                        .mapIndexed((index, tab) {
+                      var tabState = ((tab["key"] as GlobalObjectKey).currentState as _BrowserState);
+                      var uriString = tabState?._controller?.text;
+                      var selected = appKey.currentState.previousTabIndex == index + 1;
+                      if (uriString != null) {
+                        return Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Card(
+                                shape: selected
+                                    ? RoundedRectangleBorder(
+                                        side: BorderSide(color: Colors.black, width: 2),
+                                        borderRadius: BorderRadius.circular(5))
+                                    : null,
+                                child: Row(children: [
+                                  Expanded(
+                                      flex: 1,
+                                      child: ListTile(
+                                        onTap: () => onSelectTab(index + 1),
+                                        leading: Icon(Icons.folder),
+                                        subtitle: ExtendedText(tabState._content.content.substring(0,math.min(tabState._content.content.length, 500)), overflow: TextOverflow.ellipsis, maxLines: 2,),
+                                        title: Text("${tabState._uri.host}", style: TextStyle(fontSize: 14)),
+                                      )),
+                                  IconButton(
+                                    icon: Icon(Icons.star,
+                                        color:
+                                            appKey.currentState.bookmarks.contains(uriString) ? Colors.yellow : null),
+                                    onPressed: () {
+                                      onBookmark(uriString);
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete),
+                                    onPressed: () {
+                                      onDeleteTab(index);
+                                    },
+                                  ),
+                                ])));
+                      } else {
+                        return Text("No tab?");
+                      }
+                    }).toList())));
   }
 }
 
 class Browser extends StatefulWidget {
-  Browser({Key key}) : super(key: key);
+  final onNewTab;
+
+  Browser(this.onNewTab, {Key key}) : super(key: key);
 
   @override
-  _BrowserState createState() => _BrowserState();
+  _BrowserState createState() => _BrowserState(onNewTab);
 }
 
 class _BrowserState extends State<Browser> {
@@ -48,8 +226,10 @@ class _BrowserState extends State<Browser> {
   int _historyIndex = -1;
   bool _loading = false;
   StreamSubscription _sub;
-  bool _bookmarked = false;
   Uri _uri;
+  final onNewTab;
+
+  _BrowserState(this.onNewTab);
 
   void initState() {
     super.initState();
@@ -106,10 +286,7 @@ class _BrowserState extends State<Browser> {
 
     prefs.setStringList('recent', recent);
 
-    Set<String> bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
-
     setState(() {
-      _bookmarked = bookmarks.contains(uri.toString());
       _controller.text = uri.toString();
 
       if (_history.isEmpty || _history[_historyIndex] != uri) {
@@ -195,61 +372,55 @@ class _BrowserState extends State<Browser> {
             backgroundColor: (_content != null && _content.mode == "error") ? Colors.deepOrange : Colors.white,
             bottomNavigationBar: bottomBar,
             appBar: AppBar(
-              backgroundColor: Colors.orange,
-              title: TopBar(
-                controller: _controller,
-                onLocation: onLocation,
-                loading: _loading,
-              ),
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.star, color: _bookmarked ? Colors.yellow : null),
-                  onPressed: () async {
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                    Set<String> bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
-                    var text = _controller.text;
-                    if (bookmarks.contains(_controller.text)) {
-                      bookmarks.remove(text);
-                      setState(() {
-                        _bookmarked = false;
-                      });
-                    } else {
-                      bookmarks.add(text);
-                      setState(() {
-                        _bookmarked = true;
-                      });
-                    }
-
-                    prefs.setStringList('bookmarks', bookmarks.toList());
-                  },
-                ), // overflow menu
-                PopupMenuButton<String>(
-                  onSelected: (result) {
-                    if (result == "forward") {
-                      _handleForward();
-                    }
-                  },
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                     PopupMenuItem<String>(
-                      enabled: (_historyIndex != (_history.length - 1)),
-                      value: "forward",
-                      child: Text('Forward'),
-                    )
-                  ],
-                )
-              ],
-            ),
-            body: 
-            SingleChildScrollView(
+                backgroundColor: Colors.orange,
+                title: TopBar(
+                  controller: _controller,
+                  onLocation: onLocation,
+                  loading: _loading,
+                ),
+                actions: [
+                  IconButton(
+                    icon: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: DecoratedBox(
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(width: 2, color: Colors.black),
+                                borderRadius: BorderRadius.all(Radius.circular(3))),
+                            child: Align(
+                                alignment: Alignment.center,
+                                child: Text("${appKey.currentState.tabs.length}",
+                                    style: TextStyle(
+                                        color: Colors.black, fontFamily: "DejaVu Sans Mono", fontSize: 12))))),
+                    onPressed: onNewTab,
+                  ),
+                  IconButton(
+                      disabledColor: Colors.black12,
+                      icon: Icon(Icons.chevron_right),
+                      onPressed: (_historyIndex != (_history.length - 1)) ? _handleForward : null)
+                  /*PopupMenuButton<String>(
+                      onSelected: (result) {
+                        if (result == "forward") {
+                          _handleForward();
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                            PopupMenuItem<String>(
+                                enabled: (_historyIndex != (_history.length - 1)),
+                                value: "forward",
+                                child: Text('Forward'))
+                          ])*/
+                ]),
+            body: SingleChildScrollView(
                 key: ObjectKey(_content),
-                child:  Padding(
-        padding: EdgeInsets.fromLTRB(padding, padding, padding, padding),
-        child: Content(
-                  contentData: _content,
-                  onLink: onLink,
-                  onSearch: onSearch,
-                ))
-                )));
+                child: Padding(
+                    padding: EdgeInsets.fromLTRB(padding, padding, padding, padding),
+                    child: Content(
+                      contentData: _content,
+                      onLink: onLink,
+                      onSearch: onSearch,
+                    )))));
   }
 }
 
