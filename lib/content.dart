@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:math' as math;
+import 'package:clipboard_manager/clipboard_manager.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:deedum/shared.dart';
+import 'package:flutter/foundation.dart' as foundation;
 
 class Content extends StatefulWidget {
   Content({this.contentData, this.onLink, this.onSearch});
@@ -24,7 +27,6 @@ class _ContentState extends State<Content> {
   final Function onSearch;
 
   final baseFontSize = 17.0;
-  final _padding = 25.0;
   bool _inputError = false;
   int _inputLength = 0;
 
@@ -37,148 +39,151 @@ class _ContentState extends State<Content> {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> widgets;
+    Widget widget;
     if (contentData == null) {
-      widgets = [Text("")];
+      widget = Text("");
     } else if (contentData.mode == "content") {
-      widgets = buildFold(context);
+      widget = buildFold(context);
     } else if (contentData.mode == "search") {
-      widgets = [
-            SelectableText(contentData.content.join("\n")),
-            DecoratedBox(
-                decoration: BoxDecoration(color: _inputError ? Colors.deepOrange : null),
-                child: TextField(onSubmitted: (value) {
-                  var encodedSearch = Uri.encodeComponent(value);
-                  if (encodedSearch.length <= 1024) {
-                    onSearch(encodedSearch);
-                    _setInputError(false, encodedSearch.length);
-                  } else {
-                    _setInputError(true, encodedSearch.length);
-                  }
-                }))
-          ] +
-          (_inputError ? [SelectableText("\n\nInput too long: $_inputLength")] : []);
+      widget = Column(
+          children: <Widget>[
+                ExtendedText(contentData.content),
+                DecoratedBox(
+                    decoration: BoxDecoration(color: _inputError ? Colors.deepOrange : null),
+                    child: TextField(onSubmitted: (value) {
+                      var encodedSearch = Uri.encodeComponent(value);
+                      if (encodedSearch.length <= 1024) {
+                        onSearch(encodedSearch);
+                        _setInputError(false, encodedSearch.length);
+                      } else {
+                        _setInputError(true, encodedSearch.length);
+                      }
+                    }))
+              ] +
+              (_inputError ? [ExtendedText("\n\nInput too long: $_inputLength")] : []));
     } else if (contentData.mode == "error") {
-      widgets = [SelectableText("An error occurred\n\n"), SelectableText(contentData.content.join("\n"))];
+      widget = ExtendedText("An error occurred\n\n" + contentData.content);
     } else if (contentData.mode == "image") {
-      widgets = [
-        Image.memory(contentData.bytes, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
-          return SelectableText("broken image ¯\\_(ツ)_/¯");
-        })
-      ];
+      widget = Image.memory(contentData.bytes,
+          errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+        return ExtendedText("broken image ¯\\_(ツ)_/¯");
+      });
     } else if (contentData.mode == "plain") {
-      widgets = [PreText(contentData.content)];
+      var availableWidth = MediaQuery.of(context).size.width - (padding * 2);
+
+      widget = Container(
+          width: availableWidth,
+          child: FittedBox(
+              fit: BoxFit.fill,
+              child: ExtendedText(contentData.content,
+                  style: TextStyle(fontFamily: "DejaVu Sans Mono"), selectionEnabled: true)));
     } else {
-      widgets = [SelectableText("Unknown mode ${contentData.mode}")];
+      widget = ExtendedText("Unknown mode ${contentData.mode}");
     }
-    return Padding(
-        padding: EdgeInsets.all(_padding),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: widgets,
-          crossAxisAlignment: CrossAxisAlignment.start,
-        ));
+    return widget;
   }
 
   buildFold(context) {
-    var lineInfo = contentData.content.fold({"lines": [], "parse?": true}, (r, line) {
+    var lineInfo = LineSplitter.split(contentData.content).fold({"groups": [], "parse?": true}, (r, line) {
       if (line.startsWith("```")) {
         r["parse?"] = !r["parse?"];
       } else if (!r["parse?"]) {
-        if (r["lines"].isNotEmpty && r["lines"].last["type"] == "pre") {
-          var last = r["lines"].removeLast();
-          last["prelines"].add(line);
-          var lastLine = last["max"];
-          if (lastLine.length < line.length) {
-            last["max"] = line;
-          }
-          r["lines"].add(last);
-        } else {
-          r["lines"].add({
-            "type": "pre",
-            "prelines": [line],
-            "max": line
-          });
-        }
+        addToGroup(r, "pre", line);
       } else if (line.startsWith(">")) {
-        r["lines"].add({"type": "quote", "line": line.substring(1)});
+        addToGroup(r, "quote", line.substring(1));
       } else if (line.startsWith("#")) {
         var m = RegExp(r'^(#*)\s*(.*)$').firstMatch(line);
         var hashCount = math.min(m.group(1).length, 3);
-        r["lines"].add({"type": "header", "line": m.group(2), "size": hashCount});
+        r["groups"].add({"type": "header", "data": m.group(2), "size": hashCount});
       } else if (line.startsWith("=>")) {
         var m = RegExp(r'^=>\s*(\S+)\s*(.*)$').firstMatch(line);
         if (m != null) {
           var link = m.group(1);
           var rest = m.group(2).trim();
           var title = rest.isEmpty ? link : rest;
-          r["lines"].add({"type": "link", "link": link, "title": title});
+          r["groups"].add({"type": "link", "link": link, "data": title});
         }
       } else {
-        r["lines"].add({"type": "line", "line": line});
+        addToGroup(r, "line", line);
       }
       return r;
     });
-    List lines = lineInfo["lines"];
+    List groups = lineInfo["groups"];
+    return groupsToWidget(groups);
+  }
 
-    return lines.fold(<Widget>[], (widgets, r) {
-      var type = r["type"];
-      if (type == "pre") {
-        widgets.add(PreText(r["prelines"]));
-      } else if (type == "header") {
-        var extraSize = (15 - math.max(r["size"] * 5, 15));
-        widgets.add(Padding(
-            padding: EdgeInsets.fromLTRB(0, baseFontSize + extraSize, 0, baseFontSize + extraSize),
-            child: SelectableText(r["line"],
-                style: TextStyle(
-                    fontFamily: "Merriweather", fontWeight: FontWeight.bold, fontSize: (baseFontSize + extraSize)))));
-      } else if (type == "quote") {
-        widgets.add(DecoratedBox(
-            decoration: BoxDecoration(border: Border(left: BorderSide(color: Colors.orange, width: 3))),
-            child: Padding(
-                padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
-                child: SelectableText(r["line"],
-                    style: TextStyle(
-                        fontSize: baseFontSize,
-                        fontWeight: FontWeight.w300,
-                        fontFamily: "Merriweather",
-                        height: 1.7)))));
-      } else if (type == "link") {
-        widgets.add(GestureDetector(
-            child: Padding(
-                padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
-                child: Text(r["title"],
-                    style: TextStyle(
-                        fontSize: baseFontSize, fontFamily: "Merriweather", color: Color.fromARGB(255, 0, 0, 255)))),
-            onTap: () {
-              onLink(r["link"]);
-            }));
-      } else {
-        widgets.add(SelectableText(r["line"],
-            style: TextStyle(
-                fontSize: baseFontSize, fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7)));
-      }
-      return widgets;
-    });
+  void addToGroup(r, String type, String line) {
+    if (r["groups"].isNotEmpty && r["groups"].last["type"] == type) {
+      var group = r["groups"].removeLast();
+      group["data"] += "\n" + line;
+      r["groups"].add(group);
+    } else {
+      r["groups"].add({"type": type, "data": line});
+    }
+  }
+
+  groupsToWidget(groups) {
+    var availableWidth = MediaQuery.of(context).size.width;
+    return Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: groups.fold(<Widget>[], (widgets, r) {
+          var type = r["type"];
+          if (type == "pre") {
+            widgets.add(preText(r["data"], availableWidth));
+          } else if (type == "header") {
+            widgets.add(heading(r["data"], baseFontSize + (15 - math.max(r['size'] * 5, 15))));
+          } else if (type == "quote") {
+            widgets.add(blockQuote(r["data"]));
+          } else if (type == "link") {
+            widgets.add(link(r["data"], r['link'], onLink, context));
+          } else {
+            widgets.add(plainText(r["data"]));
+          }
+          return widgets;
+        }));
   }
 }
 
-class PreText extends StatelessWidget {
-  final prelines;
+Widget plainText(data) {
+  return SelectableText(data, style: TextStyle(fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7));
+}
 
-  PreText(this.prelines);
+Widget preText(actualText, availableWidth) {
+  return Container(
+      width: availableWidth - (padding * 2),
+      child: FittedBox(
+          fit: BoxFit.fill, child: SelectableText(actualText, style: TextStyle(fontFamily: "DejaVu Sans Mono"))));
+}
 
-  @override
-  Widget build(BuildContext context) {
-    var availableWidth = MediaQuery.of(context).size.width;
+Widget heading(actualText, fontSize) {
+  return Padding(
+      padding: EdgeInsets.fromLTRB(0, fontSize, 0, fontSize),
+      child: SelectableText(actualText,
+          style: TextStyle(fontFamily: "Merriweather", fontWeight: FontWeight.bold, fontSize: fontSize)));
+}
 
-    return Container(
-        width: availableWidth,
-        child: FittedBox(
-            fit: BoxFit.fill,
-            child: ExtendedText(prelines.join("\n"),
-                selectionEnabled: true,
-                textSelectionControls: materialTextSelectionControls,
-                style: TextStyle(fontFamily: "DejaVu Sans Mono"))));
-  }
+Widget link(title, link, onLink, context) {
+  return GestureDetector(
+      child: Padding(
+          padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
+          child: Text(title, style: TextStyle(fontFamily: "Merriweather", color: Color.fromARGB(255, 0, 0, 255)))),
+      onLongPress: () {
+        ClipboardManager.copyToClipBoard(link).then((result) {
+          final snackBar = SnackBar(content: Text('Copied to Clipboard'));
+          Scaffold.of(context).showSnackBar(snackBar);
+        });
+      },
+      onTap: () {
+        onLink(link);
+      });
+}
+
+Widget blockQuote(actualText) {
+  return DecoratedBox(
+      decoration: BoxDecoration(border: Border(left: BorderSide(color: Colors.orange, width: 3))),
+      child: Padding(
+          padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
+          child: SelectableText(actualText,
+              style: TextStyle(fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7))));
 }

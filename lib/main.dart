@@ -7,6 +7,7 @@ import 'package:deedum/content.dart';
 import 'package:deedum/net.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:flutter/foundation.dart' as foundation;
@@ -187,6 +188,7 @@ class _BrowserState extends State<Browser> {
         alignment: MainAxisAlignment.spaceBetween,
       ));
     }
+
     return WillPopScope(
         onWillPop: _handleBack,
         child: Scaffold(
@@ -237,13 +239,17 @@ class _BrowserState extends State<Browser> {
                 )
               ],
             ),
-            body: SingleChildScrollView(
+            body: 
+            SingleChildScrollView(
                 key: ObjectKey(_content),
-                child: Content(
+                child:  Padding(
+        padding: EdgeInsets.fromLTRB(padding, padding, padding, padding),
+        child: Content(
                   contentData: _content,
                   onLink: onLink,
                   onSearch: onSearch,
-                ))));
+                ))
+                )));
   }
 }
 
