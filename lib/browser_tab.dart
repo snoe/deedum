@@ -1,0 +1,206 @@
+import 'package:deedum/address_bar.dart';
+import 'package:deedum/content.dart';
+import 'package:deedum/main.dart';
+import 'package:deedum/net.dart';
+import 'package:deedum/shared.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class BrowserTab extends StatefulWidget {
+  final initialLocation;
+  final onNewTab;
+
+  BrowserTab(this.initialLocation, this.onNewTab, {Key key}) : super(key: key);
+
+  @override
+  BrowserTabState createState() => BrowserTabState(initialLocation, onNewTab);
+}
+
+class BrowserTabState extends State<BrowserTab> {
+  final initialLocation;
+  final onNewTab;
+  TextEditingController _controller;
+  ContentData contentData;
+  List<Uri> _history = [];
+  int _historyIndex = -1;
+  bool _loading = false;
+  Uri uri;
+  
+  BrowserTabState(this.initialLocation, this.onNewTab);
+
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+    init();
+  }
+
+  init() async {
+    onLocation(initialLocation);
+  }
+
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleLoad() async {
+    setState(() {
+      _loading = true;
+    });
+  }
+
+  void _handleDone() async {
+    setState(() {
+      _loading = false;
+    });
+  }
+
+  void _handleContent(Uri location, ContentData newContentData) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> recent = (prefs.getStringList('recent') ?? []);
+    recent.remove(location.toString());
+    recent.add(location.toString());
+    if (recent.length > 10) {
+      recent = recent.skip(recent.length - 10).toList();
+    }
+
+    prefs.setStringList('recent', recent);
+
+    setState(() {
+      _controller.text = location.toString();
+
+      if (_history.isEmpty || _history[_historyIndex] != location) {
+        _history = _history.sublist(0, _historyIndex + 1);
+        _history.add(location);
+        _historyIndex = _history.length - 1;
+      }
+      contentData = newContentData;
+    });
+  }
+
+  Future<bool> _handleBack() async {
+    if (_historyIndex > 0) {
+      _historyIndex -= 1;
+      onLocation(_history[_historyIndex]);
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  Future<bool> _handleForward() async {
+    if (_historyIndex < (_history.length - 1)) {
+      _historyIndex += 1;
+      onLocation(_history[_historyIndex]);
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  onSearch(String encodedSearch) {
+    if (encodedSearch.isNotEmpty) {
+      var u = Uri(scheme: uri.scheme, host: uri.host, port: uri.port, path: uri.path, query: encodedSearch);
+      onLocation(u);
+    }
+  }
+
+  onLink(String link) {
+    var location = Uri.parse(link);
+    if (!location.hasScheme) {
+      location = uri.resolve(link);
+    }
+    onLocation(location);
+  }
+
+  onLocation(Uri location) {
+    onURI(location, _handleContent, _handleLoad, _handleDone, []);
+    setState(() {
+      uri = location;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var bottomBar;
+    if (isIos) {
+      bottomBar = BottomAppBar(
+          child: ButtonBar(
+        children: [
+          FlatButton(
+              onPressed: _historyIndex == 0
+                  ? null
+                  : () {
+                      _handleBack();
+                    },
+              child: Icon(Icons.keyboard_arrow_left, size: 30)),
+          FlatButton(
+              onPressed: _historyIndex == (_history.length - 1)
+                  ? null
+                  : () {
+                      _handleForward();
+                    },
+              child: Icon(Icons.keyboard_arrow_right, size: 30))
+        ],
+        alignment: MainAxisAlignment.spaceBetween,
+      ));
+    }
+
+    return WillPopScope(
+        onWillPop: _handleBack,
+        child: Scaffold(
+            backgroundColor: (contentData != null && contentData.mode == "error") ? Colors.deepOrange : Colors.white,
+            bottomNavigationBar: bottomBar,
+            appBar: AppBar(
+                backgroundColor: Colors.orange,
+                title: AddressBar(
+                  controller: _controller,
+                  onLocation: onLocation,
+                  loading: _loading,
+                ),
+                actions: [
+                  IconButton(
+                    icon: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: DecoratedBox(
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(width: 2, color: Colors.black),
+                                borderRadius: BorderRadius.all(Radius.circular(3))),
+                            child: Align(
+                                alignment: Alignment.center,
+                                child: Text("${appKey.currentState.tabs.length}",
+                                    style: TextStyle(
+                                        color: Colors.black, fontFamily: "DejaVu Sans Mono", fontSize: 12))))),
+                    onPressed: onNewTab,
+                  ),
+                  IconButton(
+                      disabledColor: Colors.black12,
+                      icon: Icon(Icons.chevron_right),
+                      onPressed: (_historyIndex != (_history.length - 1)) ? _handleForward : null)
+                  /*PopupMenuButton<String>(
+                      onSelected: (result) {
+                        if (result == "forward") {
+                          _handleForward();
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                            PopupMenuItem<String>(
+                                enabled: (_historyIndex != (_history.length - 1)),
+                                value: "forward",
+                                child: Text('Forward'))
+                          ])*/
+                ]),
+            body: SingleChildScrollView(
+                key: ObjectKey(contentData),
+                child: Padding(
+                    padding: EdgeInsets.fromLTRB(padding, padding, padding, padding),
+                    child: Content(
+                      contentData: contentData,
+                      onLink: onLink,
+                      onSearch: onSearch,
+                    )))));
+  }
+}
