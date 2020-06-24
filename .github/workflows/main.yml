@@ -9,13 +9,14 @@ jobs:
       with:
         java-version: '12.x'
     - uses: subosito/flutter-action@v1
+    - run: flutter pub get
+    - run: flutter test
+    - name: flutter build apk
+      run: ./build.sh
       env:
         KEY_JKS: ${{ secrets.KEY_JKS }}
         KEY_PASSWORD: ${{ secrets.ALIAS_PASSWORD }}
         ALIAS_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-    - run: flutter pub get
-    - run: flutter test
-    - run: ./build.sh
     - name: Create Release
       if: contains(github.ref, 'release')
       id: create_release
