@@ -23,9 +23,7 @@ String bytesToString(ContentType contentType, List<int> bytes) {
 }
 
 Future<ContentData> homepageContent() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  List<String> bookmarks = (prefs.getStringList('bookmarks') ?? []);
-  var intro = [
+  var lines = [
     "Welcome to the Geminiverse.",
     "",
     "```",
@@ -36,26 +34,11 @@ Future<ContentData> homepageContent() async {
     "██████╔╝███████╗███████╗██████╔╝╚██████╔╝██║ ╚═╝ ██║",
     "╚═════╝ ╚══════╝╚══════╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝",
     "```",
+    "# Links",
+    "=> gemini://gemini.circumlunar.space/ Project Gemini",
+    "=> gemini://gus.guru/ Gemini Universal Search",
+    "=> gemini://wp.pitr.ca/en/Gemini Gemini Wikipedia Proxy"
   ];
-  var bookmarkLines = ["# Bookmarks"] +
-      bookmarks.map((s) {
-        return "=> $s";
-      }).toList();
-
-  List<String> recent = (prefs.getStringList('recent') ?? []);
-  var recentLines = ["# Recent"] +
-      recent.map((s) {
-        return "=> $s";
-      }).toList();
-  var lines = intro +
-      [
-        "# Links",
-        "=> gemini://gemini.circumlunar.space/ Project Gemini",
-        "=> gemini://typed-hole.org/ Typed Hole",
-        "=> gemini://gus.guru/ Gemini Universal Search",
-      ] +
-      bookmarkLines +
-      recentLines;
 
   return ContentData(content: lines.join("\n"), mode: "content");
 }
@@ -121,8 +104,7 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
     handleContent(
         uri,
         ContentData(
-            mode: "error",
-            content: "INVALID RESPONSE (timeout: $timeout)\n$statusMeta\n--------------\n" + content));
+            mode: "error", content: "INVALID RESPONSE (timeout: $timeout)\n$statusMeta\n--------------\n" + content));
   } else if (meta.length > 1024) {
     String content = Utf8Decoder(allowMalformed: true).convert(chunks);
     handleContent(uri, ContentData(mode: "error", content: "META TOO LONG\n--------------\n" + content));
@@ -145,8 +127,8 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
     }
   } else if (status >= 30 && status < 40) {
     if (redirects.contains(meta) || redirects.length >= 5) {
-      handleContent(
-          Uri.parse(meta), ContentData(mode: "error", content: "REDIRECT LOOP\n--------------\n" + redirects.join("\n")));
+      handleContent(Uri.parse(meta),
+          ContentData(mode: "error", content: "REDIRECT LOOP\n--------------\n" + redirects.join("\n")));
     } else {
       redirects.add(meta);
       onURI(Uri.parse(meta), handleContent, handleLoad, handleDone, redirects);
@@ -161,7 +143,7 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
 Future<List<Object>> fetch(Uri uri, bool shutdown) async {
   return await RawSecureSocket.connect(uri.host, uri.hasPort ? uri.port : 1965, timeout: Duration(seconds: 5),
       onBadCertificate: (X509Certificate cert) {
-       //log("bad");
+    //log("bad");
     // TODO Pin
     return true;
   }).then((RawSecureSocket s) async {
