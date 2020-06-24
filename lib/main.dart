@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:deedum/browser_tab.dart';
+import 'package:deedum/directory/bookmarks.dart';
+import 'package:deedum/directory/directory.dart';
+import 'package:deedum/directory/history.dart';
 import 'package:deedum/directory/tabs.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +34,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   int previousTabIndex = 0;
 
   Set<String> bookmarks = Set();
+  List<String> recents = List();
   StreamSubscription _sub;
 
   void initState() {
@@ -43,6 +47,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   init() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
+    recents = (prefs.getStringList('recent') ?? []);
 
     _sub = getLinksStream().listen((String link) {
       onNewTab(initialLocation: link);
@@ -59,6 +64,19 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     } on PlatformException {
       log("oop");
     }
+  }
+
+  addRecent(uriString) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      recents.remove(uriString);
+      recents.add(uriString);
+      if (recents.length > 10) {
+        recents = recents.skip(recents.length - 10).toList();
+      }
+
+      prefs.setStringList('recent', recents);
+    });
   }
 
   onBookmark(uriString) async {
@@ -78,7 +96,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     if (tabIndex == 0) {
       setState(() {
         var key = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
-        tabs.add({"key": key, "widget": BrowserTab(Uri.parse(initialLocation), onNewTab, key: key)});
+        tabs.add({"key": key, "widget": BrowserTab(Uri.parse(initialLocation), onNewTab, addRecent, key: key)});
         tabIndex = tabs.length;
       });
     } else {
@@ -119,7 +137,17 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
       ),
       home: IndexedStack(
           index: tabIndex,
-          children: <Widget>[Tabs(tabs, onNewTab, onSelectTab, onDeleteTab, onBookmark)] +
+          children: <Widget>[
+                Directory(children: [
+                  Tabs(tabs, onNewTab, onSelectTab, onDeleteTab, onBookmark),
+                  Bookmarks(bookmarks, onNewTab, onBookmark),
+                  History(recents, onNewTab, onBookmark)
+                ], icons: [
+                  Icons.tab,
+                  Icons.bookmark_border,
+                  Icons.history
+                ])
+              ] +
               tabs.map<Widget>((t) => t["widget"]).toList()),
     );
   }

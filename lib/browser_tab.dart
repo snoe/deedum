@@ -10,16 +10,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 class BrowserTab extends StatefulWidget {
   final initialLocation;
   final onNewTab;
+  final addRecent;
 
-  BrowserTab(this.initialLocation, this.onNewTab, {Key key}) : super(key: key);
+  BrowserTab(this.initialLocation, this.onNewTab, this.addRecent, {Key key}) : super(key: key);
 
   @override
-  BrowserTabState createState() => BrowserTabState(initialLocation, onNewTab);
+  BrowserTabState createState() => BrowserTabState(initialLocation, onNewTab, addRecent);
 }
 
 class BrowserTabState extends State<BrowserTab> {
   final initialLocation;
   final onNewTab;
+  final addRecent;
   TextEditingController _controller;
   ContentData contentData;
   List<Uri> _history = [];
@@ -27,7 +29,7 @@ class BrowserTabState extends State<BrowserTab> {
   bool _loading = false;
   Uri uri;
   
-  BrowserTabState(this.initialLocation, this.onNewTab);
+  BrowserTabState(this.initialLocation, this.onNewTab, this.addRecent);
 
   void initState() {
     super.initState();
@@ -117,6 +119,7 @@ class BrowserTabState extends State<BrowserTab> {
   onLocation(Uri location) {
     onURI(location, _handleContent, _handleLoad, _handleDone, []);
     setState(() {
+      addRecent(location.toString());
       uri = location;
     });
   }
