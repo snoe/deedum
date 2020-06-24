@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:math' as math;
-import 'package:clipboard_manager/clipboard_manager.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:deedum/shared.dart';
-import 'package:flutter/foundation.dart' as foundation;
+import 'package:flutter/services.dart';
 
 class Content extends StatefulWidget {
   Content({this.contentData, this.onLink, this.onSearch});
@@ -169,7 +168,7 @@ Widget link(title, link, onLink, context) {
           padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
           child: Text(title, style: TextStyle(fontFamily: "Merriweather", color: Color.fromARGB(255, 0, 0, 255)))),
       onLongPress: () {
-        ClipboardManager.copyToClipBoard(link).then((result) {
+        Clipboard.setData(ClipboardData(text: link)).then((result) {
           final snackBar = SnackBar(content: Text('Copied to Clipboard'));
           Scaffold.of(context).showSnackBar(snackBar);
         });
