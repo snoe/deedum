@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/services.dart';
 
+import 'package:vector_math/vector_math_64.dart' as v;
+
 class Content extends StatefulWidget {
   Content({this.contentData, this.onLink, this.onSearch});
 
@@ -28,6 +30,7 @@ class _ContentState extends State<Content> {
   final baseFontSize = 17.0;
   bool _inputError = false;
   int _inputLength = 0;
+  double zoom = 1.0;
 
   _setInputError(value, length) {
     setState(() {
@@ -35,6 +38,15 @@ class _ContentState extends State<Content> {
       _inputLength = length;
     });
   }
+
+  setScale(s) {
+    setState(() {
+      _scale = s;
+    });
+  }
+
+  double _scale = 1.0;
+  double _previousScale = null;
 
   @override
   Widget build(BuildContext context) {
@@ -68,14 +80,27 @@ class _ContentState extends State<Content> {
         return ExtendedText("broken image ¯\\_(ツ)_/¯");
       });
     } else if (contentData.mode == "plain") {
-      var availableWidth = MediaQuery.of(context).size.width - (padding * 2);
-
-      widget = Container(
-          width: availableWidth,
-          child: FittedBox(
-              fit: BoxFit.fill,
-              child: ExtendedText(contentData.content,
-                  style: TextStyle(fontFamily: "DejaVu Sans Mono"), selectionEnabled: true)));
+      var availableWidth = (MediaQuery.of(context).size.width - (padding * 2));
+      widget = GestureDetector(
+        onHorizontalDragEnd: (details) {
+          log("$details");
+          var dx = details.velocity.pixelsPerSecond.dx;
+          var dir = 1;
+          if (dx < 0) {
+            dir = -1;
+          }
+          log("$dx");
+          setScale(_scale * 1.5* dir);
+        },
+          onDoubleTap: () {
+            setScale(1.0);
+          },
+          child: Container(
+              width: availableWidth * _scale,
+              child: FittedBox(
+                  fit: BoxFit.fill,
+                  child: ExtendedText(contentData.content,
+                      style: TextStyle(fontFamily: "DejaVu Sans Mono"), selectionEnabled: true))));
     } else {
       widget = ExtendedText("Unknown mode ${contentData.mode}");
     }
