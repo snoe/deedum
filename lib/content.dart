@@ -7,8 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/services.dart';
 
-import 'package:vector_math/vector_math_64.dart' as v;
-
 class Content extends StatefulWidget {
   Content({this.contentData, this.onLink, this.onSearch});
 
@@ -27,10 +25,12 @@ class _ContentState extends State<Content> {
   final Function onLink;
   final Function onSearch;
 
+  var plainTextControls = false;
   final baseFontSize = 17.0;
   bool _inputError = false;
   int _inputLength = 0;
-  double zoom = 1.0;
+
+  int _scale = 12;
 
   _setInputError(value, length) {
     setState(() {
@@ -45,8 +45,11 @@ class _ContentState extends State<Content> {
     });
   }
 
-  double _scale = 1.0;
-  double _previousScale = null;
+  showControls(show) {
+    setState(() {
+      plainTextControls = show;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,26 +84,76 @@ class _ContentState extends State<Content> {
       });
     } else if (contentData.mode == "plain") {
       var availableWidth = (MediaQuery.of(context).size.width - (padding * 2));
+
+      var fit;
+
+      var wrap = _scale != null;
+      if (wrap) {
+        double size = (TextPainter(
+                text: TextSpan(
+                    text: "0123456789", style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
+                maxLines: 1,
+                textScaleFactor: MediaQuery.of(context).textScaleFactor,
+                textDirection: TextDirection.ltr)
+              ..layout())
+            .size
+            .width;
+
+        var ratio = wrap ? ((availableWidth / size) / _scale) : 1;
+
+        fit = SizedBox(
+            child: ExtendedText(contentData.content,
+                softWrap: wrap,
+                style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: ratio * baseFontSize),
+                selectionEnabled: true),
+            width: availableWidth);
+      } else {
+        fit = FittedBox(
+            child: ExtendedText(contentData.content,
+                style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize), selectionEnabled: true),
+            fit: BoxFit.fill);
+      }
+
       widget = GestureDetector(
-        onHorizontalDragEnd: (details) {
-          log("$details");
-          var dx = details.velocity.pixelsPerSecond.dx;
-          var dir = 1;
-          if (dx < 0) {
-            dir = -1;
-          }
-          log("$dx");
-          setScale(_scale * 1.5* dir);
-        },
           onDoubleTap: () {
-            setScale(1.0);
+            showMenu(
+              items: <PopupMenuEntry>[
+                PopupMenuItem(
+                    value: null,
+                    child: Row(children: [
+                      IconButton(
+                          icon: Icon(Icons.format_clear),
+                          onPressed: () {
+                            setScale(null);
+                          }),
+                      IconButton(
+                          icon: Text("20"),
+                          onPressed: () {
+                            setScale(2);
+                          }),
+                      IconButton(
+                          icon: Text("40"),
+                          onPressed: () {
+                            setScale(4);
+                          }),
+                      IconButton(
+                          icon: Text("80"),
+                          onPressed: () {
+                            setScale(8);
+                          }),
+                      IconButton(
+                          icon: Text("120"),
+                          onPressed: () {
+                            setScale(12);
+                          }),
+                    ])),
+              ],
+              context: context,
+              position: RelativeRect.fromLTRB(0, 100, 0, 100),
+            );
           },
-          child: Container(
-              width: availableWidth * _scale,
-              child: FittedBox(
-                  fit: BoxFit.fill,
-                  child: ExtendedText(contentData.content,
-                      style: TextStyle(fontFamily: "DejaVu Sans Mono"), selectionEnabled: true))));
+          child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal, child: Container(width: availableWidth, child: fit)));
     } else {
       widget = ExtendedText("Unknown mode ${contentData.mode}");
     }
