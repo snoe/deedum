@@ -50,7 +50,7 @@ class Tabs extends StatelessWidget {
                   var selected = appKey.currentState.previousTabIndex == index + 1;
 
                   var bookmarked = appKey.currentState.bookmarks.contains(uriString);
-                  if (uriString != null) {
+                  if (uriString != null && tabState.contentData != null) {
                     return Padding(
                         padding: EdgeInsets.only(top: 8),
                         child: Card(

@@ -1,9 +1,4 @@
-import 'dart:math' as math;
-import 'package:deedum/browser_tab.dart';
 import 'package:deedum/main.dart';
-import 'package:deedum/shared.dart';
-
-import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 

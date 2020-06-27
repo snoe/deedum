@@ -13,6 +13,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:flutter/foundation.dart' as foundation;
 
+import 'directory/settings.dart';
+
 bool get isIos => foundation.defaultTargetPlatform == foundation.TargetPlatform.iOS;
 final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
@@ -35,6 +37,8 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
 
   Set<String> bookmarks = Set();
   List<String> recents = List();
+
+  Map settings = {};
   StreamSubscription _sub;
 
   void initState() {
@@ -48,6 +52,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
     recents = (prefs.getStringList('recent') ?? []);
+    settings = {"homepage": (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/")};
 
     _sub = getLinksStream().listen((String link) {
       onNewTab(initialLocation: link);
@@ -64,6 +69,8 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     } on PlatformException {
       log("oop");
     }
+
+    onNewTab();
   }
 
   addRecent(uriString) async {
@@ -92,7 +99,23 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  onNewTab({initialLocation = "about://homepage"}) {
+  onSaveSettings(String key, String value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      if (value.trim().isNotEmpty) {
+        settings[key] = value;
+        prefs.setString(key, value);
+      } else {
+        settings.remove(key);
+        prefs.remove(key);
+      }
+    });
+  }
+
+  onNewTab({initialLocation}) {
+    if (initialLocation == null) {
+      initialLocation = settings["homepage"];
+    }
     if (tabIndex == 0) {
       setState(() {
         var key = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
@@ -141,11 +164,13 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
                 Directory(children: [
                   Tabs(tabs, onNewTab, onSelectTab, onDeleteTab, onBookmark),
                   Bookmarks(bookmarks, onNewTab, onBookmark),
-                  History(recents, onNewTab, onBookmark)
+                  History(recents, onNewTab, onBookmark),
+                  Settings(settings, onSaveSettings)
                 ], icons: [
                   Icons.tab,
                   Icons.bookmark_border,
-                  Icons.history
+                  Icons.history,
+                  Icons.settings
                 ])
               ] +
               tabs.map<Widget>((t) => t["widget"]).toList()),

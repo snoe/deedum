@@ -19,6 +19,7 @@ class AddressBar extends StatelessWidget {
               child: Padding(
                   padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
                   child: TextField(
+                    keyboardType: TextInputType.url,
                     decoration: InputDecoration(border:InputBorder.none),
                     style: TextStyle(fontSize: 14),
                       controller: controller,

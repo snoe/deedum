@@ -33,7 +33,7 @@ class BrowserTabState extends State<BrowserTab> {
 
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = TextEditingController(text: initialLocation?.toString());
     init();
   }
 
