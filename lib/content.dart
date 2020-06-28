@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/services.dart';
 
+final baseFontSize = 17.0;
+
 class Content extends StatefulWidget {
   Content({this.contentData, this.onLink, this.onSearch});
 
@@ -26,22 +28,13 @@ class _ContentState extends State<Content> {
   final Function onSearch;
 
   var plainTextControls = false;
-  final baseFontSize = 17.0;
   bool _inputError = false;
   int _inputLength = 0;
-
-  int _scale = 12;
 
   _setInputError(value, length) {
     setState(() {
       _inputError = value;
       _inputLength = length;
-    });
-  }
-
-  setScale(s) {
-    setState(() {
-      _scale = s;
     });
   }
 
@@ -83,77 +76,7 @@ class _ContentState extends State<Content> {
         return ExtendedText("broken image ¯\\_(ツ)_/¯");
       });
     } else if (contentData.mode == "plain") {
-      var availableWidth = (MediaQuery.of(context).size.width - (padding * 2));
-
-      var fit;
-
-      var wrap = _scale != null;
-      if (wrap) {
-        double size = (TextPainter(
-                text: TextSpan(
-                    text: "0123456789", style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
-                maxLines: 1,
-                textScaleFactor: MediaQuery.of(context).textScaleFactor,
-                textDirection: TextDirection.ltr)
-              ..layout())
-            .size
-            .width;
-
-        var ratio = wrap ? ((availableWidth / size) / _scale) : 1;
-
-        fit = SizedBox(
-            child: ExtendedText(contentData.content,
-                softWrap: wrap,
-                style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: ratio * baseFontSize),
-                selectionEnabled: true),
-            width: availableWidth);
-      } else {
-        fit = FittedBox(
-            child: ExtendedText(contentData.content,
-                style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize), selectionEnabled: true),
-            fit: BoxFit.fill);
-      }
-
-      widget = GestureDetector(
-          onDoubleTap: () {
-            showMenu(
-              items: <PopupMenuEntry>[
-                PopupMenuItem(
-                    value: null,
-                    child: Row(children: [
-                      IconButton(
-                          icon: Icon(Icons.format_clear),
-                          onPressed: () {
-                            setScale(null);
-                          }),
-                      IconButton(
-                          icon: Text("20"),
-                          onPressed: () {
-                            setScale(2);
-                          }),
-                      IconButton(
-                          icon: Text("40"),
-                          onPressed: () {
-                            setScale(4);
-                          }),
-                      IconButton(
-                          icon: Text("80"),
-                          onPressed: () {
-                            setScale(8);
-                          }),
-                      IconButton(
-                          icon: Text("120"),
-                          onPressed: () {
-                            setScale(12);
-                          }),
-                    ])),
-              ],
-              context: context,
-              position: RelativeRect.fromLTRB(0, 100, 0, 100),
-            );
-          },
-          child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal, child: Container(width: availableWidth, child: fit)));
+      widget = PreText(contentData.content);
     } else {
       widget = ExtendedText("Unknown mode ${contentData.mode}");
     }
@@ -200,14 +123,13 @@ class _ContentState extends State<Content> {
   }
 
   groupsToWidget(groups) {
-    var availableWidth = MediaQuery.of(context).size.width;
     return Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: groups.fold(<Widget>[], (widgets, r) {
           var type = r["type"];
           if (type == "pre") {
-            widgets.add(preText(r["data"], availableWidth));
+            widgets.add(PreText(r["data"]));
           } else if (type == "header") {
             widgets.add(heading(r["data"], baseFontSize + (15 - math.max(r['size'] * 5, 15))));
           } else if (type == "quote") {
@@ -222,15 +144,106 @@ class _ContentState extends State<Content> {
   }
 }
 
-Widget plainText(data) {
-  return SelectableText(data, style: TextStyle(fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7));
+class PreText extends StatefulWidget {
+  final actualText;
+
+  PreText(this.actualText);
+
+  @override
+  _PreTextState createState() => _PreTextState(actualText);
 }
 
-Widget preText(actualText, availableWidth) {
-  return Container(
-      width: availableWidth - (padding * 2),
-      child: FittedBox(
-          fit: BoxFit.fill, child: SelectableText(actualText, style: TextStyle(fontFamily: "DejaVu Sans Mono"))));
+class _PreTextState extends State<PreText> {
+  final actualText;
+
+  int _scale = null;
+
+  _PreTextState(this.actualText);
+
+  setScale(s) {
+    setState(() {
+      _scale = s;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var availableWidth = MediaQuery.of(context).size.width - (padding * 2);
+    var fit;
+    var wrap = _scale != null;
+
+    if (wrap) {
+      double size = (TextPainter(
+              text: TextSpan(
+                  text: "0123456789", style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
+              maxLines: 1,
+              textScaleFactor: MediaQuery.of(context).textScaleFactor,
+              textDirection: TextDirection.ltr)
+            ..layout())
+          .size
+          .width;
+
+      var ratio = wrap ? ((availableWidth / size) / _scale) : 1;
+
+      fit = SizedBox(
+          child: ExtendedText(actualText,
+              softWrap: wrap,
+              style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: ratio * baseFontSize),
+              selectionEnabled: true),
+          width: availableWidth);
+    } else {
+      fit = FittedBox(
+          child: SelectableText(actualText, //selectionEnabled: true,
+              style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
+          fit: BoxFit.fill);
+    }
+    var widget = GestureDetector(
+        onDoubleTap: () {
+          showMenu(
+            items: <PopupMenuEntry>[
+              PopupMenuItem(
+                  value: null,
+                  child: Row(children: [
+                    IconButton(
+                        icon: Icon(Icons.format_clear),
+                        onPressed: () {
+                          setScale(null);
+                        }),
+                    IconButton(
+                        icon: Text("20"),
+                        onPressed: () {
+                          setScale(2);
+                        }),
+                    IconButton(
+                        icon: Text("40"),
+                        onPressed: () {
+                          setScale(4);
+                        }),
+                    IconButton(
+                        icon: Text("80"),
+                        onPressed: () {
+                          setScale(8);
+                        }),
+                    IconButton(
+                        icon: Text("120"),
+                        onPressed: () {
+                          setScale(12);
+                        }),
+                  ])),
+            ],
+            context: context,
+            position: RelativeRect.fromLTRB(0, 100, 0, 100),
+          );
+        },
+        child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal, child: Container(width: availableWidth, child: fit)));
+
+    return widget;
+  }
+}
+
+Widget plainText(data) {
+  return SelectableText(data, style: TextStyle(fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7));
 }
 
 Widget heading(actualText, fontSize) {
