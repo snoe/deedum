@@ -105,6 +105,8 @@ class _ContentState extends State<Content> {
           var title = rest.isEmpty ? link : rest;
           r["groups"].add({"type": "link", "link": link, "data": title});
         }
+      } else if (line.startsWith("* ")) {
+        r["groups"].add({"type": "list", "data": line.substring(2)});
       } else {
         addToGroup(r, "line", line);
       }
@@ -121,7 +123,7 @@ class _ContentState extends State<Content> {
       group["maxLine"] = math.max(line.length, (group["maxLine"] as int));
       r["groups"].add(group);
     } else {
-      r["groups"].add({"type": type, "data": line});
+      r["groups"].add({"type": type, "data": line, "maxLine": line.length});
     }
   }
 
@@ -139,6 +141,8 @@ class _ContentState extends State<Content> {
             widgets.add(blockQuote(r["data"]));
           } else if (type == "link") {
             widgets.add(link(r["data"], r['link'], onLink, context));
+          } else if (type == "list") {
+            widgets.add(listItem(r["data"]));
           } else {
             widgets.add(plainText(r["data"]));
           }
@@ -250,6 +254,10 @@ Widget link(title, link, onLink, context) {
       });
 }
 
+Widget listItem(actualText) {
+  return SelectableText("⚫ " + actualText,
+              style: TextStyle(fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7));
+}
 Widget blockQuote(actualText) {
   return DecoratedBox(
       decoration: BoxDecoration(border: Border(left: BorderSide(color: Colors.orange, width: 3))),
