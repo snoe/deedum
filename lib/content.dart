@@ -50,7 +50,8 @@ class _ContentState extends State<Content> {
     if (contentData == null) {
       widget = Text("");
     } else if (contentData.mode == "content") {
-      widget = buildFold(context);
+      var groups = buildGroups(context);
+      widget = groupsToWidget(groups);
     } else if (contentData.mode == "search") {
       widget = Column(
           children: <Widget>[
@@ -76,18 +77,19 @@ class _ContentState extends State<Content> {
         return ExtendedText("broken image ¯\\_(ツ)_/¯");
       });
     } else if (contentData.mode == "plain") {
-      widget = PreText(contentData.content);
+      var groups = buildGroups(context, alwaysPre: true);
+      widget = PreText(contentData.content, groups[0]["maxLine"]);
     } else {
       widget = ExtendedText("Unknown mode ${contentData.mode}");
     }
     return widget;
   }
 
-  buildFold(context) {
+  buildGroups(context, {alwaysPre = false}) {
     var lineInfo = LineSplitter.split(contentData.content).fold({"groups": [], "parse?": true}, (r, line) {
-      if (line.startsWith("```")) {
+      if (!alwaysPre && line.startsWith("```")) {
         r["parse?"] = !r["parse?"];
-      } else if (!r["parse?"]) {
+      } else if (alwaysPre || !r["parse?"]) {
         addToGroup(r, "pre", line);
       } else if (line.startsWith(">")) {
         addToGroup(r, "quote", line.substring(1));
@@ -109,13 +111,14 @@ class _ContentState extends State<Content> {
       return r;
     });
     List groups = lineInfo["groups"];
-    return groupsToWidget(groups);
+    return groups;
   }
 
   void addToGroup(r, String type, String line) {
     if (r["groups"].isNotEmpty && r["groups"].last["type"] == type) {
       var group = r["groups"].removeLast();
       group["data"] += "\n" + line;
+      group["maxLine"] = math.max(line.length, (group["maxLine"] as int));
       r["groups"].add(group);
     } else {
       r["groups"].add({"type": type, "data": line});
@@ -129,7 +132,7 @@ class _ContentState extends State<Content> {
         children: groups.fold(<Widget>[], (widgets, r) {
           var type = r["type"];
           if (type == "pre") {
-            widgets.add(PreText(r["data"]));
+            widgets.add(PreText(r["data"], r["maxLine"]));
           } else if (type == "header") {
             widgets.add(heading(r["data"], baseFontSize + (15 - math.max(r['size'] * 5, 15))));
           } else if (type == "quote") {
@@ -146,19 +149,24 @@ class _ContentState extends State<Content> {
 
 class PreText extends StatefulWidget {
   final actualText;
+  final maxLine;
 
-  PreText(this.actualText);
+  PreText(this.actualText, this.maxLine);
 
   @override
-  _PreTextState createState() => _PreTextState(actualText);
+  _PreTextState createState() => _PreTextState(actualText, maxLine);
 }
 
 class _PreTextState extends State<PreText> {
   final actualText;
 
-  int _scale = null;
+  int _scale;
 
-  _PreTextState(this.actualText);
+  _PreTextState(this.actualText, maxLine) {
+    if (maxLine > 120) {
+      _scale = 40;
+    }
+  }
 
   setScale(s) {
     setState(() {
@@ -175,7 +183,7 @@ class _PreTextState extends State<PreText> {
     if (wrap) {
       double size = (TextPainter(
               text: TextSpan(
-                  text: "0123456789", style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
+                  text: "0".padLeft(_scale), style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
               maxLines: 1,
               textScaleFactor: MediaQuery.of(context).textScaleFactor,
               textDirection: TextDirection.ltr)
@@ -183,57 +191,30 @@ class _PreTextState extends State<PreText> {
           .size
           .width;
 
-      var ratio = wrap ? ((availableWidth / size) / _scale) : 1;
-
-      fit = SizedBox(
-          child: ExtendedText(actualText,
-              softWrap: wrap,
-              style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: ratio * baseFontSize),
-              selectionEnabled: true),
-          width: availableWidth);
+      fit = FittedBox(
+          fit: BoxFit.fill,
+          child: SizedBox(
+              child: ExtendedText(actualText,
+                  softWrap: wrap,
+                  style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
+                  selectionEnabled: true),
+              width: size));
     } else {
       fit = FittedBox(
-          child: SelectableText(actualText, //selectionEnabled: true,
-              style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
+          child: ExtendedText(actualText, selectionEnabled: true, style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
           fit: BoxFit.fill);
     }
     var widget = GestureDetector(
-        onDoubleTap: () {
-          showMenu(
-            items: <PopupMenuEntry>[
-              PopupMenuItem(
-                  value: null,
-                  child: Row(children: [
-                    IconButton(
-                        icon: Icon(Icons.format_clear),
-                        onPressed: () {
-                          setScale(null);
-                        }),
-                    IconButton(
-                        icon: Text("20"),
-                        onPressed: () {
-                          setScale(2);
-                        }),
-                    IconButton(
-                        icon: Text("40"),
-                        onPressed: () {
-                          setScale(4);
-                        }),
-                    IconButton(
-                        icon: Text("80"),
-                        onPressed: () {
-                          setScale(8);
-                        }),
-                    IconButton(
-                        icon: Text("120"),
-                        onPressed: () {
-                          setScale(12);
-                        }),
-                  ])),
-            ],
+        onDoubleTap: () async {
+          var picked = await showMenu(
+            items: <PopupMenuEntry>[CheckedPopupMenuItem(checked: _scale == null, value: null, child: Text("Fit"))] +
+                [32, 40, 64, 80, 120]
+                    .map((i) => CheckedPopupMenuItem(checked: _scale == i, value: i, child: Text("$i")))
+                    .toList(),
             context: context,
-            position: RelativeRect.fromLTRB(0, 100, 0, 100),
+            position: RelativeRect.fromLTRB(20, 100, 400, 200),
           );
+          setScale(picked);
         },
         child: SingleChildScrollView(
             scrollDirection: Axis.horizontal, child: Container(width: availableWidth, child: fit)));
