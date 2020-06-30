@@ -28,7 +28,7 @@ class BrowserTabState extends State<BrowserTab> {
   int _historyIndex = -1;
   bool _loading = false;
   Uri uri;
-  
+
   BrowserTabState(this.initialLocation, this.onNewTab, this.addRecent);
 
   void initState() {
@@ -183,18 +183,6 @@ class BrowserTabState extends State<BrowserTab> {
                       disabledColor: Colors.black12,
                       icon: Icon(Icons.chevron_right),
                       onPressed: (_historyIndex != (_history.length - 1)) ? _handleForward : null)
-                  /*PopupMenuButton<String>(
-                      onSelected: (result) {
-                        if (result == "forward") {
-                          _handleForward();
-                        }
-                      },
-                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                            PopupMenuItem<String>(
-                                enabled: (_historyIndex != (_history.length - 1)),
-                                value: "forward",
-                                child: Text('Forward'))
-                          ])*/
                 ]),
             body: SingleChildScrollView(
                 key: ObjectKey(contentData),

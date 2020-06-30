@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
+
+import 'package:qr/qr.dart';
 
 class ContentData {
   final Uint8List _bytes;
@@ -16,8 +19,7 @@ class ContentData {
 
 double get padding => 25.0;
 
-extension CollectionUtil<T> on Iterable<T>  {
-
+extension CollectionUtil<T> on Iterable<T> {
   Iterable<E> mapIndexed<E, T>(E Function(int index, T item) transform) sync* {
     var index = 0;
 
@@ -26,4 +28,175 @@ extension CollectionUtil<T> on Iterable<T>  {
       index++;
     }
   }
+}
+
+var database;
+var emojiList = [
+  "😀",
+  "😃",
+  "😄",
+  "😁",
+  "😆",
+  "😅",
+  "😂",
+  "🤣",
+  "😊",
+  "😇",
+  "🙂",
+  "🙃",
+  "😉",
+  "😌",
+  "😍",
+  "😘",
+  "😗",
+  "😚",
+  "😋",
+  "😜",
+  "😝",
+  "😛",
+  "🤑",
+  "🤗",
+  "🤓",
+  "😎",
+  "🤡",
+  "🤠",
+  "😏",
+  "😒",
+  "😞",
+  "😔",
+  "😟",
+  "😕",
+  "🙁",
+  "☹️",
+  "😣",
+  "😖",
+  "😫",
+  "😩",
+  "😤",
+  "😠",
+  "😡",
+  "😶",
+  "😐",
+  "😑",
+  "😯",
+  "😦",
+  "😧",
+  "😮",
+  "😲",
+  "😵",
+  "😳",
+  "😱",
+  "😨",
+  "😰",
+  "😢",
+  "😥",
+  "🤤",
+  "😭",
+  "😓",
+  "😪",
+  "😴",
+  "🙄",
+  "🤔",
+  "🤥",
+  "😬",
+  "🤐",
+  "🤢",
+  "🤧",
+  "😷",
+  "🤒",
+  "🤕",
+  "😈",
+  "👿",
+  "👹",
+  "👺",
+  "💩",
+  "👻",
+  "💀",
+  "☠️",
+  "👽",
+  "👾",
+  "🤖",
+  "🎃",
+  "😺",
+  "😸",
+  "😹",
+  "😻",
+  "😼",
+  "😽",
+  "🙀",
+  "😿",
+  "😾",
+  "👐",
+  "🙌",
+  "👏",
+  "🙏",
+  "🤝",
+  "👍",
+  "👎",
+  "👊",
+  "✊",
+  "🤛",
+  "🤜",
+  "🤞",
+  "✌️",
+  "🤘",
+  "👌",
+  "👈",
+  "👉",
+  "👆",
+  "👇",
+  "☝️",
+  "✋",
+  "🤚",
+  "🖐",
+  "🖖",
+  "👋",
+  "🤙",
+  "💪",
+  "🖕",
+  "✍️",
+  "🤳",
+  "💅",
+  "🖖",
+  "💄",
+  "💋",
+  "👄",
+  "👅",
+  "👂",
+  "👃",
+  "👣",
+  "👁",
+  "👀",
+  "🗣",
+  "👤",
+  "👥",
+  "👶",
+  "👦",
+  "👧",
+  "👨",
+  "👩",
+  "👱"
+];
+
+String emojiEncode(String base64String) {
+  return base64String.codeUnits.map((e) => emojiList[e]).join("");
+}
+
+String qrEncode(Uint8List der) {
+  final qrCode = new QrCode.fromUint8List(data: der, errorCorrectLevel: QrErrorCorrectLevel.L);
+  qrCode.make();
+  
+  var result = "";
+  for (int x = 0; x < qrCode.moduleCount; x++) {
+    for (int y = 0; y < qrCode.moduleCount; y++) {
+      if (qrCode.isDark(y, x)) {
+        result += "█";
+        // render a dark square on the canvas
+      } else {
+        result += " ";
+      }
+    }
+    result += "\n";
+  }
+  return result;
 }

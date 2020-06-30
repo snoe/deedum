@@ -1,11 +1,17 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:deedum/shared.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'package:deedum/main.dart';
 
 String bytesToString(ContentType contentType, List<int> bytes) {
   var rest;
@@ -46,7 +52,6 @@ Future<ContentData> homepageContent() async {
 void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function() handleLoad,
     void Function() handleDone, List<String> redirects) async {
   handleLoad();
-
   if (uri.scheme == "about") {
     var homepage = await homepageContent();
     handleContent(uri, homepage);
@@ -63,6 +68,7 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
   }
   List<Uint8List> chunksList;
   bool timeout;
+  X509Certificate serverCert;
   try {
     var result = await fetch(uri, true);
     if (!result[0] && (result[1] as List).isEmpty) {
@@ -70,15 +76,81 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
     }
 
     timeout = result[0];
-    chunksList = result[1];
+    chunksList = ((result[1] as List) ?? []);
+    chunksList.removeWhere((element) => element == null);
+    serverCert = result[2];
   } catch (e) {
     handleContent(uri, ContentData(mode: "error", content: "INTERNAL EXCEPTION\n--------------\n" + e.message));
     handleDone();
     return;
   }
 
+  final Database db = await database;
+  var hostPort = "${uri.host}:${uri.port ?? 1965}";
+  var ders = await db.rawQuery("select der from hosts where name = ?", [hostPort]);
+  if (ders != null && ders.length == 1 && !listEquals(ders[0]["der"], serverCert.der)) {
+    log(" ${serverCert.der.length} ${serverCert.der.runtimeType}");
+    var value = await showDialog(
+        barrierDismissible: false, // user must tap button!
+        context: materialKey.currentContext,
+        builder: (BuildContext context) {
+          var size = MediaQuery.of(context).size;
+          var length = math.min(size.height - 150, size.width - 200);
+
+          return AlertDialog(
+            title: Text("The server's certificate does not match."),
+            content: SingleChildScrollView(
+                child: Column(
+              children: <Widget>[
+                Text("You should confirm out-of-band that this is expected.\n"),
+                SizedBox(
+                    width: length,
+                    height: length,
+                    child: FittedBox(
+                        fit: BoxFit.fill,
+                        child: SelectableText(qrEncode(serverCert.der),
+                            style: TextStyle(fontFamily: "DejaVu Sans Mono")))),
+                Text([
+                  "subject: ${serverCert.subject}",
+                  "issuer: ${serverCert.issuer}",
+                  "start: ${new DateFormat("y-M-d h:m").format(serverCert.startValidity)}",
+                  "end: ${new DateFormat("y-M-d h:m").format(serverCert.endValidity)}"
+                ].join("\n"))
+              ],
+            )),
+            actions: <Widget>[
+              FlatButton(
+                child: Text('I accept the new certificate'),
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+              ),
+              FlatButton(
+                child: Text('Uh oh, this is unexpected', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+              ),
+            ],
+          );
+        });
+    if (!value) {
+      handleContent(
+          uri,
+          ContentData(
+              mode: "error",
+              content: "Trust on first use, certificate mismatch\n--------------\n" + base64Encode(serverCert.der)));
+      handleDone();
+      return;
+    }
+  }
+  await db.rawInsert(
+      "insert or replace into hosts (name, der, created_at) values (?,?,date('now'))", [hostPort, serverCert.der]);
+
   List<int> chunks = <int>[];
-  chunks = chunksList.fold(chunks, (chunks, element) => chunks + element);
+  chunks = chunksList.fold(chunks, (chunks, element) {
+    return chunks + element;
+  });
   var endofline = 1;
   for (; endofline < chunks.length; endofline++) {
     if (chunks[endofline - 1] == 13 && chunks[endofline] == 10) {
@@ -141,10 +213,9 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
 }
 
 Future<List<Object>> fetch(Uri uri, bool shutdown) async {
-  return await RawSecureSocket.connect(uri.host, uri.hasPort ? uri.port : 1965, timeout: Duration(seconds: 5),
+  var port = uri.hasPort ? uri.port : 1965;
+  return await RawSecureSocket.connect(uri.host, port, timeout: Duration(seconds: 5),
       onBadCertificate: (X509Certificate cert) {
-    //log("bad");
-    // TODO Pin
     return true;
   }).then((RawSecureSocket s) async {
     var chunksList = List<Uint8List>();
@@ -152,6 +223,7 @@ Future<List<Object>> fetch(Uri uri, bool shutdown) async {
     var writeBuffer = Utf8Encoder().convert(uri.toString() + "\r\n");
 
     var writeOffset = s.write(writeBuffer);
+    var serverCert = s.peerCertificate;
 
     var x = s.timeout(Duration(milliseconds: 1000), onTimeout: (x) {
       log("timeout");
@@ -180,6 +252,6 @@ Future<List<Object>> fetch(Uri uri, bool shutdown) async {
       }
     }).asFuture();
     s.close();
-    return [timeout, chunksList];
+    return [timeout, chunksList, serverCert];
   });
 }

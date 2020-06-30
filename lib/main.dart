@@ -5,21 +5,36 @@ import 'package:deedum/browser_tab.dart';
 import 'package:deedum/directory/bookmarks.dart';
 import 'package:deedum/directory/directory.dart';
 import 'package:deedum/directory/history.dart';
+import 'package:deedum/directory/settings.dart';
 import 'package:deedum/directory/tabs.dart';
+import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:flutter/foundation.dart' as foundation;
-
-import 'directory/settings.dart';
 
 bool get isIos => foundation.defaultTargetPlatform == foundation.TargetPlatform.iOS;
 final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
 final GlobalKey<AppState> appKey = new GlobalKey();
-void main() {
+final GlobalKey<AppState> materialKey = new GlobalKey();
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  database = openDatabase(
+    'deedum.db',
+    onCreate: (db, version) {
+      return db.execute(
+        "CREATE TABLE hosts(name TEXT PRIMARY KEY, der BLOB, created_at TEXT)",
+      );
+    },
+    version: 1,
+  );
+
   runApp(App(key: appKey));
 }
 
@@ -159,6 +174,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: IndexedStack(
+          key: materialKey,
           index: tabIndex,
           children: <Widget>[
                 Directory(children: [
