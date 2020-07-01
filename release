@@ -9,6 +9,7 @@ VERSION=$(date -u +"%Y.%m%d.%H%M")
 gsed -i "s/^version: .*/version: $VERSION+$CODE/" pubspec.yaml
 git add pubspec.yaml
 git commit -m "Release new version"
+git push
 
 echo "$VERSION+$CODE"
 git tag "$VERSION+$CODE"
