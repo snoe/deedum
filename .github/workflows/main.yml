@@ -18,7 +18,7 @@ jobs:
         KEY_PASSWORD: ${{ secrets.ALIAS_PASSWORD }}
         ALIAS_PASSWORD: ${{ secrets.KEY_PASSWORD }}
     - name: Create Release
-      if: startsWith(github.ref, '20')
+      if: contains(github.ref, '20')
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -30,7 +30,7 @@ jobs:
         prerelease: false
     - name: Upload Release Asset
       id: upload-release-asset
-      if: startsWith(github.ref, '20')
+      if: contains(github.ref, '20')
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
