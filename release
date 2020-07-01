@@ -1,4 +1,10 @@
 #!/bin/bash
 
-git tag release-$(date -u +"%Y%m%dT%H%M%S")
+CODE=$(perl -nle 'print $1 if /^version: .*\+(.*)$/' pubspec.yaml)
+CODE=$(( CODE + 1 ))
+VERSION=$(date -u +"%Y.%m%d.%H%M")
+gsed -i "s/^version: .*/version: $VERSION+$CODE/" pubspec.yaml
+
+echo "$VERSION+$CODE"
+git tag "$VERSION+$CODE"
 git push --tags

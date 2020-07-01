@@ -18,7 +18,7 @@ jobs:
         KEY_PASSWORD: ${{ secrets.ALIAS_PASSWORD }}
         ALIAS_PASSWORD: ${{ secrets.KEY_PASSWORD }}
     - name: Create Release
-      if: contains(github.ref, 'release')
+      if: startsWith(github.ref, '202')
       id: create_release
       uses: actions/create-release@v1
       env:

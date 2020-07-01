@@ -1,0 +1,3 @@
+Gemini is a new, collaboratively designed internet protocol, which explores the space in between gopher and the web, striving to address (perceived) limitations of one while avoiding the (undeniable) pitfalls of the other.
+ 
+https://gemini.circumlunar.space/
