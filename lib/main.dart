@@ -11,7 +11,6 @@ import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uni_links/uni_links.dart';
@@ -28,11 +27,17 @@ void main() async {
   database = openDatabase(
     'deedum.db',
     onCreate: (db, version) {
-      return db.execute(
-        "CREATE TABLE hosts(name TEXT PRIMARY KEY, der BLOB, created_at TEXT)",
+      db.execute(
+        "CREATE TABLE hosts(name TEXT PRIMARY KEY, hash BLOB, expires_at BLOB, created_at TEXT)",
       );
     },
-    version: 1,
+    onUpgrade: (db, old, _new) {
+      if (old == 1) {
+        db.execute("DROP TABLE hosts");
+        db.execute("CREATE TABLE hosts(name TEXT PRIMARY KEY, hash BLOB, expires_at BLOB, created_at TEXT)");
+      }
+    },
+    version: 2,
   );
 
   runApp(App(key: appKey));

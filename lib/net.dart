@@ -10,6 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:x509/x509.dart' as x;
+import 'package:asn1lib/asn1lib.dart';
+import 'package:crypto/crypto.dart';
 
 import 'package:deedum/main.dart';
 
@@ -85,11 +88,28 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
     return;
   }
 
+  var tofuBytes;
+  try {
+    ASN1Parser p = ASN1Parser(serverCert.der);
+    ASN1Sequence o = (p.nextObject() as ASN1Sequence).elements[0];
+    List<ASN1Object> elements = o.elements;
+    if (elements.first.tag == 0xa0) {
+      elements = elements.skip(1).toList();
+    }
+    var spkiObject = elements[5];
+    x.SubjectPublicKeyInfo spki = x.SubjectPublicKeyInfo.fromAsn1(spkiObject);
+    tofuBytes = spki.toAsn1().encodedBytes;
+  } catch (e) {
+    log("Failed to find spki $e");
+    tofuBytes = serverCert.der;
+  }
+
+  var tofuHash = sha256.convert(tofuBytes).bytes;
+
   final Database db = await database;
   var hostPort = "${uri.host}:${uri.port ?? 1965}";
-  var ders = await db.rawQuery("select der from hosts where name = ?", [hostPort]);
-  if (ders != null && ders.length == 1 && !listEquals(ders[0]["der"], serverCert.der)) {
-    log(" ${serverCert.der.length} ${serverCert.der.runtimeType}");
+  var hashes = await db.rawQuery("select hash from hosts where name = ?", [hostPort]);
+  if (hashes != null && hashes.length == 1 && !listEquals(hashes[0]["hash"], tofuHash)) {
     var value = await showDialog(
         barrierDismissible: false, // user must tap button!
         context: materialKey.currentContext,
@@ -108,8 +128,7 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
                     height: length,
                     child: FittedBox(
                         fit: BoxFit.fill,
-                        child: SelectableText(qrEncode(serverCert.der),
-                            style: TextStyle(fontFamily: "DejaVu Sans Mono")))),
+                        child: SelectableText(qrEncode(tofuHash), style: TextStyle(fontFamily: "DejaVu Sans Mono")))),
                 Text([
                   "subject: ${serverCert.subject}",
                   "issuer: ${serverCert.issuer}",
@@ -138,14 +157,13 @@ void onURI(Uri uri, void Function(Uri, ContentData) handleContent, void Function
       handleContent(
           uri,
           ContentData(
-              mode: "error",
-              content: "Trust on first use, certificate mismatch\n--------------\n" + base64Encode(serverCert.der)));
+              mode: "error", content: "Trust on first use, key mismatch\n--------------\n" + base64Encode(tofuHash)));
       handleDone();
       return;
     }
   }
   await db.rawInsert(
-      "insert or replace into hosts (name, der, created_at) values (?,?,date('now'))", [hostPort, serverCert.der]);
+      "insert or replace into hosts (name, hash, expires_at, created_at) values (?,?,?,date('now'))", [hostPort, tofuHash, serverCert.endValidity.toString()]);
 
   List<int> chunks = <int>[];
   chunks = chunksList.fold(chunks, (chunks, element) {
