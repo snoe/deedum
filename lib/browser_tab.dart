@@ -25,6 +25,7 @@ class BrowserTabState extends State<BrowserTab> {
   final onNewTab;
   final addRecent;
   TextEditingController _controller;
+  FocusNode _focusNode;
   ContentData contentData;
   List<Uri> _history = [];
   int _historyIndex = -1;
