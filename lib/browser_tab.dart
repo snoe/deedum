@@ -208,7 +208,8 @@ class BrowserTabState extends State<BrowserTab> {
                 key: ObjectKey(contentData),
                 child: Padding(
                     padding:
-                        EdgeInsets.fromLTRB(padding, padding, padding, padding),
+                        //EdgeInsets.fromLTRB(padding, padding, padding, padding),
+                        EdgeInsets.fromLTRB(16, 16, 20, 0),
                     child: Content(
                       contentData: contentData,
                       onLink: onLink,
