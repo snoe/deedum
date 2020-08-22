@@ -214,12 +214,14 @@ class _PreTextState extends State<PreText> {
                   selectionEnabled: true),
               width: size));
     } else {
-      fit = FittedBox(
-          child: ExtendedText(actualText,
-              selectionEnabled: true,
-              style: TextStyle(
-                  fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
-          fit: BoxFit.fill);
+      fit = SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ExtendedText(
+            actualText,
+            selectionEnabled: true,
+            style: TextStyle(
+                fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
+          ));
     }
     var widget = GestureDetector(
         onDoubleTap: () async {
