@@ -143,7 +143,7 @@ class _ContentState extends State<Content> {
             widgets.add(PreText(r["data"], r["maxLine"]));
           } else if (type == "header") {
             widgets.add(heading(r["data"],
-                baseFontSize + (20 - math.max(r['size'] * 6.5, 10))));
+                baseFontSize + (20 - math.max(r['size'] * 5.4, 10))));
           } else if (type == "quote") {
             widgets.add(blockQuote(r["data"]));
           } else if (type == "link") {
