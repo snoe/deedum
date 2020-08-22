@@ -15,7 +15,7 @@ class AddressBar extends StatelessWidget {
             flex: 1,
             child: DecoratedBox(
                 decoration: BoxDecoration(
-                    color: loading ? Colors.green[200] : Colors.orange[300],
+                    color: loading ? Colors.green[300] : Colors.orange[300],
                     borderRadius: BorderRadius.all(Radius.circular(5))),
                 child: Container(
                     padding: EdgeInsets.fromLTRB(12, 0, 12, 0),

@@ -137,25 +137,26 @@ class BrowserTabState extends State<BrowserTab> {
     var bottomBar;
     if (isIos) {
       bottomBar = BottomAppBar(
+          color: Theme.of(context).buttonColor,
           child: ButtonBar(
-        children: [
-          FlatButton(
-              onPressed: _historyIndex == 0
-                  ? null
-                  : () {
-                      _handleBack();
-                    },
-              child: Icon(Icons.keyboard_arrow_left, size: 30)),
-          FlatButton(
-              onPressed: _historyIndex == (_history.length - 1)
-                  ? null
-                  : () {
-                      _handleForward();
-                    },
-              child: Icon(Icons.keyboard_arrow_right, size: 30))
-        ],
-        alignment: MainAxisAlignment.spaceBetween,
-      ));
+            children: [
+              FlatButton(
+                  onPressed: _historyIndex == 0
+                      ? null
+                      : () {
+                          _handleBack();
+                        },
+                  child: Icon(Icons.keyboard_arrow_left, size: 30)),
+              FlatButton(
+                  onPressed: _historyIndex == (_history.length - 1)
+                      ? null
+                      : () {
+                          _handleForward();
+                        },
+                  child: Icon(Icons.keyboard_arrow_right, size: 30))
+            ],
+            alignment: MainAxisAlignment.spaceBetween,
+          ));
     }
 
     return WillPopScope(

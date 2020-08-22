@@ -266,13 +266,17 @@ Widget heading(actualText, fontSize) {
 }
 
 Widget link(title, link, onLink, context) {
+  Uri uri = Uri.parse(link);
+  bool httpWarn = uri.scheme != "gemini" && uri.hasScheme;
   return GestureDetector(
       child: Padding(
           padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
-          child: Text(title,
+          child: Text(title + (httpWarn ? " [${uri.scheme}]" : ""),
               style: TextStyle(
                   fontFamily: "Merriweather",
-                  color: Color.fromARGB(255, 0, 0, 255)))),
+                  color: httpWarn
+                      ? Color.fromARGB(255, 200, 0, 200)
+                      : Color.fromARGB(255, 0, 0, 255)))),
       onLongPress: () {
         Clipboard.setData(ClipboardData(text: link)).then((result) {
           final snackBar = SnackBar(content: Text('Copied to Clipboard'));
