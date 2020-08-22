@@ -1,8 +1,9 @@
 import 'dart:math' as math;
+
 import 'package:deedum/browser_tab.dart';
+import 'package:deedum/directory/gem_item.dart';
 import 'package:deedum/main.dart';
 import 'package:deedum/shared.dart';
-
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,8 @@ class Tabs extends StatelessWidget {
 
   final tabKey = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
 
-  Tabs(this.tabs, this.onNewTab, this.onSelectTab, this.onDeleteTab, this.onBookmark);
+  Tabs(this.tabs, this.onNewTab, this.onSelectTab, this.onDeleteTab,
+      this.onBookmark);
 
   String get title => [
         "████████╗ █████╗ ██████╗ ███████╗",
@@ -33,60 +35,45 @@ class Tabs extends StatelessWidget {
         child: Column(
             children: <Widget>[
                   Card(
-                    color: Colors.black12,
+                    color: Theme.of(context).buttonColor,
                     child: ListTile(
                       onTap: () => onNewTab(),
                       leading: Icon(
                         Icons.add,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
-                      title: Text("New Tab", style: TextStyle(color: Colors.white)),
+                      title: Text("New Tab",
+                          style: TextStyle(color: Colors.black)),
                     ),
                   )
                 ] +
                 tabs.mapIndexed((index, tab) {
-                  var tabState = ((tab["key"] as GlobalObjectKey).currentState as BrowserTabState);
+                  var tabState = ((tab["key"] as GlobalObjectKey).currentState
+                      as BrowserTabState);
                   var uriString = tabState?.uri?.toString();
-                  var selected = appKey.currentState.previousTabIndex == index + 1;
+                  var selected =
+                      appKey.currentState.previousTabIndex == index + 1;
 
-                  var bookmarked = appKey.currentState.bookmarks.contains(uriString);
+                  var bookmarked =
+                      appKey.currentState.bookmarks.contains(uriString);
                   if (uriString != null && tabState.contentData != null) {
-                    return Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: Card(
-                            shape: selected
-                                ? RoundedRectangleBorder(
-                                    side: BorderSide(color: Colors.black, width: 2),
-                                    borderRadius: BorderRadius.circular(5))
-                                : null,
-                            child: Row(children: [
-                              Expanded(
-                                  flex: 1,
-                                  child: ListTile(
-                                    onTap: () => onSelectTab(index + 1),
-                                    leading: Icon(Icons.description),
-                                    subtitle: ExtendedText(
-                                      tabState.contentData.content
-                                          .substring(0, math.min(tabState.contentData.content.length, 500)),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
-                                    ),
-                                    title: Text("${tabState.uri.host}", style: TextStyle(fontSize: 14)),
-                                  )),
-                              IconButton(
-                                icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border,
-                                    color: bookmarked ? Colors.orange : null),
-                                onPressed: () {
-                                  onBookmark(uriString);
-                                },
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () {
-                                  onDeleteTab(index);
-                                },
-                              ),
-                            ])));
+                    return GemItem(
+                      tabState.uri.host,
+                      title: ExtendedText(
+                        tabState.contentData.content.substring(0,
+                            math.min(tabState.contentData.content.length, 500)),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      selected: selected,
+                      bookmarked: bookmarked,
+                      showTitle: true,
+                      showBookmarked: true,
+                      showDelete: true,
+                      onSelect: () => onSelectTab(index + 1),
+                      onBookmark: () => onBookmark(uriString),
+                      onDelete: () => onDeleteTab(index),
+                    );
                   } else {
                     return Text("No tab?");
                   }

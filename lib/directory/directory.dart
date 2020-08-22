@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 
 class Directory extends StatefulWidget {
@@ -12,13 +10,15 @@ class Directory extends StatefulWidget {
   _DirectoryState createState() => _DirectoryState(this.children, this.icons);
 }
 
-class _DirectoryState extends State<Directory> with SingleTickerProviderStateMixin {
+class _DirectoryState extends State<Directory>
+    with SingleTickerProviderStateMixin {
   final controllerKey = GlobalObjectKey("tabcontroller");
   final children;
   final icons;
 
   TabController _tabController;
   int _activeTabIndex = 0;
+
   _DirectoryState(this.children, this.icons);
 
   @override
@@ -45,11 +45,12 @@ class _DirectoryState extends State<Directory> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     var title = widget.children[_activeTabIndex].title;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.orange,
         centerTitle: true,
-        title: Text(title, style: TextStyle(fontSize: 5.5, fontFamily: "DejaVu Sans Mono")),
+        title: Text(title,
+            style: TextStyle(fontSize: 5.5, fontFamily: "DejaVu Sans Mono")),
         bottom: TabBar(
           indicatorColor: Colors.black,
           controller: _tabController,

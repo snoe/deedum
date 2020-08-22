@@ -12,10 +12,12 @@ class BrowserTab extends StatefulWidget {
   final onNewTab;
   final addRecent;
 
-  BrowserTab(this.initialLocation, this.onNewTab, this.addRecent, {Key key}) : super(key: key);
+  BrowserTab(this.initialLocation, this.onNewTab, this.addRecent, {Key key})
+      : super(key: key);
 
   @override
-  BrowserTabState createState() => BrowserTabState(initialLocation, onNewTab, addRecent);
+  BrowserTabState createState() =>
+      BrowserTabState(initialLocation, onNewTab, addRecent);
 }
 
 class BrowserTabState extends State<BrowserTab> {
@@ -103,7 +105,12 @@ class BrowserTabState extends State<BrowserTab> {
 
   onSearch(String encodedSearch) {
     if (encodedSearch.isNotEmpty) {
-      var u = Uri(scheme: uri.scheme, host: uri.host, port: uri.port, path: uri.path, query: encodedSearch);
+      var u = Uri(
+          scheme: uri.scheme,
+          host: uri.host,
+          port: uri.port,
+          path: uri.path,
+          query: encodedSearch);
       onLocation(u);
     }
   }
@@ -129,31 +136,35 @@ class BrowserTabState extends State<BrowserTab> {
     var bottomBar;
     if (isIos) {
       bottomBar = BottomAppBar(
+          color: Theme.of(context).buttonColor,
           child: ButtonBar(
-        children: [
-          FlatButton(
-              onPressed: _historyIndex == 0
-                  ? null
-                  : () {
-                      _handleBack();
-                    },
-              child: Icon(Icons.keyboard_arrow_left, size: 30)),
-          FlatButton(
-              onPressed: _historyIndex == (_history.length - 1)
-                  ? null
-                  : () {
-                      _handleForward();
-                    },
-              child: Icon(Icons.keyboard_arrow_right, size: 30))
-        ],
-        alignment: MainAxisAlignment.spaceBetween,
-      ));
+            children: [
+              FlatButton(
+                  onPressed: _historyIndex == 0
+                      ? null
+                      : () {
+                          _handleBack();
+                        },
+                  child: Icon(Icons.keyboard_arrow_left, size: 30)),
+              FlatButton(
+                  onPressed: _historyIndex == (_history.length - 1)
+                      ? null
+                      : () {
+                          _handleForward();
+                        },
+                  child: Icon(Icons.keyboard_arrow_right, size: 30))
+            ],
+            alignment: MainAxisAlignment.spaceBetween,
+          ));
     }
 
     return WillPopScope(
         onWillPop: _handleBack,
         child: Scaffold(
-            backgroundColor: (contentData != null && contentData.mode == "error") ? Colors.deepOrange : Colors.white,
+            backgroundColor:
+                (contentData != null && contentData.mode == "error")
+                    ? Colors.deepOrange
+                    : Colors.white,
             bottomNavigationBar: bottomBar,
             appBar: AppBar(
                 backgroundColor: Colors.orange,
@@ -165,29 +176,38 @@ class BrowserTabState extends State<BrowserTab> {
                 actions: [
                   IconButton(
                     icon: SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 23,
+                        height: 23,
                         child: DecoratedBox(
                             decoration: BoxDecoration(
-                                color: Colors.white,
-                                border: Border.all(width: 2, color: Colors.black),
-                                borderRadius: BorderRadius.all(Radius.circular(3))),
+                                color: Colors.transparent,
+                                border:
+                                    Border.all(width: 2, color: Colors.black),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(3))),
                             child: Align(
                                 alignment: Alignment.center,
-                                child: Text("${appKey.currentState.tabs.length}",
+                                child: Text(
+                                    "${appKey.currentState.tabs.length}",
                                     style: TextStyle(
-                                        color: Colors.black, fontFamily: "DejaVu Sans Mono", fontSize: 12))))),
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: "DejaVu Sans Mono",
+                                        fontSize: 13))))),
                     onPressed: onNewTab,
                   ),
                   IconButton(
                       disabledColor: Colors.black12,
+                      color: Colors.black,
                       icon: Icon(Icons.chevron_right),
-                      onPressed: (_historyIndex != (_history.length - 1)) ? _handleForward : null)
+                      onPressed: (_historyIndex != (_history.length - 1))
+                          ? _handleForward
+                          : null)
                 ]),
             body: SingleChildScrollView(
                 key: ObjectKey(contentData),
                 child: Padding(
-                    padding: EdgeInsets.fromLTRB(padding, padding, padding, padding),
+                    padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
                     child: Content(
                       contentData: contentData,
                       onLink: onLink,

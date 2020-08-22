@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:math' as math;
+
+import 'package:deedum/shared.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:deedum/shared.dart';
 import 'package:flutter/services.dart';
 
 final baseFontSize = 17.0;
@@ -17,7 +17,8 @@ class Content extends StatefulWidget {
   final Function onSearch;
 
   @override
-  _ContentState createState() => _ContentState(contentData: contentData, onLink: onLink, onSearch: onSearch);
+  _ContentState createState() => _ContentState(
+      contentData: contentData, onLink: onLink, onSearch: onSearch);
 }
 
 class _ContentState extends State<Content> {
@@ -57,7 +58,8 @@ class _ContentState extends State<Content> {
           children: <Widget>[
                 ExtendedText(contentData.content),
                 DecoratedBox(
-                    decoration: BoxDecoration(color: _inputError ? Colors.deepOrange : null),
+                    decoration: BoxDecoration(
+                        color: _inputError ? Colors.deepOrange : null),
                     child: TextField(onSubmitted: (value) {
                       var encodedSearch = Uri.encodeComponent(value);
                       if (encodedSearch.length <= 1024) {
@@ -68,12 +70,14 @@ class _ContentState extends State<Content> {
                       }
                     }))
               ] +
-              (_inputError ? [ExtendedText("\n\nInput too long: $_inputLength")] : []));
+              (_inputError
+                  ? [ExtendedText("\n\nInput too long: $_inputLength")]
+                  : []));
     } else if (contentData.mode == "error") {
       widget = ExtendedText("An error occurred\n\n" + contentData.content);
     } else if (contentData.mode == "image") {
-      widget = Image.memory(contentData.bytes,
-          errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+      widget = Image.memory(contentData.bytes, errorBuilder:
+          (BuildContext context, Object exception, StackTrace stackTrace) {
         return ExtendedText("broken image ¯\\_(ツ)_/¯");
       });
     } else if (contentData.mode == "plain") {
@@ -86,7 +90,8 @@ class _ContentState extends State<Content> {
   }
 
   buildGroups(context, {alwaysPre = false}) {
-    var lineInfo = LineSplitter.split(contentData.content).fold({"groups": [], "parse?": true}, (r, line) {
+    var lineInfo = LineSplitter.split(contentData.content)
+        .fold({"groups": [], "parse?": true}, (r, line) {
       if (!alwaysPre && line.startsWith("```")) {
         r["parse?"] = !r["parse?"];
       } else if (alwaysPre || !r["parse?"]) {
@@ -96,7 +101,8 @@ class _ContentState extends State<Content> {
       } else if (line.startsWith("#")) {
         var m = RegExp(r'^(#*)\s*(.*)$').firstMatch(line);
         var hashCount = math.min(m.group(1).length, 3);
-        r["groups"].add({"type": "header", "data": m.group(2), "size": hashCount});
+        r["groups"]
+            .add({"type": "header", "data": m.group(2), "size": hashCount});
       } else if (line.startsWith("=>")) {
         var m = RegExp(r'^=>\s*(\S+)\s*(.*)$').firstMatch(line);
         if (m != null) {
@@ -136,7 +142,8 @@ class _ContentState extends State<Content> {
           if (type == "pre") {
             widgets.add(PreText(r["data"], r["maxLine"]));
           } else if (type == "header") {
-            widgets.add(heading(r["data"], baseFontSize + (15 - math.max(r['size'] * 5, 15))));
+            widgets.add(heading(r["data"],
+                baseFontSize + (20 - math.max(r['size'] * 6.5, 10))));
           } else if (type == "quote") {
             widgets.add(blockQuote(r["data"]));
           } else if (type == "link") {
@@ -187,7 +194,9 @@ class _PreTextState extends State<PreText> {
     if (wrap) {
       double size = (TextPainter(
               text: TextSpan(
-                  text: "0".padLeft(_scale), style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
+                  text: "0".padLeft(_scale),
+                  style: TextStyle(
+                      fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
               maxLines: 1,
               textScaleFactor: MediaQuery.of(context).textScaleFactor,
               textDirection: TextDirection.ltr)
@@ -200,20 +209,30 @@ class _PreTextState extends State<PreText> {
           child: SizedBox(
               child: ExtendedText(actualText,
                   softWrap: wrap,
-                  style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
+                  style: TextStyle(
+                      fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
                   selectionEnabled: true),
               width: size));
     } else {
-      fit = FittedBox(
-          child: ExtendedText(actualText, selectionEnabled: true, style: TextStyle(fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
-          fit: BoxFit.fill);
+      fit = SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ExtendedText(
+            actualText,
+            selectionEnabled: true,
+            style: TextStyle(
+                fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
+          ));
     }
     var widget = GestureDetector(
         onDoubleTap: () async {
           var picked = await showMenu(
-            items: <PopupMenuEntry>[CheckedPopupMenuItem(checked: _scale == null, value: null, child: Text("Fit"))] +
+            items: <PopupMenuEntry>[
+                  CheckedPopupMenuItem(
+                      checked: _scale == null, value: null, child: Text("Fit"))
+                ] +
                 [32, 40, 64, 80, 120]
-                    .map((i) => CheckedPopupMenuItem(checked: _scale == i, value: i, child: Text("$i")))
+                    .map((i) => CheckedPopupMenuItem(
+                        checked: _scale == i, value: i, child: Text("$i")))
                     .toList(),
             context: context,
             position: RelativeRect.fromLTRB(20, 100, 400, 200),
@@ -221,28 +240,43 @@ class _PreTextState extends State<PreText> {
           setScale(picked);
         },
         child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal, child: Container(width: availableWidth, child: fit)));
+            scrollDirection: Axis.horizontal,
+            child: Container(width: availableWidth, child: fit)));
 
     return widget;
   }
 }
 
 Widget plainText(data) {
-  return SelectableText(data, style: TextStyle(fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7));
+  return SelectableText(data,
+      style: TextStyle(
+          fontWeight: FontWeight.w400,
+          fontFamily: "Merriweather",
+          height: 1.7));
 }
 
 Widget heading(actualText, fontSize) {
   return Padding(
-      padding: EdgeInsets.fromLTRB(0, fontSize, 0, fontSize),
+      padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
       child: SelectableText(actualText,
-          style: TextStyle(fontFamily: "Merriweather", fontWeight: FontWeight.bold, fontSize: fontSize)));
+          style: TextStyle(
+              fontFamily: "Merriweather",
+              fontWeight: FontWeight.bold,
+              fontSize: fontSize)));
 }
 
 Widget link(title, link, onLink, context) {
+  Uri uri = Uri.parse(link);
+  bool httpWarn = uri.scheme != "gemini" && uri.hasScheme;
   return GestureDetector(
       child: Padding(
           padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
-          child: Text(title, style: TextStyle(fontFamily: "Merriweather", color: Color.fromARGB(255, 0, 0, 255)))),
+          child: Text(title + (httpWarn ? " [${uri.scheme}]" : ""),
+              style: TextStyle(
+                  fontFamily: "Merriweather",
+                  color: httpWarn
+                      ? Color.fromARGB(255, 200, 0, 200)
+                      : Color.fromARGB(255, 0, 0, 255)))),
       onLongPress: () {
         Clipboard.setData(ClipboardData(text: link)).then((result) {
           final snackBar = SnackBar(content: Text('Copied to Clipboard'));
@@ -255,14 +289,22 @@ Widget link(title, link, onLink, context) {
 }
 
 Widget listItem(actualText) {
-  return SelectableText("⚫ " + actualText,
-              style: TextStyle(fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7));
+  return SelectableText(" ＊ " + actualText,
+      style: TextStyle(
+          fontWeight: FontWeight.w400,
+          fontFamily: "Merriweather",
+          height: 1.7));
 }
+
 Widget blockQuote(actualText) {
   return DecoratedBox(
-      decoration: BoxDecoration(border: Border(left: BorderSide(color: Colors.orange, width: 3))),
+      decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: Colors.orange, width: 3))),
       child: Padding(
           padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
           child: SelectableText(actualText,
-              style: TextStyle(fontWeight: FontWeight.w300, fontFamily: "Merriweather", height: 1.7))));
+              style: TextStyle(
+                  fontWeight: FontWeight.w400,
+                  fontFamily: "Merriweather",
+                  height: 1.7))));
 }

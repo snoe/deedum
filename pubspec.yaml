@@ -32,14 +32,17 @@ dependencies:
   url_launcher: '5.4.10'
   cupertino_icons: ^0.1.3
   uni_links: '0.4.0'
-  extended_text: ^1.0.1
+  extended_text: ^4.0.0
   flutter_markdown: ^0.4.2
   asn1lib: ^0.6.5
   x509: ^0.1.2+1
+  crypto: ^2.1.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  flutter_launcher_icons: ^0.7.5
 
 flutter:
   uses-material-design: true
@@ -60,3 +63,9 @@ flutter:
     - family: DejaVu Sans Mono
       fonts:
         - asset: assets/DejaVuSansMono.ttf
+
+flutter_icons:
+  image_path_android: 'assets/launcher_android.png'
+  image_path_ios: 'assets/launcher_ios.png'
+  android: true
+  ios: true

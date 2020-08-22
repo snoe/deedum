@@ -9,14 +9,15 @@ import 'package:deedum/directory/settings.dart';
 import 'package:deedum/directory/tabs.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uni_links/uni_links.dart';
-import 'package:flutter/foundation.dart' as foundation;
 
-bool get isIos => foundation.defaultTargetPlatform == foundation.TargetPlatform.iOS;
+bool get isIos =>
+    foundation.defaultTargetPlatform == foundation.TargetPlatform.iOS;
 final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
 final GlobalKey<AppState> appKey = new GlobalKey();
@@ -34,7 +35,8 @@ void main() async {
     onUpgrade: (db, old, _new) {
       if (old == 1) {
         db.execute("DROP TABLE hosts");
-        db.execute("CREATE TABLE hosts(name TEXT PRIMARY KEY, hash BLOB, expires_at BLOB, created_at TEXT)");
+        db.execute(
+            "CREATE TABLE hosts(name TEXT PRIMARY KEY, hash BLOB, expires_at BLOB, created_at TEXT)");
       }
     },
     version: 2,
@@ -72,7 +74,10 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
     recents = (prefs.getStringList('recent') ?? []);
-    settings = {"homepage": (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/")};
+    settings = {
+      "homepage":
+          (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/")
+    };
 
     _sub = getLinksStream().listen((String link) {
       onNewTab(initialLocation: link);
@@ -139,7 +144,11 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     if (tabIndex == 0) {
       setState(() {
         var key = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
-        tabs.add({"key": key, "widget": BrowserTab(Uri.parse(initialLocation), onNewTab, addRecent, key: key)});
+        tabs.add({
+          "key": key,
+          "widget": BrowserTab(Uri.parse(initialLocation), onNewTab, addRecent,
+              key: key)
+        });
         tabIndex = tabs.length;
       });
     } else {
@@ -182,17 +191,20 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
           key: materialKey,
           index: tabIndex,
           children: <Widget>[
-                Directory(children: [
-                  Tabs(tabs, onNewTab, onSelectTab, onDeleteTab, onBookmark),
-                  Bookmarks(bookmarks, onNewTab, onBookmark),
-                  History(recents, onNewTab, onBookmark),
-                  Settings(settings, onSaveSettings)
-                ], icons: [
-                  Icons.tab,
-                  Icons.bookmark_border,
-                  Icons.history,
-                  Icons.settings
-                ])
+                Directory(
+                  children: [
+                    Tabs(tabs, onNewTab, onSelectTab, onDeleteTab, onBookmark),
+                    Bookmarks(bookmarks, onNewTab, onBookmark),
+                    History(recents, onNewTab, onBookmark),
+                    Settings(settings, onSaveSettings)
+                  ],
+                  icons: [
+                    Icons.tab,
+                    Icons.bookmark_border,
+                    Icons.history,
+                    Icons.settings
+                  ],
+                )
               ] +
               tabs.map<Widget>((t) => t["widget"]).toList()),
     );
