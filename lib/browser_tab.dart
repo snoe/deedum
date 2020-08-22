@@ -207,9 +207,7 @@ class BrowserTabState extends State<BrowserTab> {
             body: SingleChildScrollView(
                 key: ObjectKey(contentData),
                 child: Padding(
-                    padding:
-                        //EdgeInsets.fromLTRB(padding, padding, padding, padding),
-                        EdgeInsets.fromLTRB(16, 16, 20, 0),
+                    padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
                     child: Content(
                       contentData: contentData,
                       onLink: onLink,
