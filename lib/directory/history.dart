@@ -1,3 +1,4 @@
+import 'package:deedum/directory/gem_item.dart';
 import 'package:deedum/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -29,26 +30,15 @@ class History extends StatelessWidget {
         var recentUri = Uri.parse(recentLocation);
 
         var bookmarked = appKey.currentState.bookmarks.contains(recentLocation);
-        return Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Card(
-                child: Row(children: [
-              Expanded(
-                  flex: 1,
-                  child: ListTile(
-                    onTap: () => onNewTab(initialLocation: recentLocation),
-                    leading: Icon(Icons.description),
-                    title: Text("${recentUri.host}", style: TextStyle(fontSize: 14)),
-                    subtitle: recentUri.path != "/" ? Text("${recentUri.path}", style: TextStyle(fontSize: 12)) : null,
-                  )),
-              IconButton(
-                icon:
-                    Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border, color: bookmarked ? Colors.orange : null),
-                onPressed: () {
-                  onBookmark(recentLocation);
-                },
-              ),
-            ])));
+        return GemItem(
+          recentUri.host,
+          title: Text(recentUri.path == "" ? "/" : recentUri.path),
+          bookmarked: bookmarked,
+          showBookmarked: true,
+          showDelete: false,
+          onSelect: () => onNewTab(initialLocation: recentLocation),
+          onBookmark: () => onBookmark(recentLocation),
+        );
       }).toList();
     } else {
       children = [
@@ -58,7 +48,8 @@ class History extends StatelessWidget {
             onTap: onNewTab,
             leading: Icon(Icons.explore, color: Colors.white),
             title: Text("No History", style: TextStyle(color: Colors.white)),
-            subtitle: Text("Go forth, explore", style: TextStyle(color: Colors.white)),
+            subtitle: Text("Go forth, explore",
+                style: TextStyle(color: Colors.white)),
           ),
         )
       ];
