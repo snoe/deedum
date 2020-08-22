@@ -25,7 +25,6 @@ class BrowserTabState extends State<BrowserTab> {
   final onNewTab;
   final addRecent;
   TextEditingController _controller;
-  FocusNode _focusNode;
   ContentData contentData;
   List<Uri> _history = [];
   int _historyIndex = -1;
@@ -199,6 +198,7 @@ class BrowserTabState extends State<BrowserTab> {
                   ),
                   IconButton(
                       disabledColor: Colors.black12,
+                      color: Colors.black,
                       icon: Icon(Icons.chevron_right),
                       onPressed: (_historyIndex != (_history.length - 1))
                           ? _handleForward

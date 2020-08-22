@@ -28,6 +28,10 @@ class AddressBar extends StatelessWidget {
                         ),
                         style: TextStyle(fontSize: 14),
                         controller: controller,
+                        onTap: () => controller.selection = TextSelection(
+                              baseOffset: 0,
+                              extentOffset: controller.value.text.length,
+                            ),
                         onSubmitted: (value) {
                           onLocation(Uri.parse(value));
                         })))),
