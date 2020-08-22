@@ -7,7 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-final baseFontSize = 17.0;
+final baseFontSize = 14.0;
 
 class Content extends StatefulWidget {
   Content({this.contentData, this.onLink, this.onSearch});
@@ -250,7 +250,9 @@ class _PreTextState extends State<PreText> {
 Widget plainText(data) {
   return SelectableText(data,
       style: TextStyle(
-          fontWeight: FontWeight.w400, fontFamily: "Noto Serif", height: 1.7));
+          fontWeight: FontWeight.w400,
+          fontFamily: "Source Serif Pro",
+          height: 1.5));
 }
 
 Widget heading(actualText, fontSize) {
@@ -258,7 +260,7 @@ Widget heading(actualText, fontSize) {
       padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
       child: SelectableText(actualText,
           style: TextStyle(
-              fontFamily: "Noto Serif",
+              fontFamily: "Source Serif Pro",
               fontWeight: FontWeight.bold,
               fontSize: fontSize)));
 }
@@ -268,10 +270,10 @@ Widget link(title, link, onLink, context) {
   bool httpWarn = uri.scheme != "gemini" && uri.hasScheme;
   return GestureDetector(
       child: Padding(
-          padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
+          padding: EdgeInsets.fromLTRB(0, 7, 0, 7),
           child: Text(title + (httpWarn ? " [${uri.scheme}]" : ""),
               style: TextStyle(
-                  fontFamily: "Noto Serif",
+                  fontFamily: "Source Serif Pro",
                   color: httpWarn
                       ? Color.fromARGB(255, 200, 0, 200)
                       : Color.fromARGB(255, 0, 0, 255)))),
@@ -289,7 +291,9 @@ Widget link(title, link, onLink, context) {
 Widget listItem(actualText) {
   return SelectableText(" ＊ " + actualText,
       style: TextStyle(
-          fontWeight: FontWeight.w400, fontFamily: "Noto Serif", height: 1.7));
+          fontWeight: FontWeight.w400,
+          fontFamily: "Source Serif Pro",
+          height: 1.7));
 }
 
 Widget blockQuote(actualText) {
@@ -297,10 +301,10 @@ Widget blockQuote(actualText) {
       decoration: BoxDecoration(
           border: Border(left: BorderSide(color: Colors.orange, width: 3))),
       child: Padding(
-          padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
+          padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
           child: SelectableText(actualText,
               style: TextStyle(
                   fontWeight: FontWeight.w400,
-                  fontFamily: "Noto Serif",
+                  fontFamily: "Source Serif Pro",
                   height: 1.7))));
 }

@@ -51,24 +51,24 @@ flutter:
     - assets/logo.png
 
   fonts:
-    - family: Noto Serif
+    - family: Source Serif Pro
       fonts:
-        - asset: assets/NotoSerif-Light.ttf
+        - asset: assets/SourceSerifPro-Light.otf
           weight: 300
           style: normal
-        - asset: assets/NotoSerif-LightItalic.ttf
+        - asset: assets/SourceSerifPro-LightIt.otf
           weight: 300
           style: italic
-        - asset: assets/NotoSerif-Regular.ttf
+        - asset: assets/SourceSerifPro-Regular.otf
           weight: 400
           style: normal
-        - asset: assets/NotoSerif-Italic.ttf
+        - asset: assets/SourceSerifPro-It.otf
           weight: 400
           style: italic
-        - asset: assets/NotoSerif-Bold.ttf
+        - asset: assets/SourceSerifPro-Bold.otf
           weight: 700
           style: normal
-        - asset: assets/NotoSerif-BoldItalic.ttf
+        - asset: assets/SourceSerifPro-BoldIt.otf
           weight: 700
           style: italic
     - family: DejaVu Sans Mono
