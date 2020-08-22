@@ -257,7 +257,7 @@ Widget plainText(data) {
 
 Widget heading(actualText, fontSize) {
   return Padding(
-      padding: EdgeInsets.fromLTRB(0, 5, 0, 0),
+      padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
       child: SelectableText(actualText,
           style: TextStyle(
               fontFamily: "Merriweather",
