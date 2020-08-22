@@ -51,15 +51,26 @@ flutter:
     - assets/logo.png
 
   fonts:
-    - family: Merriweather
+    - family: Noto Serif
       fonts:
-        - asset: assets/Merriweather-Regular.ttf
-        - asset: assets/Merriweather-Italic.ttf
-          style: italic
-        - asset: assets/Merriweather-Bold.ttf
-          weight: 700
-        - asset: assets/Merriweather-Light.ttf
+        - asset: assets/NotoSerif-Light.ttf
           weight: 300
+          style: normal
+        - asset: assets/NotoSerif-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: assets/NotoSerif-Regular.ttf
+          weight: 400
+          style: normal
+        - asset: assets/NotoSerif-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/NotoSerif-Bold.ttf
+          weight: 700
+          style: normal
+        - asset: assets/NotoSerif-BoldItalic.ttf
+          weight: 700
+          style: italic
     - family: DejaVu Sans Mono
       fonts:
         - asset: assets/DejaVuSansMono.ttf

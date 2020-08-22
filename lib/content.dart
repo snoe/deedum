@@ -250,9 +250,7 @@ class _PreTextState extends State<PreText> {
 Widget plainText(data) {
   return SelectableText(data,
       style: TextStyle(
-          fontWeight: FontWeight.w400,
-          fontFamily: "Merriweather",
-          height: 1.7));
+          fontWeight: FontWeight.w400, fontFamily: "Noto Serif", height: 1.7));
 }
 
 Widget heading(actualText, fontSize) {
@@ -260,7 +258,7 @@ Widget heading(actualText, fontSize) {
       padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
       child: SelectableText(actualText,
           style: TextStyle(
-              fontFamily: "Merriweather",
+              fontFamily: "Noto Serif",
               fontWeight: FontWeight.bold,
               fontSize: fontSize)));
 }
@@ -273,7 +271,7 @@ Widget link(title, link, onLink, context) {
           padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
           child: Text(title + (httpWarn ? " [${uri.scheme}]" : ""),
               style: TextStyle(
-                  fontFamily: "Merriweather",
+                  fontFamily: "Noto Serif",
                   color: httpWarn
                       ? Color.fromARGB(255, 200, 0, 200)
                       : Color.fromARGB(255, 0, 0, 255)))),
@@ -291,9 +289,7 @@ Widget link(title, link, onLink, context) {
 Widget listItem(actualText) {
   return SelectableText(" ＊ " + actualText,
       style: TextStyle(
-          fontWeight: FontWeight.w400,
-          fontFamily: "Merriweather",
-          height: 1.7));
+          fontWeight: FontWeight.w400, fontFamily: "Noto Serif", height: 1.7));
 }
 
 Widget blockQuote(actualText) {
@@ -305,6 +301,6 @@ Widget blockQuote(actualText) {
           child: SelectableText(actualText,
               style: TextStyle(
                   fontWeight: FontWeight.w400,
-                  fontFamily: "Merriweather",
+                  fontFamily: "Noto Serif",
                   height: 1.7))));
 }
