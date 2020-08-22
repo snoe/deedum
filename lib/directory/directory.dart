@@ -18,6 +18,7 @@ class _DirectoryState extends State<Directory>
 
   TabController _tabController;
   int _activeTabIndex = 0;
+
   _DirectoryState(this.children, this.icons);
 
   @override

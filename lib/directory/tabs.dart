@@ -35,15 +35,15 @@ class Tabs extends StatelessWidget {
         child: Column(
             children: <Widget>[
                   Card(
-                    color: Colors.black12,
+                    color: Theme.of(context).buttonColor,
                     child: ListTile(
                       onTap: () => onNewTab(),
                       leading: Icon(
                         Icons.add,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                       title: Text("New Tab",
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(color: Colors.black)),
                     ),
                   )
                 ] +
