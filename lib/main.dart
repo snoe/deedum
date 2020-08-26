@@ -183,10 +183,16 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     return MaterialApp(
       title: 'deedum',
       theme: ThemeData(
-        fontFamily: "Merriweather",
+        fontFamily: "Source Serif Pro",
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+      builder: (context, child) {
+        return MediaQuery(
+          child: child,
+          data: MediaQuery.of(context).copyWith(textScaleFactor: 1.15),
+        );
+      },
       home: IndexedStack(
           key: materialKey,
           index: tabIndex,

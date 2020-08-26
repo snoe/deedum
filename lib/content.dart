@@ -7,7 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-final baseFontSize = 17.0;
+final baseFontSize = 14.0;
 
 class Content extends StatefulWidget {
   Content({this.contentData, this.onLink, this.onSearch});
@@ -143,7 +143,7 @@ class _ContentState extends State<Content> {
             widgets.add(PreText(r["data"], r["maxLine"]));
           } else if (type == "header") {
             widgets.add(heading(r["data"],
-                baseFontSize + (20 - math.max(r['size'] * 6.5, 10))));
+                baseFontSize + (20 - math.max(r['size'] * 5.4, 10))));
           } else if (type == "quote") {
             widgets.add(blockQuote(r["data"]));
           } else if (type == "link") {
@@ -251,8 +251,8 @@ Widget plainText(data) {
   return SelectableText(data,
       style: TextStyle(
           fontWeight: FontWeight.w400,
-          fontFamily: "Merriweather",
-          height: 1.7));
+          fontFamily: "Source Serif Pro",
+          height: 1.5));
 }
 
 Widget heading(actualText, fontSize) {
@@ -260,7 +260,7 @@ Widget heading(actualText, fontSize) {
       padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
       child: SelectableText(actualText,
           style: TextStyle(
-              fontFamily: "Merriweather",
+              fontFamily: "Source Serif Pro",
               fontWeight: FontWeight.bold,
               fontSize: fontSize)));
 }
@@ -270,10 +270,10 @@ Widget link(title, link, onLink, context) {
   bool httpWarn = uri.scheme != "gemini" && uri.hasScheme;
   return GestureDetector(
       child: Padding(
-          padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
+          padding: EdgeInsets.fromLTRB(0, 7, 0, 7),
           child: Text(title + (httpWarn ? " [${uri.scheme}]" : ""),
               style: TextStyle(
-                  fontFamily: "Merriweather",
+                  fontFamily: "Source Serif Pro",
                   color: httpWarn
                       ? Color.fromARGB(255, 200, 0, 200)
                       : Color.fromARGB(255, 0, 0, 255)))),
@@ -292,7 +292,7 @@ Widget listItem(actualText) {
   return SelectableText(" ＊ " + actualText,
       style: TextStyle(
           fontWeight: FontWeight.w400,
-          fontFamily: "Merriweather",
+          fontFamily: "Source Serif Pro",
           height: 1.7));
 }
 
@@ -301,10 +301,10 @@ Widget blockQuote(actualText) {
       decoration: BoxDecoration(
           border: Border(left: BorderSide(color: Colors.orange, width: 3))),
       child: Padding(
-          padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
+          padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
           child: SelectableText(actualText,
               style: TextStyle(
                   fontWeight: FontWeight.w400,
-                  fontFamily: "Merriweather",
+                  fontFamily: "Source Serif Pro",
                   height: 1.7))));
 }
