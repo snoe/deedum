@@ -52,7 +52,6 @@ class _DirectoryState extends State<Directory>
         title: Text(title,
             style: TextStyle(fontSize: 5.5, fontFamily: "DejaVu Sans Mono")),
         bottom: TabBar(
-          indicatorColor: Colors.black,
           controller: _tabController,
           tabs: widget.icons.map<Widget>((i) => Tab(icon: Icon(i))).toList(),
         ),

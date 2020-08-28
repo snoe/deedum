@@ -34,7 +34,6 @@ void main() async {
     },
     onUpgrade: (db, old, _new) {
       if (old == 1) {
-        db.execute("DROP TABLE hosts");
         db.execute(
             "CREATE TABLE hosts(name TEXT PRIMARY KEY, hash BLOB, expires_at BLOB, created_at TEXT)");
       }
@@ -183,6 +182,12 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     return MaterialApp(
       title: 'deedum',
       theme: ThemeData(
+        fontFamily: "Source Serif Pro",
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
         fontFamily: "Source Serif Pro",
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,

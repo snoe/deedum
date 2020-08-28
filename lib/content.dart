@@ -257,7 +257,7 @@ Widget plainText(data) {
 
 Widget heading(actualText, fontSize) {
   return Padding(
-      padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
+      padding: EdgeInsets.fromLTRB(0, 2, 0, 2),
       child: SelectableText(actualText,
           style: TextStyle(
               fontFamily: "Source Serif Pro",
@@ -271,12 +271,10 @@ Widget link(title, link, onLink, context) {
   return GestureDetector(
       child: Padding(
           padding: EdgeInsets.fromLTRB(0, 7, 0, 7),
-          child: Text(title + (httpWarn ? " [${uri.scheme}]" : ""),
+          child: Text((httpWarn ? "[${uri.scheme}] " : "") + title,
               style: TextStyle(
                   fontFamily: "Source Serif Pro",
-                  color: httpWarn
-                      ? Color.fromARGB(255, 200, 0, 200)
-                      : Color.fromARGB(255, 0, 0, 255)))),
+                  color: httpWarn ? Colors.purple[300] : Colors.blue))),
       onLongPress: () {
         Clipboard.setData(ClipboardData(text: link)).then((result) {
           final snackBar = SnackBar(content: Text('Copied to Clipboard'));
