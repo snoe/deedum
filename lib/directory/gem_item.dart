@@ -32,7 +32,8 @@ class GemItem extends StatelessWidget {
         child: Card(
             shape: this.selected
                 ? RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.black, width: 2),
+                    side: BorderSide(
+                        color: Theme.of(context).hintColor, width: 2),
                     borderRadius: BorderRadius.circular(5))
                 : null,
             child: Padding(

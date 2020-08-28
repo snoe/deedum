@@ -26,7 +26,10 @@ class AddressBar extends StatelessWidget {
                           border: InputBorder.none,
                           isDense: true,
                         ),
-                        style: TextStyle(fontSize: 14),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
                         controller: controller,
                         onTap: () => controller.selection = TextSelection(
                               baseOffset: 0,

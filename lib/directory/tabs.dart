@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
-import 'package:deedum/browser_tab.dart';
 import 'package:deedum/directory/gem_item.dart';
 import 'package:deedum/main.dart';
 import 'package:deedum/shared.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import '../browser_tab.dart';
 
 class Tabs extends StatelessWidget {
   final onNewTab;
@@ -40,10 +41,9 @@ class Tabs extends StatelessWidget {
                       onTap: () => onNewTab(),
                       leading: Icon(
                         Icons.add,
-                        color: Colors.black,
+                        //color: Colors.black,
                       ),
-                      title: Text("New Tab",
-                          style: TextStyle(color: Colors.black)),
+                      title: Text("New Tab"),
                     ),
                   )
                 ] +

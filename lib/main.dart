@@ -3,7 +3,6 @@ import 'dart:developer';
 
 import 'package:deedum/browser_tab.dart';
 import 'package:deedum/directory/bookmarks.dart';
-import 'package:deedum/directory/directory.dart';
 import 'package:deedum/directory/history.dart';
 import 'package:deedum/directory/settings.dart';
 import 'package:deedum/directory/tabs.dart';
@@ -183,6 +182,12 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     return MaterialApp(
       title: 'deedum',
       theme: ThemeData(
+        fontFamily: "Source Serif Pro",
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
         fontFamily: "Source Serif Pro",
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
