@@ -3,7 +3,6 @@ import 'dart:developer';
 
 import 'package:deedum/browser_tab.dart';
 import 'package:deedum/directory/bookmarks.dart';
-import 'package:deedum/directory/directory.dart';
 import 'package:deedum/directory/history.dart';
 import 'package:deedum/directory/settings.dart';
 import 'package:deedum/directory/tabs.dart';
@@ -34,6 +33,7 @@ void main() async {
     },
     onUpgrade: (db, old, _new) {
       if (old == 1) {
+        db.execute("DROP TABLE hosts");
         db.execute(
             "CREATE TABLE hosts(name TEXT PRIMARY KEY, hash BLOB, expires_at BLOB, created_at TEXT)");
       }
