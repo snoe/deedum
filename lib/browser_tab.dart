@@ -136,7 +136,7 @@ class BrowserTabState extends State<BrowserTab> {
     var bottomBar;
     if (isIos) {
       bottomBar = BottomAppBar(
-          color: Theme.of(context).buttonColor,
+          color: Theme.of(context).cardColor,
           child: ButtonBar(
             children: [
               FlatButton(
