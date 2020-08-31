@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:deedum/browser_tab.dart';
+import 'package:deedum/directory/directory.dart';
 import 'package:deedum/directory/bookmarks.dart';
 import 'package:deedum/directory/history.dart';
 import 'package:deedum/directory/settings.dart';
