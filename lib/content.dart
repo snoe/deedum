@@ -175,7 +175,7 @@ class _PreTextState extends State<PreText> {
 
   _PreTextState(this.actualText, maxLine) {
     if (maxLine > 120) {
-      _scale = 40;
+      _scale = -1;
     }
   }
 
@@ -191,7 +191,16 @@ class _PreTextState extends State<PreText> {
     var fit;
     var wrap = _scale != null;
 
-    if (wrap) {
+    if (_scale == -1) {
+      fit = SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ExtendedText(
+            actualText,
+            selectionEnabled: true,
+            style: TextStyle(
+                fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
+          ));
+    } else if (wrap) {
       double size = (TextPainter(
               text: TextSpan(
                   text: "0".padLeft(_scale),
@@ -214,14 +223,12 @@ class _PreTextState extends State<PreText> {
                   selectionEnabled: true),
               width: size));
     } else {
-      fit = SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ExtendedText(
-            actualText,
-            selectionEnabled: true,
-            style: TextStyle(
-                fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
-          ));
+     fit = FittedBox(
+          child: ExtendedText(actualText,
+              selectionEnabled: true,
+              style: TextStyle(
+                  fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
+          fit: BoxFit.fill);
     }
     var widget = GestureDetector(
         onDoubleTap: () async {
@@ -230,9 +237,9 @@ class _PreTextState extends State<PreText> {
                   CheckedPopupMenuItem(
                       checked: _scale == null, value: null, child: Text("Fit"))
                 ] +
-                [32, 40, 64, 80, 120]
+                [-1, 32, 40, 64, 80, 120]
                     .map((i) => CheckedPopupMenuItem(
-                        checked: _scale == i, value: i, child: Text("$i")))
+                        checked: _scale == i, value: i, child: Text("${i == -1 ? "Scroll" : i}")))
                     .toList(),
             context: context,
             position: RelativeRect.fromLTRB(20, 100, 400, 200),
