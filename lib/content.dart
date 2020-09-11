@@ -7,7 +7,79 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-final baseFontSize = 14.0;
+class TextStyleSetting extends ChangeNotifier {
+  double _baseFontSize = 14.0;
+  get baseFontSize => _baseFontSize;
+  set baseFontSize(val) {
+    _baseFontSize = val;
+    notifyListeners();
+  }
+
+  String _bodyFontFamily = "Source Serif Pro";
+  get bodyFontFamily => _bodyFontFamily;
+  set bodyFontFamily(val) {
+    _bodyFontFamily = val;
+    notifyListeners();
+  }
+
+  String _monoFontFamily = "DejaVu Sans Mono";
+  get monoFontFamily => _monoFontFamily;
+  set monoFontFamily(val) {
+    _monoFontFamily = val;
+    notifyListeners();
+  }
+
+  TextStyle get blockquote {
+    return TextStyle(
+        fontWeight: FontWeight.w400, fontFamily: bodyFontFamily, height: 1.7);
+  }
+
+  TextStyle get listItem {
+    return TextStyle(
+        fontWeight: FontWeight.w400, fontFamily: bodyFontFamily, height: 1.7);
+  }
+
+  TextStyle link(httpWarn) {
+    return TextStyle(
+        fontFamily: bodyFontFamily,
+        color: httpWarn ? Colors.purple[300] : Colors.blue);
+  }
+
+  TextStyle get plaintext {
+    return TextStyle(
+        fontWeight: FontWeight.w400, fontFamily: bodyFontFamily, height: 1.5);
+  }
+
+  TextStyle get body {
+    return TextStyle(fontFamily: bodyFontFamily, fontSize: baseFontSize);
+  }
+
+  TextStyle get preformat {
+    return TextStyle(fontFamily: monoFontFamily, fontSize: baseFontSize);
+  }
+
+  TextStyle header(sizeClass) {
+    var fontSize = baseFontSize * (1 + sizeClass * 0.5);
+    return TextStyle(
+        fontFamily: "Source Serif Pro",
+        fontWeight: FontWeight.bold,
+        fontSize: fontSize); //TODO: this is way too scaled
+  }
+
+  TextStyle get header1 {
+    return header(1);
+  }
+
+  TextStyle get header2 {
+    return header(2);
+  }
+
+  TextStyle get header3 {
+    return header(3);
+  }
+}
+
+TextStyleSetting currentTextStyle = new TextStyleSetting();
 
 class Content extends StatefulWidget {
   Content({this.contentData, this.onLink, this.onSearch});
@@ -142,8 +214,9 @@ class _ContentState extends State<Content> {
           if (type == "pre") {
             widgets.add(PreText(r["data"], r["maxLine"]));
           } else if (type == "header") {
-            widgets.add(heading(r["data"],
-                baseFontSize + (20 - math.max(r['size'] * 5.4, 10))));
+            widgets.add(heading(r["data"], r['size']
+                //baseFontSize + (20 - math.max(r['size'] * 5.4, 10
+                ));
           } else if (type == "quote") {
             widgets.add(blockQuote(r["data"]));
           } else if (type == "link") {
@@ -197,15 +270,12 @@ class _PreTextState extends State<PreText> {
           child: ExtendedText(
             actualText,
             selectionEnabled: true,
-            style: TextStyle(
-                fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
+            style: currentTextStyle.body,
           ));
     } else if (wrap) {
       double size = (TextPainter(
               text: TextSpan(
-                  text: "0".padLeft(_scale),
-                  style: TextStyle(
-                      fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
+                  text: "0".padLeft(_scale), style: currentTextStyle.preformat),
               maxLines: 1,
               textScaleFactor: MediaQuery.of(context).textScaleFactor,
               textDirection: TextDirection.ltr)
@@ -218,16 +288,13 @@ class _PreTextState extends State<PreText> {
           child: SizedBox(
               child: ExtendedText(actualText,
                   softWrap: wrap,
-                  style: TextStyle(
-                      fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
+                  style: currentTextStyle.preformat,
                   selectionEnabled: true),
               width: size));
     } else {
-     fit = FittedBox(
+      fit = FittedBox(
           child: ExtendedText(actualText,
-              selectionEnabled: true,
-              style: TextStyle(
-                  fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
+              selectionEnabled: true, style: currentTextStyle.preformat),
           fit: BoxFit.fill);
     }
     var widget = GestureDetector(
@@ -239,7 +306,9 @@ class _PreTextState extends State<PreText> {
                 ] +
                 [-1, 32, 40, 64, 80, 120]
                     .map((i) => CheckedPopupMenuItem(
-                        checked: _scale == i, value: i, child: Text("${i == -1 ? "Scroll" : i}")))
+                        checked: _scale == i,
+                        value: i,
+                        child: Text("${i == -1 ? "Scroll" : i}")))
                     .toList(),
             context: context,
             position: RelativeRect.fromLTRB(20, 100, 400, 200),
@@ -255,21 +324,14 @@ class _PreTextState extends State<PreText> {
 }
 
 Widget plainText(data) {
-  return SelectableText(data,
-      style: TextStyle(
-          fontWeight: FontWeight.w400,
-          fontFamily: "Source Serif Pro",
-          height: 1.5));
+  return SelectableText(data, style: currentTextStyle.plaintext);
 }
 
-Widget heading(actualText, fontSize) {
+Widget heading(actualText, sizeClass) {
   return Padding(
       padding: EdgeInsets.fromLTRB(0, 2, 0, 2),
       child: SelectableText(actualText,
-          style: TextStyle(
-              fontFamily: "Source Serif Pro",
-              fontWeight: FontWeight.bold,
-              fontSize: fontSize)));
+          style: currentTextStyle.header(sizeClass)));
 }
 
 Widget link(title, link, onLink, context) {
@@ -279,9 +341,7 @@ Widget link(title, link, onLink, context) {
       child: Padding(
           padding: EdgeInsets.fromLTRB(0, 7, 0, 7),
           child: Text((httpWarn ? "[${uri.scheme}] " : "") + title,
-              style: TextStyle(
-                  fontFamily: "Source Serif Pro",
-                  color: httpWarn ? Colors.purple[300] : Colors.blue))),
+              style: currentTextStyle.link(httpWarn))),
       onLongPress: () {
         Clipboard.setData(ClipboardData(text: link)).then((result) {
           final snackBar = SnackBar(content: Text('Copied to Clipboard'));
@@ -294,11 +354,7 @@ Widget link(title, link, onLink, context) {
 }
 
 Widget listItem(actualText) {
-  return SelectableText(" ＊ " + actualText,
-      style: TextStyle(
-          fontWeight: FontWeight.w400,
-          fontFamily: "Source Serif Pro",
-          height: 1.7));
+  return SelectableText(" ＊ " + actualText, style: currentTextStyle.listItem);
 }
 
 Widget blockQuote(actualText) {
@@ -307,9 +363,6 @@ Widget blockQuote(actualText) {
           border: Border(left: BorderSide(color: Colors.orange, width: 3))),
       child: Padding(
           padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
-          child: SelectableText(actualText,
-              style: TextStyle(
-                  fontWeight: FontWeight.w400,
-                  fontFamily: "Source Serif Pro",
-                  height: 1.7))));
+          child:
+              SelectableText(actualText, style: currentTextStyle.blockquote)));
 }
