@@ -20,24 +20,30 @@ class AddressBar extends StatelessWidget {
                 child: Container(
                     padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
                     margin: EdgeInsets.fromLTRB(0, 5, 0, 5),
-                    child: TextField(
-                        keyboardType: TextInputType.url,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                        ),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                        ),
-                        controller: controller,
-                        onTap: () => controller.selection = TextSelection(
-                              baseOffset: 0,
-                              extentOffset: controller.value.text.length,
-                            ),
-                        onSubmitted: (value) {
-                          onLocation(Uri.parse(value));
-                        })))),
+                    child: FocusScope(
+                        child: Focus(
+                            onFocusChange: (entered) {
+                              if (entered) {
+                                controller.selection = TextSelection(
+                                  baseOffset: 0,
+                                  extentOffset: controller.value.text.length,
+                                );
+                              }
+                            },
+                            child: TextField(
+                                keyboardType: TextInputType.url,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                                controller: controller,
+                                onSubmitted: (value) {
+                                  onLocation(Uri.parse(value));
+                                })))))),
       ]),
     );
   }
