@@ -7,17 +7,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'dart:developer';
+
+class HistoryEntry {
+  final Uri location;
+  final ContentData contentData;
+  double scrollPosition;
+
+  HistoryEntry(this.location, this.contentData, this.scrollPosition);
+
+  @override
+  String toString() {
+    return "$location $scrollPosition";
+  }
+}
+
+
 class BrowserTab extends StatefulWidget {
   final initialLocation;
   final onNewTab;
   final addRecent;
 
-  BrowserTab(this.initialLocation, this.onNewTab, this.addRecent, {Key key})
-      : super(key: key);
+  BrowserTab(this.initialLocation, this.onNewTab, this.addRecent, {Key key}) : super(key: key);
 
   @override
-  BrowserTabState createState() =>
-      BrowserTabState(initialLocation, onNewTab, addRecent);
+  BrowserTabState createState() => BrowserTabState(initialLocation, onNewTab, addRecent);
 }
 
 class BrowserTabState extends State<BrowserTab> {
@@ -26,10 +40,11 @@ class BrowserTabState extends State<BrowserTab> {
   final addRecent;
   TextEditingController _controller;
   ContentData contentData;
-  List<Uri> _history = [];
+  List<HistoryEntry> _history = [];
   int _historyIndex = -1;
   bool _loading = false;
   Uri uri;
+  ScrollController _scrollController = ScrollController();
 
   BrowserTabState(this.initialLocation, this.onNewTab, this.addRecent);
 
@@ -60,7 +75,7 @@ class BrowserTabState extends State<BrowserTab> {
     });
   }
 
-  void _handleContent(Uri location, ContentData newContentData) async {
+  void _handleContent(Uri location, ContentData newContentData, {double position = 0}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> recent = (prefs.getStringList('recent') ?? []);
     recent.remove(location.toString());
@@ -70,23 +85,34 @@ class BrowserTabState extends State<BrowserTab> {
     }
 
     prefs.setStringList('recent', recent);
+    var oldPosition = _scrollController.position.pixels;
 
     setState(() {
       _controller.text = location.toString();
 
-      if (_history.isEmpty || _history[_historyIndex] != location) {
+      if (_history.isEmpty || _history[_historyIndex].location != location) {
+        if (_historyIndex != -1) {
+          _history[_historyIndex].scrollPosition = oldPosition;
+        }
         _history = _history.sublist(0, _historyIndex + 1);
-        _history.add(location);
+        _history.add(HistoryEntry(location, newContentData, 0));
+
         _historyIndex = _history.length - 1;
       }
       contentData = newContentData;
+      _scrollController = ScrollController( initialScrollOffset: position);
     });
   }
 
   Future<bool> _handleBack() async {
     if (_historyIndex > 0) {
       _historyIndex -= 1;
-      onLocation(_history[_historyIndex]);
+      var entry = _history[_historyIndex];
+      _handleContent(entry.location, entry.contentData, position : entry.scrollPosition);
+      setState(() {
+        addRecent(entry.location.toString());
+        uri = entry.location;
+      });
       return false;
     } else {
       return true;
@@ -96,7 +122,12 @@ class BrowserTabState extends State<BrowserTab> {
   Future<bool> _handleForward() async {
     if (_historyIndex < (_history.length - 1)) {
       _historyIndex += 1;
-      onLocation(_history[_historyIndex]);
+      var entry = _history[_historyIndex];
+      _handleContent(entry.location, entry.contentData, position : entry.scrollPosition);
+      setState(() {
+        addRecent(entry.location.toString());
+        uri = entry.location;
+      });
       return false;
     } else {
       return true;
@@ -105,12 +136,7 @@ class BrowserTabState extends State<BrowserTab> {
 
   onSearch(String encodedSearch) {
     if (encodedSearch.isNotEmpty) {
-      var u = Uri(
-          scheme: uri.scheme,
-          host: uri.host,
-          port: uri.port,
-          path: uri.path,
-          query: encodedSearch);
+      var u = Uri(scheme: uri.scheme, host: uri.host, port: uri.port, path: uri.path, query: encodedSearch);
       onLocation(u);
     }
   }
@@ -161,10 +187,9 @@ class BrowserTabState extends State<BrowserTab> {
     return WillPopScope(
         onWillPop: _handleBack,
         child: Scaffold(
-            backgroundColor:
-                (contentData != null && contentData.mode == "error")
-                    ? Colors.deepOrange
-                    : Theme.of(context).canvasColor,
+            backgroundColor: (contentData != null && contentData.mode == "error")
+                ? Colors.deepOrange
+                : Theme.of(context).canvasColor,
             bottomNavigationBar: bottomBar,
             appBar: AppBar(
                 backgroundColor: Colors.orange,
@@ -181,14 +206,11 @@ class BrowserTabState extends State<BrowserTab> {
                         child: DecoratedBox(
                             decoration: BoxDecoration(
                                 color: Colors.transparent,
-                                border:
-                                    Border.all(width: 2, color: Colors.black),
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(3))),
+                                border: Border.all(width: 2, color: Colors.black),
+                                borderRadius: BorderRadius.all(Radius.circular(3))),
                             child: Align(
                                 alignment: Alignment.center,
-                                child: Text(
-                                    "${appKey.currentState.tabs.length}",
+                                child: Text("${appKey.currentState.tabs.length}",
                                     style: TextStyle(
                                         color: Colors.black,
                                         fontWeight: FontWeight.bold,
@@ -200,12 +222,11 @@ class BrowserTabState extends State<BrowserTab> {
                       disabledColor: Colors.black12,
                       color: Colors.black,
                       icon: Icon(Icons.chevron_right),
-                      onPressed: (_historyIndex != (_history.length - 1))
-                          ? _handleForward
-                          : null)
+                      onPressed: (_historyIndex != (_history.length - 1)) ? _handleForward : null)
                 ]),
             body: SingleChildScrollView(
                 key: ObjectKey(contentData),
+                controller: _scrollController,
                 child: Padding(
                     padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
                     child: Content(
