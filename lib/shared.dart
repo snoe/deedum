@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:qr/qr.dart';
+import 'dart:math' as math;
 
 class ContentData {
   final Uint8List _bytes;
@@ -15,6 +16,11 @@ class ContentData {
   Uint8List get bytes => _bytes;
   String get mode => _mode;
   String get content => _content;
+  @override
+  String toString() {
+    var preview = content == null ? "" : content;
+    return "ContentData<$mode, ${preview.substring(0, math.min(10, preview.length))}>";
+  }
 }
 
 double get padding => 25.0;

@@ -83,6 +83,8 @@ class _ContentState extends State<Content> {
     } else if (contentData.mode == "plain") {
       var groups = buildGroups(context, alwaysPre: true);
       widget = PreText(contentData.content, groups[0]["maxLine"]);
+    } else if (contentData.mode == "opening") {
+      widget = ExtendedText(contentData.content);
     } else {
       widget = ExtendedText("Unknown mode ${contentData.mode}");
     }
