@@ -57,7 +57,7 @@ class Tabs extends StatelessWidget {
                   var bookmarked =
                       appKey.currentState.bookmarks.contains(uriString);
                   if (uriString != null && tabState.contentData != null) {
-                    return GemItem(
+                    var tab = GemItem(
                       tabState.uri.host,
                       title: ExtendedText(
                         tabState.contentData.content.substring(0,
@@ -73,6 +73,14 @@ class Tabs extends StatelessWidget {
                       onSelect: () => onSelectTab(index + 1),
                       onBookmark: () => onBookmark(uriString),
                       onDelete: () => onDeleteTab(index),
+                    );
+                    return Dismissible(
+                      background: Container(color: Colors.red),
+                      key: UniqueKey(),
+                      onDismissed: (direction) {
+                        onDeleteTab(index);
+                      },
+                      child: tab,
                     );
                   } else {
                     return Text("No tab?");
