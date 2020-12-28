@@ -186,7 +186,7 @@ class BrowserTabState extends State<BrowserTab> {
     if (newBytes == null) {
       return;
     }
-    _handleLog("debug", "Received ${newBytes} bytes $location", requestID);
+    _handleLog("debug", "Received ${newBytes.length} bytes $location", requestID);
     if (requestID != _requestID) {
       return;
     }
