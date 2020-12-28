@@ -183,7 +183,10 @@ class BrowserTabState extends State<BrowserTab> {
   }
 
   void _handleBytes(Uri location, Uint8List newBytes, int requestID) async {
-    _handleLog("debug", "Received ${newBytes.length} bytes $location", requestID);
+    if (newBytes == null) {
+      return;
+    }
+    _handleLog("debug", "Received ${newBytes} bytes $location", requestID);
     if (requestID != _requestID) {
       return;
     }
