@@ -225,7 +225,7 @@ class _PreTextState extends State<PreText> {
                   selectionEnabled: true),
               width: size));
     } else {
-     fit = FittedBox(
+      fit = FittedBox(
           child: ExtendedText(actualText,
               selectionEnabled: true,
               style: TextStyle(
@@ -241,7 +241,9 @@ class _PreTextState extends State<PreText> {
                 ] +
                 [-1, 32, 40, 64, 80, 120]
                     .map((i) => CheckedPopupMenuItem(
-                        checked: _scale == i, value: i, child: Text("${i == -1 ? "Scroll" : i}")))
+                        checked: _scale == i,
+                        value: i,
+                        child: Text("${i == -1 ? "Scroll" : i}")))
                     .toList(),
             context: context,
             position: RelativeRect.fromLTRB(20, 100, 400, 200),
@@ -296,11 +298,17 @@ Widget link(title, link, onLink, context) {
 }
 
 Widget listItem(actualText) {
-  return SelectableText(" ＊ " + actualText,
-      style: TextStyle(
-          fontWeight: FontWeight.w400,
-          fontFamily: "Source Serif Pro",
-          height: 1.7));
+  return Row(crossAxisAlignment: CrossAxisAlignment.baseline, children: [
+    Text("•"),
+    Flexible(
+        child: Padding(
+            padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+            child: SelectableText(actualText,
+                style: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    fontFamily: "Source Serif Pro",
+                    height: 1.7))))
+  ]);
 }
 
 Widget blockQuote(actualText) {
