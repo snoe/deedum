@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Generated with `openssl req -new -x509 -keyout test-key.pem -out test-cert.pem`
+
+FILE=${1:-"server-files/test.gmi"}
+echo "Serving: $FILE"
+echo "Pass phrase is: test"
+ncat -C -k -l 1965 --ssl --ssl-cert server-files/test-cert.pem --ssl-key server-files/test-key.pem -c "cat $FILE"

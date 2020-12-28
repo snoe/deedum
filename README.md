@@ -14,3 +14,17 @@ flutter install
 ```
 
 I haven't been able to get ios building yet because of xcode / macos version restrictions.
+
+### Test server
+
+It is useful to have a server to test against.
+You can run `./server server-files/test.gmi` with pass phrase `test` to spinup a single file `ncat` server (make sure you have it installed).
+
+## Release
+
+You need the signing secrets in the environment (`KEY_JKS`, `KEY_PASSWORD`, `ALIAS_PASSWORD`):
+
+```
+source Envfile
+./release
+```
