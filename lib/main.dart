@@ -146,7 +146,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
         var key = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
         tabs.add({
           "key": key,
-          "widget": BrowserTab(Uri.parse(initialLocation), onNewTab, addRecent,
+          "widget": BrowserTab(Uri.tryParse(initialLocation), onNewTab, addRecent,
               key: key)
         });
         tabIndex = tabs.length;

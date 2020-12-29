@@ -65,7 +65,11 @@ class BrowserTabState extends State<BrowserTab> {
 
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: initialLocation?.toString());
+    var initLoc;
+    if (initialLocation != null && initialLocation.scheme == "gemini") {
+      initLoc = initialLocation.toString().replaceFirst(RegExp(r"^gemini://"), "");
+    }
+    _controller = TextEditingController(text: initLoc);
     _focusNode = FocusNode();
 
     _focusNode.addListener(() {
@@ -125,7 +129,7 @@ class BrowserTabState extends State<BrowserTab> {
               content:
                   "REDIRECT LOOP\n--------------\n" + _redirects.join("\n"));
         } else {
-          var newLocation = Uri.parse(parsedData.content);
+          var newLocation = Uri.tryParse(parsedData.content);
           if (!newLocation.hasScheme) {
             newLocation = location.resolve(parsedData.content);
           }
@@ -147,7 +151,11 @@ class BrowserTabState extends State<BrowserTab> {
     parsedData = null;
     bytes = List<Uint8List>();
 
-    _controller.text = location.toString();
+    var addressLoc;
+    if (location != null && location.scheme == "gemini") {
+      addressLoc = location.toString().replaceFirst(RegExp(r"^gemini://"), "");
+    }
+    _controller.text = addressLoc;
     _focusNode.unfocus();
     uri = location;
     if (!redirect) {
@@ -268,7 +276,7 @@ class BrowserTabState extends State<BrowserTab> {
   }
 
   onLink(String link) {
-    var location = Uri.parse(link);
+    var location = Uri.tryParse(link);
     if (!location.hasScheme) {
       location = uri.resolve(link);
     }
