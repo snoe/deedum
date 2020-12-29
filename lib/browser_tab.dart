@@ -32,10 +32,12 @@ class BrowserTab extends StatefulWidget {
   final onNewTab;
   final addRecent;
 
-  BrowserTab(this.initialLocation, this.onNewTab, this.addRecent, {Key key}) : super(key: key);
+  BrowserTab(this.initialLocation, this.onNewTab, this.addRecent, {Key key})
+      : super(key: key);
 
   @override
-  BrowserTabState createState() => BrowserTabState(initialLocation, onNewTab, addRecent);
+  BrowserTabState createState() =>
+      BrowserTabState(initialLocation, onNewTab, addRecent);
 }
 
 class BrowserTabState extends State<BrowserTab> {
@@ -43,6 +45,7 @@ class BrowserTabState extends State<BrowserTab> {
   final onNewTab;
   final addRecent;
   TextEditingController _controller;
+  FocusNode _focusNode;
   List<Uint8List> bytes;
   ContentData contentData;
   ContentData parsedData;
@@ -56,12 +59,26 @@ class BrowserTabState extends State<BrowserTab> {
   List _redirects = [];
   List _logs = [];
   bool showLogs = false;
+  bool _showActions = true;
 
   BrowserTabState(this.initialLocation, this.onNewTab, this.addRecent);
 
   void initState() {
     super.initState();
     _controller = TextEditingController(text: initialLocation?.toString());
+    _focusNode = FocusNode();
+
+    _focusNode.addListener(() {
+      setState(() {
+        _showActions = !_focusNode.hasFocus;
+      });
+      if (_focusNode.hasFocus) {
+        _controller.selection = TextSelection(
+            affinity: TextAffinity.upstream,
+            baseOffset: _controller.value.text.length,
+            extentOffset: 0);
+      }
+    });
     init();
   }
 
@@ -71,32 +88,42 @@ class BrowserTabState extends State<BrowserTab> {
 
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
-  void _handleDone(Uri location, bool timeout, bool badScheme, int requestID) async {
+  void _handleDone(
+      Uri location, bool timeout, bool badScheme, int requestID) async {
     if (requestID != _requestID) {
       return;
     }
     setState(() {
       if (parsedData == null) {
         var allLogs = List.from(_logs);
-        allLogs.removeWhere((element) => (element[0] != "error" || element[2] != requestID));
+        allLogs.removeWhere(
+            (element) => (element[0] != "error" || element[2] != requestID));
         var logStrings = allLogs.map((log) => log[3]);
         if (badScheme) {
-          contentData = ContentData(mode: "opening", content: "Launching app for $location");
+          contentData = ContentData(
+              mode: "opening", content: "Launching app for $location");
         } else if (logStrings.isNotEmpty) {
-          contentData = ContentData(mode: "error", content: logStrings.join("\n"));
+          contentData =
+              ContentData(mode: "error", content: logStrings.join("\n"));
         } else if (timeout) {
-          contentData = ContentData(mode: "error", content: "No response. timeout");
+          contentData =
+              ContentData(mode: "error", content: "No response. timeout");
         } else {
-          contentData = ContentData(mode: "error", content: "No response. connection closed");
+          contentData = ContentData(
+              mode: "error", content: "No response. connection closed");
         }
       } else if (parsedData.mode == "error") {
-        contentData = parsedData;        
+        contentData = parsedData;
       } else if (parsedData.mode == 'redirect') {
         if (_redirects.contains(parsedData.content) || _redirects.length >= 5) {
-          contentData = ContentData(mode: "error", content: "REDIRECT LOOP\n--------------\n" + _redirects.join("\n"));
+          contentData = ContentData(
+              mode: "error",
+              content:
+                  "REDIRECT LOOP\n--------------\n" + _redirects.join("\n"));
         } else {
           var newLocation = Uri.parse(parsedData.content);
           if (!newLocation.hasScheme) {
@@ -121,6 +148,7 @@ class BrowserTabState extends State<BrowserTab> {
     bytes = List<Uint8List>();
 
     _controller.text = location.toString();
+    _focusNode.unfocus();
     uri = location;
     if (!redirect) {
       _redirects = [];
@@ -147,14 +175,20 @@ class BrowserTabState extends State<BrowserTab> {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-
         var orderedLogs = _logs.reversed.toList();
         DateFormat formatter = DateFormat('HH:mm:ss.SSSS');
 
         return AlertDialog(
             title: Text('Logs'),
             contentPadding: EdgeInsets.zero,
-            actions:[IconButton(icon: Icon(Icons.delete), onPressed: () { _clearLogs(); Navigator.of(context).pop();})],
+            actions: [
+              IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () {
+                    _clearLogs();
+                    Navigator.of(context).pop();
+                  })
+            ],
             content: Container(
               width: double.maxFinite,
               child: ListView.builder(
@@ -174,7 +208,10 @@ class BrowserTabState extends State<BrowserTab> {
                   } else {
                     levelColor = Colors.white;
                   }
-                  return ListTile(title: Text("[$formatted] #$requestID"), subtitle: Text(message), tileColor: levelColor);
+                  return ListTile(
+                      title: Text("[$formatted] #$requestID"),
+                      subtitle: Text(message),
+                      tileColor: levelColor);
                 },
               ),
             ));
@@ -186,7 +223,8 @@ class BrowserTabState extends State<BrowserTab> {
     if (newBytes == null) {
       return;
     }
-    _handleLog("debug", "Received ${newBytes.length} bytes $location", requestID);
+    _handleLog(
+        "debug", "Received ${newBytes.length} bytes $location", requestID);
     if (requestID != _requestID) {
       return;
     }
@@ -219,7 +257,12 @@ class BrowserTabState extends State<BrowserTab> {
 
   onSearch(String encodedSearch) {
     if (encodedSearch.isNotEmpty) {
-      var u = Uri(scheme: uri.scheme, host: uri.host, port: uri.port, path: uri.path, query: encodedSearch);
+      var u = Uri(
+          scheme: uri.scheme,
+          host: uri.host,
+          port: uri.port,
+          path: uri.path,
+          query: encodedSearch);
       onLocation(u);
     }
   }
@@ -243,7 +286,8 @@ class BrowserTabState extends State<BrowserTab> {
 
       resetResponse(entry.location);
       if (entry.bytes != null) {
-        _scrollController = ScrollController(initialScrollOffset: entry.scrollPosition);
+        _scrollController =
+            ScrollController(initialScrollOffset: entry.scrollPosition);
         contentData = parse(entry.bytes);
       } else {
         onLocation(entry.location);
@@ -306,62 +350,75 @@ class BrowserTabState extends State<BrowserTab> {
           ));
     }
 
-    var contentWidget = SingleChildScrollView(
-        key: ObjectKey(contentData),
-        controller: _scrollController,
-        child: Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
-            child: Content(
-              contentData: contentData,
-              onLink: onLink,
-              onSearch: onSearch,
-            )));
+    var contentWidget = GestureDetector(
+        onTapDown: (_) {
+          _focusNode.unfocus();
+        },
+        child: SingleChildScrollView(
+            key: ObjectKey(contentData),
+            controller: _scrollController,
+            child: Padding(
+                padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
+                child: Content(
+                  contentData: contentData,
+                  onLink: onLink,
+                  onSearch: onSearch,
+                ))));
+
+    var actions;
+    if (_showActions) {
+      actions = [
+        IconButton(
+          icon: Icon(Icons.code),
+          onPressed: () => _showLogs(),
+          color: Colors.black,
+        ),
+        IconButton(
+          icon: SizedBox(
+              width: 23,
+              height: 23,
+              child: DecoratedBox(
+                  decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      border: Border.all(width: 2, color: Colors.black),
+                      borderRadius: BorderRadius.all(Radius.circular(3))),
+                  child: Align(
+                      alignment: Alignment.center,
+                      child: Text("${appKey.currentState.tabs.length}",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "DejaVu Sans Mono",
+                              fontSize: 13))))),
+          onPressed: onNewTab,
+        ),
+        IconButton(
+            disabledColor: Colors.black12,
+            color: Colors.black,
+            icon: Icon(Icons.chevron_right),
+            onPressed: (_historyIndex != (_history.length - 1))
+                ? _handleForward
+                : null)
+      ];
+    }
 
     return WillPopScope(
         onWillPop: _handleBack,
         child: Scaffold(
-            backgroundColor: (contentData != null && contentData.mode == "error")
-                ? Colors.deepOrange
-                : Theme.of(context).canvasColor,
+            backgroundColor:
+                (contentData != null && contentData.mode == "error")
+                    ? Colors.deepOrange
+                    : Theme.of(context).canvasColor,
             bottomNavigationBar: bottomBar,
             appBar: AppBar(
                 backgroundColor: Colors.orange,
                 title: AddressBar(
+                  focusNode: _focusNode,
                   controller: _controller,
                   onLocation: onLocation,
                   loading: _loading,
                 ),
-                actions: [
-                  IconButton(
-                    icon: Icon(Icons.code),
-                    onPressed: () => _showLogs(),
-                    color: Colors.black,
-                  ),
-                  IconButton(
-                    icon: SizedBox(
-                        width: 23,
-                        height: 23,
-                        child: DecoratedBox(
-                            decoration: BoxDecoration(
-                                color: Colors.transparent,
-                                border: Border.all(width: 2, color: Colors.black),
-                                borderRadius: BorderRadius.all(Radius.circular(3))),
-                            child: Align(
-                                alignment: Alignment.center,
-                                child: Text("${appKey.currentState.tabs.length}",
-                                    style: TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: "DejaVu Sans Mono",
-                                        fontSize: 13))))),
-                    onPressed: onNewTab,
-                  ),
-                  IconButton(
-                      disabledColor: Colors.black12,
-                      color: Colors.black,
-                      icon: Icon(Icons.chevron_right),
-                      onPressed: (_historyIndex != (_history.length - 1)) ? _handleForward : null)
-                ]),
+                actions: actions),
             body: contentWidget));
   }
 }

@@ -1,11 +1,15 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 class AddressBar extends StatelessWidget {
-  AddressBar({this.controller, this.loading, this.onLocation});
+  AddressBar({this.controller, this.focusNode, this.loading, this.onLocation});
   final TextEditingController controller;
   final loading;
   final onLocation;
+  final focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -20,30 +24,21 @@ class AddressBar extends StatelessWidget {
                 child: Container(
                     padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
                     margin: EdgeInsets.fromLTRB(0, 5, 0, 5),
-                    child: FocusScope(
-                        child: Focus(
-                            onFocusChange: (entered) {
-                              if (entered) {
-                                controller.selection = TextSelection(
-                                  baseOffset: 0,
-                                  extentOffset: controller.value.text.length,
-                                );
-                              }
-                            },
-                            child: TextField(
-                                keyboardType: TextInputType.url,
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black,
-                                ),
-                                controller: controller,
-                                onSubmitted: (value) {
-                                  onLocation(Uri.parse(value));
-                                })))))),
+                    child: TextField(
+                        keyboardType: TextInputType.url,
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                        focusNode: focusNode,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                        controller: controller,
+                        onSubmitted: (value) {
+                          onLocation(Uri.parse(value));
+                        })))),
       ]),
     );
   }
