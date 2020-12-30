@@ -27,7 +27,7 @@ class History extends StatelessWidget {
 
     if (recents.isNotEmpty) {
       children = recents.reversed.map((recentLocation) {
-        var recentUri = Uri.parse(recentLocation);
+        var recentUri = Uri.tryParse(recentLocation);
 
         var bookmarked = appKey.currentState.bookmarks.contains(recentLocation);
         return GemItem(

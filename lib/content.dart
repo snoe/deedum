@@ -277,7 +277,7 @@ Widget heading(actualText, fontSize) {
 }
 
 Widget link(title, link, onLink, context) {
-  Uri uri = Uri.parse(link);
+  Uri uri = Uri.tryParse(link);
   bool httpWarn = uri.scheme != "gemini" && uri.hasScheme;
   return GestureDetector(
       child: Padding(

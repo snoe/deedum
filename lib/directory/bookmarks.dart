@@ -26,7 +26,7 @@ class Bookmarks extends StatelessWidget {
 
     if (bookmarks.isNotEmpty) {
       children = bookmarks.map((bookmarkLocation) {
-        var bookmarkUri = Uri.parse(bookmarkLocation);
+        var bookmarkUri = Uri.tryParse(bookmarkLocation);
         return GemItem(
           bookmarkUri.host,
           title: Text(bookmarkUri.path == "" ? "/" : bookmarkUri.path),

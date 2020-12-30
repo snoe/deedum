@@ -34,11 +34,11 @@ class Settings extends StatelessWidget {
                     try {
                       s = removeGeminiScheme(s);
 
-                      var u = Uri.parse(s);
+                      var u = Uri.tryParse(s);
                       if (u.scheme.isNotEmpty) {
                         return "Please use a gemini uri";
                       }
-                      u = Uri.parse("gemini://" + s);
+                      u = Uri.tryParse("gemini://" + s);
                     } catch (_) {
                       return "Please enter a valid uri";
                     }

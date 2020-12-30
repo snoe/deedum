@@ -37,9 +37,9 @@ class AddressBar extends StatelessWidget {
                         ),
                         controller: controller,
                         onSubmitted: (value) {
-                          var newURL = Uri.parse(value);
+                          var newURL = Uri.tryParse(value);
                           if (!newURL.hasScheme) {
-                            newURL = Uri.parse("gemini://" + value);
+                            newURL = Uri.tryParse("gemini://" + value);
                           }
                           onLocation(newURL);
                         })))),
