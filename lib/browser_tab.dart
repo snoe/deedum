@@ -1,3 +1,5 @@
+import 'dart:developer';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:deedum/address_bar.dart';
@@ -9,10 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
-import 'dart:developer';
-
 import 'parser.dart';
-import 'dart:math' as math;
 
 class HistoryEntry {
   final Uri location;
@@ -67,7 +66,8 @@ class BrowserTabState extends State<BrowserTab> {
     super.initState();
     var initLoc;
     if (initialLocation != null && initialLocation.scheme == "gemini") {
-      initLoc = initialLocation.toString().replaceFirst(RegExp(r"^gemini://"), "");
+      initLoc =
+          initialLocation.toString().replaceFirst(RegExp(r"^gemini://"), "");
     }
     _controller = TextEditingController(text: initLoc);
     _focusNode = FocusNode();
@@ -190,12 +190,18 @@ class BrowserTabState extends State<BrowserTab> {
             title: Text('Logs'),
             contentPadding: EdgeInsets.zero,
             actions: [
-              IconButton(
-                  icon: Icon(Icons.delete),
+              FlatButton(
+                  child: Text('Clear'),
                   onPressed: () {
                     _clearLogs();
                     Navigator.of(context).pop();
-                  })
+                  }),
+              FlatButton(
+                child: Text('Close'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              )
             ],
             content: Container(
               width: double.maxFinite,
@@ -214,7 +220,7 @@ class BrowserTabState extends State<BrowserTab> {
                   } else if (level == "warn") {
                     levelColor = Colors.yellowAccent;
                   } else {
-                    levelColor = Colors.white;
+                    levelColor = Theme.of(context).dialogBackgroundColor;
                   }
                   return ListTile(
                       title: Text("[$formatted] #$requestID"),
