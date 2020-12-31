@@ -10,23 +10,29 @@ import 'package:flutter/services.dart';
 final baseFontSize = 14.0;
 
 class Content extends StatefulWidget {
-  Content({this.contentData, this.onLink, this.onSearch});
+  Content({this.contentData, this.onLink, this.onSearch, this.onNewTab});
 
   final ContentData contentData;
   final Function onLink;
   final Function onSearch;
+  final Function onNewTab;
 
   @override
   _ContentState createState() => _ContentState(
-      contentData: contentData, onLink: onLink, onSearch: onSearch);
+        contentData: contentData,
+        onLink: onLink,
+        onSearch: onSearch,
+        onNewTab: onNewTab,
+      );
 }
 
 class _ContentState extends State<Content> {
-  _ContentState({this.contentData, this.onLink, this.onSearch});
+  _ContentState({this.contentData, this.onLink, this.onSearch, this.onNewTab});
 
   final ContentData contentData;
   final Function onLink;
   final Function onSearch;
+  final Function onNewTab;
 
   var plainTextControls = false;
   bool _inputError = false;
@@ -149,7 +155,7 @@ class _ContentState extends State<Content> {
           } else if (type == "quote") {
             widgets.add(blockQuote(r["data"]));
           } else if (type == "link") {
-            widgets.add(link(r["data"], r['link'], onLink, context));
+            widgets.add(link(r["data"], r['link'], onLink, onNewTab, context));
           } else if (type == "list") {
             widgets.add(listItem(r["data"]));
           } else {
@@ -276,7 +282,56 @@ Widget heading(actualText, fontSize) {
               fontSize: fontSize)));
 }
 
-Widget link(title, link, onLink, context) {
+void linkLongPressMenu(title, link, onNewTab, oldContext) =>
+    showModalBottomSheet<void>(
+        context: oldContext,
+        builder: (BuildContext context) {
+          return Container(
+            constraints: new BoxConstraints(
+              minHeight: 50,
+              maxHeight: MediaQuery.of(context).size.height * 0.4,
+            ),
+            // color: Colors.amber,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                ListTile(title: Center(child: Text(link))),
+                ListTile(
+                  title: Center(child: Text("Copy link")),
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: link)).then((result) {
+                      final snackBar =
+                          SnackBar(content: Text('Copied to Clipboard'));
+                      Scaffold.of(oldContext).showSnackBar(snackBar);
+                      Navigator.pop(context);
+                    });
+                  },
+                ),
+                ListTile(
+                  title: Center(child: Text("Copy link text")),
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: title)).then((result) {
+                      final snackBar =
+                      SnackBar(content: Text('Copied to Clipboard'));
+                      Scaffold.of(oldContext).showSnackBar(snackBar);
+                      Navigator.pop(context);
+                    });
+                  },
+                ),
+                ListTile(
+                  title: Center(child: Text("Open link in new tab")),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onNewTab(initialLocation: link);
+                  },
+                ),
+              ],
+            ),
+          );
+        });
+
+Widget link(title, link, onLink, onNewTab, context) {
   Uri uri = Uri.parse(link);
   bool httpWarn = uri.scheme != "gemini" && uri.hasScheme;
   return GestureDetector(
@@ -286,12 +341,7 @@ Widget link(title, link, onLink, context) {
               style: TextStyle(
                   fontFamily: "Source Serif Pro",
                   color: httpWarn ? Colors.purple[300] : Colors.blue))),
-      onLongPress: () {
-        Clipboard.setData(ClipboardData(text: link)).then((result) {
-          final snackBar = SnackBar(content: Text('Copied to Clipboard'));
-          Scaffold.of(context).showSnackBar(snackBar);
-        });
-      },
+      onLongPress: () => linkLongPressMenu(title, link, onNewTab, context),
       onTap: () {
         onLink(link);
       });

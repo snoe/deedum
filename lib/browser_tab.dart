@@ -275,6 +275,14 @@ class BrowserTabState extends State<BrowserTab> {
     }
   }
 
+  onNewTabRelativeLink({String initialLocation, bool menuPage }){
+      var location = Uri.tryParse(initialLocation);
+      if (!location.hasScheme) {
+        location = uri.resolve(initialLocation);
+      }
+      onNewTab(initialLocation: location.toString(), menuPage: menuPage);
+  }
+
   onLink(String link) {
     var location = Uri.tryParse(link);
     if (!location.hasScheme) {
@@ -371,6 +379,7 @@ class BrowserTabState extends State<BrowserTab> {
                   contentData: contentData,
                   onLink: onLink,
                   onSearch: onSearch,
+                  onNewTab: onNewTabRelativeLink,
                 ))));
 
     var actions;
@@ -398,7 +407,7 @@ class BrowserTabState extends State<BrowserTab> {
                               fontWeight: FontWeight.bold,
                               fontFamily: "DejaVu Sans Mono",
                               fontSize: 13))))),
-          onPressed: onNewTab,
+          onPressed: () => onNewTab(menuPage: true),
         ),
         IconButton(
             disabledColor: Colors.black12,
