@@ -137,11 +137,18 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  onNewTab({initialLocation}) {
+  onNewTab({String initialLocation, bool menuPage}) {
     if (initialLocation == null) {
       initialLocation = settings["homepage"];
     }
-    if (tabIndex == 0) {
+    if (menuPage ?? false) {
+      //defaults to false if null
+      setState(() {
+        previousTabIndex = tabIndex;
+        tabIndex = 0;
+        print(tabs);
+      });
+    } else { //else when menuPage not set and want to open normal tab
       setState(() {
         var key = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
         tabs.add({
@@ -150,11 +157,6 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
               key: key)
         });
         tabIndex = tabs.length;
-      });
-    } else {
-      setState(() {
-        previousTabIndex = tabIndex;
-        tabIndex = 0;
       });
     }
   }
