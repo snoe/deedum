@@ -184,6 +184,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     super.build(context);
     return MaterialApp(
       title: 'deedum',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: "Source Serif Pro",
         primarySwatch: Colors.blue,
