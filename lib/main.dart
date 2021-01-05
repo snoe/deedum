@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:deedum/browser_tab.dart';
-import 'package:deedum/directory/directory.dart';
 import 'package:deedum/directory/bookmarks.dart';
+import 'package:deedum/directory/directory.dart';
 import 'package:deedum/directory/history.dart';
 import 'package:deedum/directory/settings.dart';
 import 'package:deedum/directory/tabs.dart';
@@ -148,12 +148,14 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
         tabIndex = 0;
         print(tabs);
       });
-    } else { //else when menuPage not set and want to open normal tab
+    } else {
+      //else when menuPage not set and want to open normal tab
       setState(() {
         var key = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
         tabs.add({
           "key": key,
-          "widget": BrowserTab(Uri.tryParse(initialLocation), onNewTab, addRecent,
+          "widget": BrowserTab(
+              Uri.tryParse(initialLocation), onNewTab, addRecent,
               key: key)
         });
         tabIndex = tabs.length;
@@ -184,7 +186,6 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     super.build(context);
     return MaterialApp(
       title: 'deedum',
-      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: "Source Serif Pro",
         primarySwatch: Colors.blue,
