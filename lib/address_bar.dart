@@ -1,4 +1,3 @@
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,6 +25,8 @@ class AddressBar extends StatelessWidget {
                     margin: EdgeInsets.fromLTRB(0, 5, 0, 5),
                     child: TextField(
                         keyboardType: TextInputType.url,
+                        autocorrect: false,
+                        textCapitalization: TextCapitalization.none,
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           isDense: true,
