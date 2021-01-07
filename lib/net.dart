@@ -4,6 +4,9 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:asn1lib/asn1lib.dart';
+import 'package:crypto/crypto.dart';
+import 'package:deedum/main.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,10 +14,6 @@ import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:x509/x509.dart' as x;
-import 'package:asn1lib/asn1lib.dart';
-import 'package:crypto/crypto.dart';
-
-import 'package:deedum/main.dart';
 
 Future<ContentData> homepageContent() async {
   var lines = [
@@ -58,8 +57,11 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
 
   final Database db = await database;
   var hostPort = "${uri.host}:${uri.port ?? 1965}";
-  var hashes = await db.rawQuery("select hash from hosts where name = ?", [hostPort]);
-  if (hashes != null && hashes.length == 1 && !listEquals(hashes[0]["hash"], tofuHash)) {
+  var hashes =
+      await db.rawQuery("select hash from hosts where name = ?", [hostPort]);
+  if (hashes != null &&
+      hashes.length == 1 &&
+      !listEquals(hashes[0]["hash"], tofuHash)) {
     var value = await showDialog(
         barrierDismissible: false, // user must tap button!
         context: materialKey.currentContext,
@@ -78,7 +80,8 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
                     height: length,
                     child: FittedBox(
                         fit: BoxFit.fill,
-                        child: SelectableText(qrEncode(tofuHash), style: TextStyle(fontFamily: "DejaVu Sans Mono")))),
+                        child: SelectableText(qrEncode(tofuHash),
+                            style: TextStyle(fontFamily: "DejaVu Sans Mono")))),
                 Text([
                   "subject: ${serverCert.subject}",
                   "issuer: ${serverCert.issuer}",
@@ -95,7 +98,8 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
                 },
               ),
               FlatButton(
-                child: Text('Uh oh, this is unexpected', style: TextStyle(color: Colors.red)),
+                child: Text('Uh oh, this is unexpected',
+                    style: TextStyle(color: Colors.red)),
                 onPressed: () {
                   Navigator.of(context).pop(false);
                 },
@@ -108,12 +112,17 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
       //handleContent( uri, ContentData( mode: "error", content: "Trust on first use, key mismatch\n--------------\n" + base64Encode(tofuHash)));
     }
   }
-  await db.rawInsert("insert or replace into hosts (name, hash, expires_at, created_at) values (?,?,?,date('now'))",
+  await db.rawInsert(
+      "insert or replace into hosts (name, hash, expires_at, created_at) values (?,?,?,date('now'))",
       [hostPort, tofuHash, serverCert.endValidity.toString()]);
 }
 
-void onURI(Uri uri, void Function(Uri, Uint8List, int) handleBytes, void Function(Uri, bool, bool, int) handleDone,
-    void Function(String, String, int) handleLog, int requestID) async {
+void onURI(
+    Uri uri,
+    void Function(Uri, Uint8List, int) handleBytes,
+    void Function(Uri, bool, bool, int) handleDone,
+    void Function(String, String, int) handleLog,
+    int requestID) async {
   bool timeout = false;
   bool opened = false;
   try {
@@ -140,20 +149,24 @@ void onURI(Uri uri, void Function(Uri, Uint8List, int) handleBytes, void Functio
 
 Future<RawSecureSocket> connect(Uri uri) async {
   var port = uri.hasPort ? uri.port : 1965;
-  return await RawSecureSocket.connect(uri.host, port, timeout: Duration(seconds: 5),
-      onBadCertificate: (X509Certificate cert) {
+  return await RawSecureSocket.connect(uri.host, port,
+      timeout: Duration(seconds: 10), onBadCertificate: (X509Certificate cert) {
     return true;
   });
 }
 
-Future<bool> fetch(Uri uri, RawSecureSocket socket, void Function(Uri, Uint8List, int) handleBytes,
-    void Function(String, String, int) handleLog, int requestID) async {
+Future<bool> fetch(
+    Uri uri,
+    RawSecureSocket socket,
+    void Function(Uri, Uint8List, int) handleBytes,
+    void Function(String, String, int) handleLog,
+    int requestID) async {
   var timeout = false;
   var writeBuffer = Utf8Encoder().convert(uri.toString() + "\r\n");
 
   var writeOffset = socket.write(writeBuffer);
 
-  var x = socket.timeout(Duration(milliseconds: 1000), onTimeout: (x) {
+  var x = socket.timeout(Duration(seconds: 10), onTimeout: (x) {
     handleLog("info", "Timeout $uri", requestID);
     timeout = true;
     x.close();
