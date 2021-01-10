@@ -7,6 +7,7 @@ CODE=$(perl -nle 'print $1 if /^version: .*\+(.*)$/' pubspec.yaml)
 CODE=$(( CODE + 1 ))
 VERSION=$(date -u +"%Y.%m%d.%H%M")
 gsed -i "s/^version: .*/version: $VERSION+$CODE/" pubspec.yaml
+flutter --version > flutter.version
 git add pubspec.yaml
 git commit -m "Release new version"
 git push
