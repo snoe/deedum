@@ -58,7 +58,7 @@ class Tabs extends StatelessWidget {
                   var bookmarked =
                       appKey.currentState.bookmarks.contains(uriString);
                   var feedActive = appKey.currentState.feeds.any((element) => element.uri.toString() == uriString);
-                  var host = tabState.uri.host;
+                  var host = tabState?.uri?.host;
                   if (host == "") {
                     host = tabState.uri.toString();
                   }
