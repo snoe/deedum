@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:math' as math;
 
+import 'package:deedum/main.dart';
+import 'package:deedum/parser.dart';
 import 'package:deedum/shared.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
@@ -10,27 +13,31 @@ import 'package:flutter/services.dart';
 final baseFontSize = 14.0;
 
 class Content extends StatefulWidget {
-  Content({this.contentData, this.onLink, this.onSearch, this.onNewTab});
 
+  Content({this.currentUri, this.contentData, this.onLocation, this.onSearch, this.onNewTab});
+
+  final Uri currentUri;
   final ContentData contentData;
-  final Function onLink;
+  final Function onLocation;
   final Function onSearch;
   final Function onNewTab;
 
   @override
   _ContentState createState() => _ContentState(
+        currentUri: currentUri,
         contentData: contentData,
-        onLink: onLink,
+        onLocation: onLocation,
         onSearch: onSearch,
         onNewTab: onNewTab,
       );
 }
 
 class _ContentState extends State<Content> {
-  _ContentState({this.contentData, this.onLink, this.onSearch, this.onNewTab});
+  _ContentState({this.currentUri, this.contentData, this.onLocation, this.onSearch, this.onNewTab});
 
+  final Uri currentUri;
   final ContentData contentData;
-  final Function onLink;
+  final Function onLocation;
   final Function onSearch;
   final Function onNewTab;
 
@@ -57,7 +64,7 @@ class _ContentState extends State<Content> {
     if (contentData == null) {
       widget = Text("");
     } else if (contentData.mode == "content") {
-      var groups = buildGroups(context);
+      var groups = analyze(contentData.content);
       widget = groupsToWidget(groups);
     } else if (contentData.mode == "search") {
       widget = Column(
@@ -87,7 +94,7 @@ class _ContentState extends State<Content> {
         return ExtendedText("broken image ¯\\_(ツ)_/¯");
       });
     } else if (contentData.mode == "plain") {
-      var groups = buildGroups(context, alwaysPre: true);
+      var groups = analyze(contentData.content, alwaysPre: true);
       widget = PreText(contentData.content, groups[0]["maxLine"]);
     } else if (contentData.mode == "opening") {
       widget = ExtendedText(contentData.content);
@@ -95,50 +102,6 @@ class _ContentState extends State<Content> {
       widget = ExtendedText("Unknown mode ${contentData.mode}");
     }
     return widget;
-  }
-
-  buildGroups(context, {alwaysPre = false}) {
-    var lineInfo = LineSplitter.split(contentData.content)
-        .fold({"groups": [], "parse?": true}, (r, line) {
-      if (!alwaysPre && line.startsWith("```")) {
-        r["parse?"] = !r["parse?"];
-      } else if (alwaysPre || !r["parse?"]) {
-        addToGroup(r, "pre", line);
-      } else if (line.startsWith(">")) {
-        addToGroup(r, "quote", line.substring(1));
-      } else if (line.startsWith("#")) {
-        var m = RegExp(r'^(#*)\s*(.*)$').firstMatch(line);
-        var hashCount = math.min(m.group(1).length, 3);
-        r["groups"]
-            .add({"type": "header", "data": m.group(2), "size": hashCount});
-      } else if (line.startsWith("=>")) {
-        var m = RegExp(r'^=>\s*(\S+)\s*(.*)$').firstMatch(line);
-        if (m != null) {
-          var link = m.group(1);
-          var rest = m.group(2).trim();
-          var title = rest.isEmpty ? link : rest;
-          r["groups"].add({"type": "link", "link": link, "data": title});
-        }
-      } else if (line.startsWith("* ")) {
-        r["groups"].add({"type": "list", "data": line.substring(2)});
-      } else {
-        addToGroup(r, "line", line);
-      }
-      return r;
-    });
-    List groups = lineInfo["groups"];
-    return groups;
-  }
-
-  void addToGroup(r, String type, String line) {
-    if (r["groups"].isNotEmpty && r["groups"].last["type"] == type) {
-      var group = r["groups"].removeLast();
-      group["data"] += "\n" + line;
-      group["maxLine"] = math.max(line.length, (group["maxLine"] as int));
-      r["groups"].add(group);
-    } else {
-      r["groups"].add({"type": type, "data": line, "maxLine": line.length});
-    }
   }
 
   groupsToWidget(groups) {
@@ -155,7 +118,7 @@ class _ContentState extends State<Content> {
           } else if (type == "quote") {
             widgets.add(blockQuote(r["data"]));
           } else if (type == "link") {
-            widgets.add(link(r["data"], r['link'], onLink, onNewTab, context));
+            widgets.add(link(r["data"], r['link'], currentUri, onLocation, onNewTab, context));
           } else if (type == "list") {
             widgets.add(listItem(r["data"]));
           } else {
@@ -282,7 +245,7 @@ Widget heading(actualText, fontSize) {
               fontSize: fontSize)));
 }
 
-void linkLongPressMenu(title, link, onNewTab, oldContext) =>
+void linkLongPressMenu(title, uri, onNewTab, oldContext) =>
     showModalBottomSheet<void>(
         context: oldContext,
         builder: (BuildContext context) {
@@ -296,11 +259,11 @@ void linkLongPressMenu(title, link, onNewTab, oldContext) =>
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                ListTile(title: Center(child: Text(link))),
+                ListTile(title: Center(child: Text(uri.toString()))),
                 ListTile(
                   title: Center(child: Text("Copy link")),
                   onTap: () {
-                    Clipboard.setData(ClipboardData(text: link)).then((result) {
+                    Clipboard.setData(ClipboardData(text: uri.toString())).then((result) {
                       final snackBar =
                           SnackBar(content: Text('Copied to Clipboard'));
                       Scaffold.of(oldContext).showSnackBar(snackBar);
@@ -323,7 +286,7 @@ void linkLongPressMenu(title, link, onNewTab, oldContext) =>
                   title: Center(child: Text("Open link in new tab")),
                   onTap: () {
                     Navigator.pop(context);
-                    onNewTab(initialLocation: link);
+                    onNewTab(initialLocation: uri.toString());
                   },
                 ),
               ],
@@ -331,19 +294,20 @@ void linkLongPressMenu(title, link, onNewTab, oldContext) =>
           );
         });
 
-Widget link(title, link, onLink, onNewTab, context) {
-  Uri uri = Uri.tryParse(link);
-  bool httpWarn = uri.scheme != "gemini" && uri.hasScheme;
+Widget link(title, link, currentUri, onLocation, onNewTab, context) {
+  Uri uri = resolveLink(currentUri, link);
+  bool httpWarn = uri.scheme != "gemini";
+  bool visited = appKey.currentState.recents.contains(uri.toString());
   return GestureDetector(
       child: Padding(
           padding: EdgeInsets.fromLTRB(0, 7, 0, 7),
           child: Text((httpWarn ? "[${uri.scheme}] " : "") + title,
               style: TextStyle(
                   fontFamily: "Source Serif Pro",
-                  color: httpWarn ? Colors.purple[300] : Colors.blue))),
-      onLongPress: () => linkLongPressMenu(title, link, onNewTab, context),
+                  color: httpWarn ? (visited ? Colors.purple[100] : Colors.purple[300]) : (visited ? Colors.blueGrey : Colors.blue)))),
+      onLongPress: () => linkLongPressMenu(title, uri, onNewTab, context),
       onTap: () {
-        onLink(link);
+        onLocation(uri);
       });
 }
 

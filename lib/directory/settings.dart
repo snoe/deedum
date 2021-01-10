@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -34,11 +35,10 @@ class Settings extends StatelessWidget {
                     try {
                       s = removeGeminiScheme(s);
 
-                      var u = Uri.tryParse(s);
-                      if (u.scheme.isNotEmpty) {
-                        return "Please use a gemini uri";
+                      var u = toSchemeUri(s);
+                      if (u.scheme.isEmpty) {
+                        return "Please use a valid gemini uri";
                       }
-                      u = Uri.tryParse("gemini://" + s);
                     } catch (_) {
                       return "Please enter a valid uri";
                     }

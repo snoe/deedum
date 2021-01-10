@@ -14,12 +14,13 @@ class Tabs extends StatelessWidget {
   final onSelectTab;
   final onDeleteTab;
   final onBookmark;
+  final onFeed;
   final List tabs;
 
   final tabKey = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
 
   Tabs(this.tabs, this.onNewTab, this.onSelectTab, this.onDeleteTab,
-      this.onBookmark);
+      this.onBookmark, this.onFeed);
 
   String get title => [
         "████████╗ █████╗ ██████╗ ███████╗",
@@ -56,9 +57,14 @@ class Tabs extends StatelessWidget {
 
                   var bookmarked =
                       appKey.currentState.bookmarks.contains(uriString);
+                  var feedActive = appKey.currentState.feeds.any((element) => element.uri.toString() == uriString);
+                  var host = tabState.uri.host;
+                  if (host == "") {
+                    host = tabState.uri.toString();
+                  }
                   if (uriString != null && tabState.contentData != null) {
                     var tab = GemItem(
-                      tabState.uri.host,
+                      host,
                       title: ExtendedText(
                         tabState.contentData.content.substring(0,
                             math.min(tabState.contentData.content.length, 500)),
@@ -67,12 +73,15 @@ class Tabs extends StatelessWidget {
                       ),
                       selected: selected,
                       bookmarked: bookmarked,
+                      feedActive: feedActive,
                       showTitle: true,
                       showBookmarked: true,
                       showDelete: true,
+                      showFeed: true,
                       onSelect: () => onSelectTab(index + 1),
                       onBookmark: () => onBookmark(uriString),
                       onDelete: () => onDeleteTab(index),
+                      onFeed: () => onFeed(uriString),
                     );
                     return Dismissible(
                       background: Container(color: Colors.red),

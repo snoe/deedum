@@ -64,11 +64,7 @@ class BrowserTabState extends State<BrowserTab> {
 
   void initState() {
     super.initState();
-    var initLoc;
-    if (initialLocation != null && initialLocation.scheme == "gemini") {
-      initLoc =
-          initialLocation.toString().replaceFirst(RegExp(r"^gemini://"), "");
-    }
+    var initLoc = toSchemelessString(initialLocation);
     _controller = TextEditingController(text: initLoc);
     _focusNode = FocusNode();
 
@@ -151,10 +147,7 @@ class BrowserTabState extends State<BrowserTab> {
     parsedData = null;
     bytes = List<Uint8List>();
 
-    var addressLoc;
-    if (location != null && location.scheme == "gemini") {
-      addressLoc = location.toString().replaceFirst(RegExp(r"^gemini://"), "");
-    }
+    var addressLoc = toSchemelessString(location);
     _controller.text = addressLoc;
     _focusNode.unfocus();
     uri = location;
@@ -281,22 +274,6 @@ class BrowserTabState extends State<BrowserTab> {
     }
   }
 
-  onNewTabRelativeLink({String initialLocation, bool menuPage }){
-      var location = Uri.tryParse(initialLocation);
-      if (!location.hasScheme) {
-        location = uri.resolve(initialLocation);
-      }
-      onNewTab(initialLocation: location.toString(), menuPage: menuPage);
-  }
-
-  onLink(String link) {
-    var location = Uri.tryParse(link);
-    if (!location.hasScheme) {
-      location = uri.resolve(link);
-    }
-    onLocation(location);
-  }
-
   void _handleHistory(int dir) async {
     _requestID += 1;
 
@@ -382,10 +359,11 @@ class BrowserTabState extends State<BrowserTab> {
             child: Padding(
                 padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
                 child: Content(
+                  currentUri: uri,
                   contentData: contentData,
-                  onLink: onLink,
+                  onLocation: onLocation,
                   onSearch: onSearch,
-                  onNewTab: onNewTabRelativeLink,
+                  onNewTab: onNewTab,
                 ))));
 
     var actions;

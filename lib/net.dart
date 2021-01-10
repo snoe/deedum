@@ -58,8 +58,11 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
 
   final Database db = await database;
   var hostPort = "${uri.host}:${uri.port ?? 1965}";
-  var hashes = await db.rawQuery("select hash from hosts where name = ?", [hostPort]);
-  if (hashes != null && hashes.length == 1 && !listEquals(hashes[0]["hash"], tofuHash)) {
+  var hashes =
+      await db.rawQuery("select hash from hosts where name = ?", [hostPort]);
+  if (hashes != null &&
+      hashes.length == 1 &&
+      !listEquals(hashes[0]["hash"], tofuHash)) {
     var value = await showDialog(
         barrierDismissible: false, // user must tap button!
         context: materialKey.currentContext,
@@ -78,7 +81,8 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
                     height: length,
                     child: FittedBox(
                         fit: BoxFit.fill,
-                        child: SelectableText(qrEncode(tofuHash), style: TextStyle(fontFamily: "DejaVu Sans Mono")))),
+                        child: SelectableText(qrEncode(tofuHash),
+                            style: TextStyle(fontFamily: "DejaVu Sans Mono")))),
                 Text([
                   "subject: ${serverCert.subject}",
                   "issuer: ${serverCert.issuer}",
@@ -95,7 +99,8 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
                 },
               ),
               FlatButton(
-                child: Text('Uh oh, this is unexpected', style: TextStyle(color: Colors.red)),
+                child: Text('Uh oh, this is unexpected',
+                    style: TextStyle(color: Colors.red)),
                 onPressed: () {
                   Navigator.of(context).pop(false);
                 },
@@ -108,16 +113,38 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
       //handleContent( uri, ContentData( mode: "error", content: "Trust on first use, key mismatch\n--------------\n" + base64Encode(tofuHash)));
     }
   }
-  await db.rawInsert("insert or replace into hosts (name, hash, expires_at, created_at) values (?,?,?,date('now'))",
+  await db.rawInsert(
+      "insert or replace into hosts (name, hash, expires_at, created_at) values (?,?,?,date('now'))",
       [hostPort, tofuHash, serverCert.endValidity.toString()]);
 }
 
-void onURI(Uri uri, void Function(Uri, Uint8List, int) handleBytes, void Function(Uri, bool, bool, int) handleDone,
-    void Function(String, String, int) handleLog, int requestID) async {
+Future<void> onURI(
+    Uri uri,
+    void Function(Uri, Uint8List, int) handleBytes,
+    void Function(Uri, bool, bool, int) handleDone,
+    void Function(String, String, int) handleLog,
+    int requestID) async {
   bool timeout = false;
   bool opened = false;
   try {
-    if (uri.scheme != "gemini") {
+    if (uri.toString() == "about:feeds") {
+      var feeds = appKey.currentState.feeds;
+      var linksByDate = feeds.fold<List>([], (accum, feed) {
+        accum.addAll(feed.links);
+        return accum;
+      }).groupBy<String>((link) => link.entryDate);
+      var dates = linksByDate.keys.toList()..sort((a,b) => b.compareTo(a));
+      var entries = dates.map((date) {
+        var links = linksByDate[date];
+        var linksForDay = links
+            .map((link) =>
+                "=> ${link.entryUri} ${link.feedTitle}: ${link.entryTitle}")
+            .join("\n");
+        return "## $date\n$linksForDay";
+      }).join("\n\n");
+      var result = "20 text/gemini\r\n# Your feeds\n\n" + entries;
+      handleBytes(uri, Utf8Encoder().convert(result), requestID);
+    } else if (uri.scheme != "gemini") {
       if (await canLaunch(uri.toString())) {
         launch(uri.toString());
         opened = true;
@@ -140,14 +167,18 @@ void onURI(Uri uri, void Function(Uri, Uint8List, int) handleBytes, void Functio
 
 Future<RawSecureSocket> connect(Uri uri) async {
   var port = uri.hasPort ? uri.port : 1965;
-  return await RawSecureSocket.connect(uri.host, port, timeout: Duration(seconds: 5),
-      onBadCertificate: (X509Certificate cert) {
+  return await RawSecureSocket.connect(uri.host, port,
+      timeout: Duration(seconds: 5), onBadCertificate: (X509Certificate cert) {
     return true;
   });
 }
 
-Future<bool> fetch(Uri uri, RawSecureSocket socket, void Function(Uri, Uint8List, int) handleBytes,
-    void Function(String, String, int) handleLog, int requestID) async {
+Future<bool> fetch(
+    Uri uri,
+    RawSecureSocket socket,
+    void Function(Uri, Uint8List, int) handleBytes,
+    void Function(String, String, int) handleLog,
+    int requestID) async {
   var timeout = false;
   var writeBuffer = Utf8Encoder().convert(uri.toString() + "\r\n");
 
