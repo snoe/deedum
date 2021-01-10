@@ -4,6 +4,9 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:asn1lib/asn1lib.dart';
+import 'package:crypto/crypto.dart';
+import 'package:deedum/main.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,10 +14,6 @@ import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:x509/x509.dart' as x;
-import 'package:asn1lib/asn1lib.dart';
-import 'package:crypto/crypto.dart';
-
-import 'package:deedum/main.dart';
 
 Future<ContentData> homepageContent() async {
   var lines = [
@@ -168,7 +167,7 @@ Future<void> onURI(
 Future<RawSecureSocket> connect(Uri uri) async {
   var port = uri.hasPort ? uri.port : 1965;
   return await RawSecureSocket.connect(uri.host, port,
-      timeout: Duration(seconds: 5), onBadCertificate: (X509Certificate cert) {
+      timeout: Duration(seconds: 10), onBadCertificate: (X509Certificate cert) {
     return true;
   });
 }
@@ -184,7 +183,7 @@ Future<bool> fetch(
 
   var writeOffset = socket.write(writeBuffer);
 
-  var x = socket.timeout(Duration(milliseconds: 1000), onTimeout: (x) {
+  var x = socket.timeout(Duration(seconds: 10), onTimeout: (x) {
     handleLog("info", "Timeout $uri", requestID);
     timeout = true;
     x.close();
