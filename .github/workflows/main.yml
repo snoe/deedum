@@ -16,6 +16,7 @@ jobs:
       env:
         KEY_JKS: ${{ secrets.KEY_JKS }}
         KEY_PASSWORD: ${{ secrets.ALIAS_PASSWORD }}
+        KEY_ALIAS: key
         ALIAS_PASSWORD: ${{ secrets.KEY_PASSWORD }}
     - name: Create Release
       if: contains(github.ref, '20')

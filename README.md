@@ -22,7 +22,7 @@ You can run `./server server-files/test.gmi` with pass phrase `test` to spinup a
 
 ## Release
 
-You need the signing secrets in the environment (`KEY_JKS`, `KEY_PASSWORD`, `ALIAS_PASSWORD`):
+You need the signing secrets in the environment (`KEY_JKS`, `KEY_PASSWORD`, `KEY_ALIAS`, `ALIAS_PASSWORD`):
 
 ```
 source Envfile
