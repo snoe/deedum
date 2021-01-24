@@ -37,6 +37,7 @@ dependencies:
   asn1lib: ^0.6.5
   x509: ^0.1.2+1
   crypto: ^2.1.5
+  punycode: ^0.1.0
 
 dev_dependencies:
   flutter_test:
