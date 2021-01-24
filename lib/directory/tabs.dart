@@ -64,7 +64,7 @@ class Tabs extends StatelessWidget {
                   }
                   if (uriString != null && tabState.contentData != null) {
                     var tab = GemItem(
-                      host,
+                      Uri.decodeFull(host),
                       title: ExtendedText(
                         tabState.contentData.content.substring(0,
                             math.min(tabState.contentData.content.length, 500)),

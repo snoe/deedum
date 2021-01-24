@@ -28,8 +28,8 @@ class Bookmarks extends StatelessWidget {
       children = bookmarks.map((bookmarkLocation) {
         var bookmarkUri = Uri.tryParse(bookmarkLocation);
         return GemItem(
-          bookmarkUri.host,
-          title: Text(bookmarkUri.path == "" ? "/" : bookmarkUri.path),
+          Uri.decodeFull(bookmarkUri.host),
+          title: Text(bookmarkUri.path == "" ? "/" : Uri.decodeFull(bookmarkUri.path)),
           showBookmarked: false,
           showDelete: true,
           onSelect: () => onNewTab(initialLocation: bookmarkLocation),

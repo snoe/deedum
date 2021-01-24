@@ -31,8 +31,8 @@ class History extends StatelessWidget {
 
         var bookmarked = appKey.currentState.bookmarks.contains(recentLocation);
         return GemItem(
-          recentUri.host,
-          title: Text(recentUri.path == "" ? "/" : recentUri.path),
+          Uri.decodeFull(recentUri.host),
+          title: Text(recentUri.path == "" ? "/" : Uri.decodeFull(recentUri.path)),
           bookmarked: bookmarked,
           showBookmarked: true,
           showDelete: false,
