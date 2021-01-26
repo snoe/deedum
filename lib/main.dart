@@ -276,7 +276,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
 
   onNewTab({String initialLocation, bool menuPage}) {
     if (initialLocation == null) {
-      initialLocation = settings["homepage"];
+      initialLocation = settings["homepage"] ?? "gemini://gemini.circumlunar.space/";
     }
     if (menuPage ?? false) {
       //defaults to false if null

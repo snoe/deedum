@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:qr/qr.dart';
@@ -57,7 +58,7 @@ Uri toSchemeUri(String uriString) {
   var u = Uri.tryParse(uriString);
   if (!u.hasScheme) {
     u = Uri.tryParse("gemini://" + uriString);
-  } else if (u.scheme != "gemini") {
+  } else if (u.scheme != "gemini" && u.scheme != "about") {
     u = null;
   }
   return u;

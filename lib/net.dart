@@ -140,7 +140,9 @@ Future<void> onURI(
 
   bool timeout = false;
   bool opened = false;
-  uri = uri.replace(host: _punyEncodeUrl(Uri.decodeFull(uri.host)));
+  if (uri.host != "") {
+    uri = uri.replace(host: _punyEncodeUrl(Uri.decodeFull(uri.host)));
+  }
 
   try {
     if (uri.toString() == "about:feeds") {

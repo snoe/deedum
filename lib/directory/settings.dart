@@ -28,8 +28,8 @@ class Settings extends StatelessWidget {
               key: homepageKey,
               child: TextFormField(
                 keyboardType: TextInputType.url,
-                decoration: InputDecoration(labelText: "Homepage", prefixText: "gemini://"),
-                initialValue: settings["homepage"].substring(9),
+                decoration: InputDecoration(labelText: "Homepage"),
+                initialValue: removeGeminiScheme(settings["homepage"]),
                 validator: (s) {
                   if (s.trim().isNotEmpty) {
                     try {
@@ -61,7 +61,7 @@ class Settings extends StatelessWidget {
   }
 
   String prefixSchema(String s) {
-    if (!s.startsWith("gemini://")) {
+    if (!s.startsWith("gemini://") && !s.startsWith("about:")) {
       s = "gemini://" + s;
     }
     return s;
