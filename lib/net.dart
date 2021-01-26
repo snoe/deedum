@@ -14,6 +14,8 @@ import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:x509/x509.dart' as x;
+import 'package:punycode/punycode.dart';
+
 
 Future<ContentData> homepageContent() async {
   var lines = [
@@ -117,14 +119,29 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
       [hostPort, tofuHash, serverCert.endValidity.toString()]);
 }
 
+String _punyEncodeUrl(String url) {
+  // from https://github.com/Teifun2/nextcloud-cookbook-flutter
+  String pattern = r"(?:\.|^)([^.]*?[^\x00-\x7F][^.]*?)(?:\.|$)";
+  RegExp expression = new RegExp(pattern, caseSensitive: false);
+
+  while (expression.hasMatch(url)) {
+    String match = expression.firstMatch(url).group(1);
+    url = url.replaceFirst(match, "xn--" + punycodeEncode(match));
+  }
+
+  return url;
+}
 Future<void> onURI(
     Uri uri,
     void Function(Uri, Uint8List, int) handleBytes,
     void Function(Uri, bool, bool, int) handleDone,
     void Function(String, String, int) handleLog,
     int requestID) async {
+
   bool timeout = false;
   bool opened = false;
+  uri = uri.replace(host: _punyEncodeUrl(Uri.decodeFull(uri.host)));
+
   try {
     if (uri.toString() == "about:feeds") {
       var feeds = appKey.currentState.feeds;

@@ -49,6 +49,7 @@ String toSchemelessString(Uri uri) {
       uriString = uri.toString();
     }
   }
+  uriString =  Uri.decodeFull(uriString);
   return uriString;
 }
 

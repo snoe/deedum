@@ -240,6 +240,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.4.4"
+  punycode:
+    dependency: "direct main"
+    description:
+      name: punycode
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.0"
   qr:
     dependency: "direct main"
     description:
