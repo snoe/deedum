@@ -181,7 +181,9 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     feeds = (prefs.getStringList('feeds') ?? []);
     settings = {
       "homepage":
-          (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/")
+          (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/"),
+      "search":
+          (prefs.getString("homepage") ?? "gemini://gus.guru/search")
     };
 
     _sub = getLinksStream().listen((String link) {
