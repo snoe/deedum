@@ -1,8 +1,8 @@
-
-import 'package:deedum/shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:string_validator/string_validator.dart' as validator;
 
 class AddressBar extends StatelessWidget {
   AddressBar({this.controller, this.focusNode, this.loading, this.onLocation});
@@ -38,11 +38,32 @@ class AddressBar extends StatelessWidget {
                           color: Colors.black,
                         ),
                         controller: controller,
-                        onSubmitted: (value) {
-                          var newURL = Uri.tryParse(value);
-                          if (!newURL.hasScheme) {
-                            newURL = Uri.tryParse("gemini://" + value);
+                        onSubmitted: (value) async {
+                          Uri newURL;
+                          if (validator.isURL(value, {
+                                "protocols": ['gemini'],
+                                "require_tld": true,
+                                "require_protocol": false,
+                                "allow_underscores": true
+                              }) ||
+                              validator.isURL(value, {
+                                "protocols": ['gemini'],
+                                "require_tld": false,
+                                "require_protocol": true,
+                                "allow_underscores": true
+                              })) {
+                            newURL = Uri.tryParse(value);
+                            if (!newURL.hasScheme) {
+                              newURL = Uri.parse("gemini://" + value);
+                            }
+                          } else {
+                            String searchEngine =
+                                (await SharedPreferences.getInstance())
+                                    .getString("search");
+                            newURL = Uri.parse(searchEngine);
+                            newURL = newURL.replace(query: value);
                           }
+
                           onLocation(newURL);
                         })))),
       ]),
