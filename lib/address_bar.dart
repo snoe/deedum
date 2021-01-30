@@ -1,7 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:deedum/main.dart';
 import 'package:string_validator/string_validator.dart' as validator;
 
 class AddressBar extends StatelessWidget {
@@ -39,31 +41,25 @@ class AddressBar extends StatelessWidget {
                         ),
                         controller: controller,
                         onSubmitted: (value) async {
-                          Uri newURL;
-                          if (validator.isURL(value, {
+                          Uri newURL = Uri.tryParse(value);
+                          var validated = (
+                            newURL.scheme == "gemini" ||
+                            newURL.scheme == "about" ||
+                            validator.isURL(value, {
                                 "protocols": ['gemini'],
                                 "require_tld": true,
                                 "require_protocol": false,
                                 "allow_underscores": true
-                              }) ||
-                              validator.isURL(value, {
-                                "protocols": ['gemini'],
-                                "require_tld": false,
-                                "require_protocol": true,
-                                "allow_underscores": true
-                              })) {
-                            newURL = Uri.tryParse(value);
+                              }));
+                          if (validated) {
                             if (!newURL.hasScheme) {
                               newURL = Uri.parse("gemini://" + value);
                             }
                           } else {
-                            String searchEngine =
-                                (await SharedPreferences.getInstance())
-                                    .getString("search");
+                            String searchEngine = appKey.currentState.settings["search"];
                             newURL = Uri.parse(searchEngine);
                             newURL = newURL.replace(query: value);
                           }
-
                           onLocation(newURL);
                         })))),
       ]),
