@@ -181,7 +181,9 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     feeds = (prefs.getStringList('feeds') ?? []);
     settings = {
       "homepage":
-          (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/")
+          (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/"),
+      "search":
+          (prefs.getString("search") ?? "gemini://gus.guru/search")
     };
 
     _sub = getLinksStream().listen((String link) {
@@ -276,7 +278,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
 
   onNewTab({String initialLocation, bool menuPage}) {
     if (initialLocation == null) {
-      initialLocation = settings["homepage"] ?? "gemini://gemini.circumlunar.space/";
+      initialLocation = settings["homepage"];
     }
     if (menuPage ?? false) {
       //defaults to false if null

@@ -1,8 +1,10 @@
+import 'dart:developer';
 
-import 'package:deedum/shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:deedum/main.dart';
+import 'package:string_validator/string_validator.dart' as validator;
 
 class AddressBar extends StatelessWidget {
   AddressBar({this.controller, this.focusNode, this.loading, this.onLocation});
@@ -38,10 +40,25 @@ class AddressBar extends StatelessWidget {
                           color: Colors.black,
                         ),
                         controller: controller,
-                        onSubmitted: (value) {
-                          var newURL = Uri.tryParse(value);
-                          if (!newURL.hasScheme) {
-                            newURL = Uri.tryParse("gemini://" + value);
+                        onSubmitted: (value) async {
+                          Uri newURL = Uri.tryParse(value);
+                          var validated = (
+                            newURL.scheme == "gemini" ||
+                            newURL.scheme == "about" ||
+                            validator.isURL(value, {
+                                "protocols": ['gemini'],
+                                "require_tld": true,
+                                "require_protocol": false,
+                                "allow_underscores": true
+                              }));
+                          if (validated) {
+                            if (!newURL.hasScheme) {
+                              newURL = Uri.parse("gemini://" + value);
+                            }
+                          } else {
+                            String searchEngine = appKey.currentState.settings["search"];
+                            newURL = Uri.parse(searchEngine);
+                            newURL = newURL.replace(query: value);
                           }
                           onLocation(newURL);
                         })))),

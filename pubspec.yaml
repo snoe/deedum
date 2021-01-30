@@ -38,6 +38,7 @@ dependencies:
   x509: ^0.1.2+1
   crypto: ^2.1.5
   punycode: ^0.1.0
+  string_validator: ^0.1.4
 
 dev_dependencies:
   flutter_test:

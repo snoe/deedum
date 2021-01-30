@@ -23,38 +23,35 @@ class Settings extends StatelessWidget {
   Widget build(BuildContext context) {
     var children = [
       Padding(
-          padding: EdgeInsets.all(8),
-          child: (Form(
-              key: homepageKey,
-              child: TextFormField(
+        padding: EdgeInsets.all(8),
+        child: (Form(
+            key: homepageKey,
+            child: Column(children: <Widget>[
+              TextFormField(
                 keyboardType: TextInputType.url,
                 decoration: InputDecoration(labelText: "Homepage"),
                 initialValue: removeGeminiScheme(settings["homepage"]),
-                validator: (s) {
-                  if (s.trim().isNotEmpty) {
-                    try {
-                      s = removeGeminiScheme(s);
-
-                      var u = toSchemeUri(s);
-                      if (u.scheme.isEmpty) {
-                        return "Please use a valid gemini uri";
-                      }
-                    } catch (_) {
-                      return "Please enter a valid uri";
-                    }
-                  }
-                  return null;
-                },
-                onFieldSubmitted: (s) {
-                  if (homepageKey.currentState.validate()) {
-                    homepageKey.currentState.save();
-                  }
-                },
+                validator: validateGeminiURL,
+                onFieldSubmitted: validateAndSaveForm,
                 onSaved: (s) {
                   s = prefixSchema(s);
                   onSaveSettings("homepage", s);
                 },
-              ))))
+              ),
+              TextFormField(
+                keyboardType: TextInputType.url,
+                decoration: InputDecoration(
+                    labelText: "Search Engine (page that takes input)"),
+                initialValue: removeGeminiScheme(settings["search"]),
+                validator: validateGeminiURL,
+                onFieldSubmitted: validateAndSaveForm,
+                onSaved: (s) {
+                  s = prefixSchema(s);
+                  onSaveSettings("search", s);
+                },
+              ),
+            ]))),
+      )
     ];
 
     return SingleChildScrollView(child: Column(children: children));
@@ -72,5 +69,27 @@ class Settings extends StatelessWidget {
       return s.substring(9);
     }
     return s;
+  }
+
+  String validateGeminiURL(String s) {
+    if (s.trim().isNotEmpty) {
+      try {
+        s = removeGeminiScheme(s);
+
+        var u = toSchemeUri(s);
+        if (u.scheme.isEmpty) {
+          return "Please use a valid gemini uri";
+        }
+      } catch (_) {
+        return "Please enter a valid uri";
+      }
+    }
+    return null;
+  }
+
+  void validateAndSaveForm(String s) {
+    if (homepageKey.currentState.validate()) {
+      homepageKey.currentState.save();
+    }
   }
 }
