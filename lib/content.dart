@@ -14,10 +14,11 @@ final baseFontSize = 14.0;
 
 class Content extends StatefulWidget {
 
-  Content({this.currentUri, this.contentData, this.onLocation, this.onSearch, this.onNewTab});
+  Content({this.currentUri, this.contentData, this.viewSource, this.onLocation, this.onSearch, this.onNewTab});
 
   final Uri currentUri;
   final ContentData contentData;
+  final bool viewSource;
   final Function onLocation;
   final Function onSearch;
   final Function onNewTab;
@@ -26,6 +27,7 @@ class Content extends StatefulWidget {
   _ContentState createState() => _ContentState(
         currentUri: currentUri,
         contentData: contentData,
+        viewSource: viewSource,
         onLocation: onLocation,
         onSearch: onSearch,
         onNewTab: onNewTab,
@@ -33,10 +35,11 @@ class Content extends StatefulWidget {
 }
 
 class _ContentState extends State<Content> {
-  _ContentState({this.currentUri, this.contentData, this.onLocation, this.onSearch, this.onNewTab});
+  _ContentState({this.currentUri, this.contentData, this.viewSource, this.onLocation, this.onSearch, this.onNewTab});
 
   final Uri currentUri;
   final ContentData contentData;
+  final bool viewSource;
   final Function onLocation;
   final Function onSearch;
   final Function onNewTab;
@@ -61,8 +64,13 @@ class _ContentState extends State<Content> {
   @override
   Widget build(BuildContext context) {
     Widget widget;
+
+
     if (contentData == null) {
       widget = Text("");
+    } else if (contentData.mode == "plain" || viewSource) {
+      var groups = analyze(contentData.content, alwaysPre: true);
+      widget = PreText(contentData.content, groups[0]["maxLine"]);
     } else if (contentData.mode == "content") {
       var groups = analyze(contentData.content);
       widget = groupsToWidget(groups);
@@ -93,9 +101,6 @@ class _ContentState extends State<Content> {
           (BuildContext context, Object exception, StackTrace stackTrace) {
         return ExtendedText("broken image ¯\\_(ツ)_/¯");
       });
-    } else if (contentData.mode == "plain") {
-      var groups = analyze(contentData.content, alwaysPre: true);
-      widget = PreText(contentData.content, groups[0]["maxLine"]);
     } else if (contentData.mode == "opening") {
       widget = ExtendedText(contentData.content);
     } else {

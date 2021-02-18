@@ -354,22 +354,26 @@ class BrowserTabState extends State<BrowserTab> {
           ));
     }
 
+    var content = Content(
+      currentUri: uri,
+      contentData: contentData,
+      viewSource: viewingSource &&
+          (contentData?.mode == "content"), //view source if valid gemtext
+      onLocation: onLocation,
+      onSearch: onSearch,
+      onNewTab: onNewTab,
+    );
     var contentWidget = GestureDetector(
         onTapDown: (_) {
           _focusNode.unfocus();
         },
         child: SingleChildScrollView(
-            key: ObjectKey(contentData),
+            key: ObjectKey(content),
             controller: _scrollController,
             child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
-                child: Content(
-                  currentUri: uri,
-                  contentData: contentData,
-                  onLocation: onLocation,
-                  onSearch: onSearch,
-                  onNewTab: onNewTab,
-                ))));
+              padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
+              child: content,
+            )));
 
     var actions;
     if (_showActions) {
