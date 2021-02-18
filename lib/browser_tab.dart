@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:deedum/address_bar.dart';
 import 'package:deedum/content.dart';
 import 'package:deedum/main.dart';
+import 'package:deedum/browser_tab/menu.dart';
 import 'package:deedum/net.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/material.dart';
@@ -57,8 +58,8 @@ class BrowserTabState extends State<BrowserTab> {
 
   List _redirects = [];
   List _logs = [];
-  bool showLogs = false;
   bool _showActions = true;
+  bool viewingSource = false;
 
   BrowserTabState(this.initialLocation, this.onNewTab, this.addRecent);
 
@@ -171,7 +172,7 @@ class BrowserTabState extends State<BrowserTab> {
     });
   }
 
-  Future<void> _showLogs() async {
+  Future<void> showLogs() async {
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -225,6 +226,10 @@ class BrowserTabState extends State<BrowserTab> {
       },
     );
   }
+
+  void toggleSourceView() => setState(() {
+        viewingSource = !viewingSource;
+      });
 
   void _handleBytes(Uri location, Uint8List newBytes, int requestID) async {
     if (newBytes == null) {
@@ -370,11 +375,6 @@ class BrowserTabState extends State<BrowserTab> {
     if (_showActions) {
       actions = [
         IconButton(
-          icon: Icon(Icons.code),
-          onPressed: () => _showLogs(),
-          color: Colors.black,
-        ),
-        IconButton(
           icon: SizedBox(
               width: 23,
               height: 23,
@@ -399,7 +399,8 @@ class BrowserTabState extends State<BrowserTab> {
             icon: Icon(Icons.chevron_right),
             onPressed: (_historyIndex != (_history.length - 1))
                 ? _handleForward
-                : null)
+                : null),
+        TabMenuWidget(this),
       ];
     }
 
