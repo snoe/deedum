@@ -325,7 +325,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
         navigatorKey: navigatorKey,
         theme: ThemeData(
           fontFamily: "Source Serif Pro",
-          primarySwatch: Colors.grey,
+          primarySwatch: Colors.blue,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         darkTheme: ThemeData(
