@@ -9,6 +9,7 @@ class GemItem extends StatelessWidget {
   final bool showTitle;
   final bool showBookmarked;
   final bool showDelete;
+  final bool disableDelete;
 
   final bool showFeed;
 
@@ -25,6 +26,7 @@ class GemItem extends StatelessWidget {
       this.showTitle = true,
       this.showBookmarked = false,
       this.showDelete = false,
+      this.disableDelete = false,
       this.showFeed = false,
       this.onSelect,
       this.onBookmark,
@@ -62,7 +64,9 @@ class GemItem extends StatelessWidget {
                                 this.feedActive
                                     ? Icons.rss_feed
                                     : Icons.rss_feed_outlined,
-                                color: this.feedActive ? Colors.orange : Colors.black12),
+                                color: this.feedActive
+                                    ? Colors.orange
+                                    : Colors.black12),
                             onPressed: this.onFeed)
                         : Container(),
                     this.showBookmarked
@@ -78,7 +82,8 @@ class GemItem extends StatelessWidget {
                     this.showDelete
                         ? IconButton(
                             icon: Icon(Icons.delete),
-                            onPressed: this.onDelete,
+                            onPressed:
+                                this.disableDelete ? null : this.onDelete,
                           )
                         : Container(),
                   ]),

@@ -249,7 +249,7 @@ class BrowserTabState extends State<BrowserTab> {
     });
   }
 
-  Future<bool> _handleBack() async {
+  Future<bool> handleBack() async {
     if (_historyIndex > 0) {
       _handleHistory(-1);
       return false;
@@ -339,7 +339,7 @@ class BrowserTabState extends State<BrowserTab> {
                   onPressed: _historyIndex == 0
                       ? null
                       : () {
-                          _handleBack();
+                          handleBack();
                         },
                   child: Icon(Icons.keyboard_arrow_left, size: 30)),
               FlatButton(
@@ -408,23 +408,20 @@ class BrowserTabState extends State<BrowserTab> {
       ];
     }
 
-    return WillPopScope(
-        onWillPop: _handleBack,
-        child: Scaffold(
-            backgroundColor:
-                (contentData != null && contentData.mode == "error")
-                    ? Colors.deepOrange
-                    : Theme.of(context).canvasColor,
-            bottomNavigationBar: bottomBar,
-            appBar: AppBar(
-                backgroundColor: Colors.orange,
-                title: AddressBar(
-                  focusNode: _focusNode,
-                  controller: _controller,
-                  onLocation: onLocation,
-                  loading: _loading,
-                ),
-                actions: actions),
-            body: contentWidget));
+    return Scaffold(
+        backgroundColor: (contentData != null && contentData.mode == "error")
+            ? Colors.deepOrange
+            : Theme.of(context).canvasColor,
+        bottomNavigationBar: bottomBar,
+        appBar: AppBar(
+            backgroundColor: Colors.orange,
+            title: AddressBar(
+              focusNode: _focusNode,
+              controller: _controller,
+              onLocation: onLocation,
+              loading: _loading,
+            ),
+            actions: actions),
+        body: contentWidget);
   }
 }

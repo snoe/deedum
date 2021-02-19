@@ -78,7 +78,6 @@ class FeedEntry {
 class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   List tabs = [];
   int tabIndex = 0;
-  int previousTabIndex = 0;
 
   Set<String> bookmarks = Set();
   List<String> recents = List();
@@ -182,8 +181,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     settings = {
       "homepage":
           (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/"),
-      "search":
-          (prefs.getString("search") ?? "gemini://gus.guru/search")
+      "search": (prefs.getString("search") ?? "gemini://gus.guru/search")
     };
 
     _sub = getLinksStream().listen((String link) {
@@ -283,9 +281,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     if (menuPage ?? false) {
       //defaults to false if null
       setState(() {
-        previousTabIndex = tabIndex;
-        tabIndex = 0;
-        print(tabs);
+        Navigator.pushNamed(navigatorKey.currentContext, "/directory");
       });
     } else {
       //else when menuPage not set and want to open normal tab
@@ -297,7 +293,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
               Uri.tryParse(initialLocation), onNewTab, addRecent,
               key: key)
         });
-        tabIndex = tabs.length;
+        tabIndex = tabs.length - 1;
       });
     }
   }
@@ -311,10 +307,10 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   onDeleteTab(dropIndex) {
     setState(() {
       tabs.removeAt(dropIndex);
-      if (previousTabIndex == dropIndex + 1) {
-        previousTabIndex = 0;
-      } else if (previousTabIndex > dropIndex) {
-        previousTabIndex -= 1;
+      if (tabIndex == dropIndex) {
+        tabIndex = 0;
+      } else if (tabIndex > dropIndex) {
+        tabIndex -= 1;
       }
     });
   }
@@ -324,48 +320,56 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   Widget build(BuildContext context) {
     super.build(context);
     return MaterialApp(
-      title: 'deedum',
-      theme: ThemeData(
-        fontFamily: "Source Serif Pro",
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        fontFamily: "Source Serif Pro",
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      builder: (context, child) {
-        return MediaQuery(
-          child: child,
-          data: MediaQuery.of(context).copyWith(textScaleFactor: 1.15),
-        );
-      },
-      home: IndexedStack(
-          key: materialKey,
-          index: tabIndex,
-          children: <Widget>[
-                Directory(
-                  children: [
-                    Tabs(tabs, onNewTab, onSelectTab, onDeleteTab, onBookmark,
-                        toggleFeed),
-                    Feeds(feeds, onNewTab, removeFeed, updateFeed),
-                    Bookmarks(bookmarks, onNewTab, onBookmark),
-                    History(recents, onNewTab, onBookmark),
-                    Settings(settings, onSaveSettings)
-                  ],
-                  icons: [
-                    Icons.tab,
-                    Icons.rss_feed,
-                    Icons.bookmark_border,
-                    Icons.history,
-                    Icons.settings
-                  ],
-                )
-              ] +
-              tabs.map<Widget>((t) => t["widget"]).toList()),
-    );
+        title: 'deedum',
+        key: materialKey,
+        navigatorKey: navigatorKey,
+        theme: ThemeData(
+          fontFamily: "Source Serif Pro",
+          primarySwatch: Colors.grey,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        darkTheme: ThemeData(
+          brightness: Brightness.dark,
+          fontFamily: "Source Serif Pro",
+          primarySwatch: Colors.grey,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        builder: (context, child) {
+          return MediaQuery(
+            child: child,
+            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.15),
+          );
+        },
+        initialRoute: '/',
+        routes: {
+          '/': (context) => WillPopScope(
+              onWillPop: () async {
+                GlobalObjectKey w = tabs[tabIndex]["key"];
+                BrowserTabState s = w.currentState;
+                return s.handleBack();
+              },
+              child: IndexedStack(
+                  index: tabIndex,
+                  children: <Widget>[] +
+                      tabs.map<Widget>((t) => t["widget"]).toList())),
+          "/directory": (context) => Directory(
+                children: [
+                  Tabs(tabs, onNewTab, onSelectTab, onDeleteTab, onBookmark,
+                      toggleFeed),
+                  Feeds(feeds, onNewTab, removeFeed, updateFeed),
+                  Bookmarks(bookmarks, onNewTab, onBookmark),
+                  History(recents, onNewTab, onBookmark),
+                  Settings(settings, onSaveSettings)
+                ],
+                icons: [
+                  Icons.tab,
+                  Icons.rss_feed,
+                  Icons.bookmark_border,
+                  Icons.history,
+                  Icons.settings
+                ],
+              )
+        });
   }
 
   @override

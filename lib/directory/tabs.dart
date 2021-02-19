@@ -39,7 +39,10 @@ class Tabs extends StatelessWidget {
                   Card(
                     color: Theme.of(context).buttonColor,
                     child: ListTile(
-                      onTap: () => onNewTab(),
+                      onTap: () {
+                        onNewTab();
+                        Navigator.pop(navigatorKey.currentContext);
+                      },
                       leading: Icon(
                         Icons.add,
                         //color: Colors.black,
@@ -52,12 +55,12 @@ class Tabs extends StatelessWidget {
                   var tabState = ((tab["key"] as GlobalObjectKey).currentState
                       as BrowserTabState);
                   var uriString = tabState?.uri?.toString();
-                  var selected =
-                      appKey.currentState.previousTabIndex == index + 1;
+                  var selected = appKey.currentState.tabIndex == index;
 
                   var bookmarked =
                       appKey.currentState.bookmarks.contains(uriString);
-                  var feedActive = appKey.currentState.feeds.any((element) => element.uri.toString() == uriString);
+                  var feedActive = appKey.currentState.feeds
+                      .any((element) => element.uri.toString() == uriString);
                   var host = tabState?.uri?.host;
                   if (host == "") {
                     host = tabState.uri.toString();
@@ -77,20 +80,34 @@ class Tabs extends StatelessWidget {
                       showTitle: true,
                       showBookmarked: true,
                       showDelete: true,
+                      disableDelete: index == 0,
                       showFeed: true,
-                      onSelect: () => onSelectTab(index + 1),
+                      onSelect: () {
+                        onSelectTab(index);
+                        Navigator.pop(navigatorKey.currentContext);
+                      },
                       onBookmark: () => onBookmark(uriString),
-                      onDelete: () => onDeleteTab(index),
+                      onDelete: () {
+                        if (index != 0) {
+                          onDeleteTab(index);
+                        }
+                      },
                       onFeed: () => onFeed(uriString),
                     );
-                    return Dismissible(
-                      background: Container(color: Colors.red),
-                      key: UniqueKey(),
-                      onDismissed: (direction) {
-                        onDeleteTab(index);
-                      },
-                      child: tab,
-                    );
+                    if (index == 0) {
+                      return tab;
+                    } else {
+                      return Dismissible(
+                        background: Container(color: Colors.red),
+                        key: UniqueKey(),
+                        onDismissed: (direction) {
+                          if (index != 0) {
+                            onDeleteTab(index);
+                          }
+                        },
+                        child: tab,
+                      );
+                    }
                   } else {
                     return Text("No tab?");
                   }

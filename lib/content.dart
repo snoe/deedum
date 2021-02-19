@@ -249,20 +249,14 @@ class _PreTextState extends State<PreText> {
 
 Widget plainText(data) {
   return SelectableText(data,
-      style: TextStyle(
-          fontWeight: FontWeight.w400,
-          fontFamily: "Source Serif Pro",
-          height: 1.5));
+      style: TextStyle(fontWeight: FontWeight.w400, height: 1.5));
 }
 
 Widget heading(actualText, fontSize) {
   return Padding(
       padding: EdgeInsets.fromLTRB(0, 2, 0, 2),
       child: SelectableText(actualText,
-          style: TextStyle(
-              fontFamily: "Source Serif Pro",
-              fontWeight: FontWeight.bold,
-              fontSize: fontSize)));
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize)));
 }
 
 void linkLongPressMenu(title, uri, onNewTab, oldContext) =>
@@ -325,7 +319,6 @@ Widget link(title, link, currentUri, onLocation, onNewTab, context) {
           padding: EdgeInsets.fromLTRB(0, 7, 0, 7),
           child: Text((httpWarn ? "[${uri.scheme}] " : "") + title,
               style: TextStyle(
-                  fontFamily: "Source Serif Pro",
                   color: httpWarn
                       ? (visited ? Colors.purple[100] : Colors.purple[300])
                       : (visited ? Colors.blueGrey : Colors.blue)))),
@@ -342,10 +335,7 @@ Widget listItem(actualText) {
         child: Padding(
             padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
             child: SelectableText(actualText,
-                style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    fontFamily: "Source Serif Pro",
-                    height: 1.7))))
+                style: TextStyle(fontWeight: FontWeight.w400, height: 1.7))))
   ]);
 }
 
@@ -356,8 +346,5 @@ Widget blockQuote(actualText) {
       child: Padding(
           padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
           child: SelectableText(actualText,
-              style: TextStyle(
-                  fontWeight: FontWeight.w400,
-                  fontFamily: "Source Serif Pro",
-                  height: 1.7))));
+              style: TextStyle(fontWeight: FontWeight.w400, height: 1.7))));
 }
