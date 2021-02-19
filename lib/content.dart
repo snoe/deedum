@@ -13,8 +13,13 @@ import 'package:flutter/services.dart';
 final baseFontSize = 14.0;
 
 class Content extends StatefulWidget {
-
-  Content({this.currentUri, this.contentData, this.viewSource, this.onLocation, this.onSearch, this.onNewTab});
+  Content(
+      {this.currentUri,
+      this.contentData,
+      this.viewSource,
+      this.onLocation,
+      this.onSearch,
+      this.onNewTab});
 
   final Uri currentUri;
   final ContentData contentData;
@@ -35,7 +40,13 @@ class Content extends StatefulWidget {
 }
 
 class _ContentState extends State<Content> {
-  _ContentState({this.currentUri, this.contentData, this.viewSource, this.onLocation, this.onSearch, this.onNewTab});
+  _ContentState(
+      {this.currentUri,
+      this.contentData,
+      this.viewSource,
+      this.onLocation,
+      this.onSearch,
+      this.onNewTab});
 
   final Uri currentUri;
   final ContentData contentData;
@@ -65,10 +76,13 @@ class _ContentState extends State<Content> {
   Widget build(BuildContext context) {
     Widget widget;
 
-
     if (contentData == null) {
       widget = Text("");
-    } else if (contentData.mode == "plain" || viewSource) {
+    } else if (viewSource) {
+      widget = SelectableText(contentData.content,
+          style: TextStyle(
+              fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize));
+    } else if (contentData.mode == "plain") {
       var groups = analyze(contentData.content, alwaysPre: true);
       widget = PreText(contentData.content, groups[0]["maxLine"]);
     } else if (contentData.mode == "content") {
@@ -123,7 +137,8 @@ class _ContentState extends State<Content> {
           } else if (type == "quote") {
             widgets.add(blockQuote(r["data"]));
           } else if (type == "link") {
-            widgets.add(link(r["data"], r['link'], currentUri, onLocation, onNewTab, context));
+            widgets.add(link(r["data"], r['link'], currentUri, onLocation,
+                onNewTab, context));
           } else if (type == "list") {
             widgets.add(listItem(r["data"]));
           } else {
@@ -268,7 +283,8 @@ void linkLongPressMenu(title, uri, onNewTab, oldContext) =>
                 ListTile(
                   title: Center(child: Text("Copy link")),
                   onTap: () {
-                    Clipboard.setData(ClipboardData(text: uri.toString())).then((result) {
+                    Clipboard.setData(ClipboardData(text: uri.toString()))
+                        .then((result) {
                       final snackBar =
                           SnackBar(content: Text('Copied to Clipboard'));
                       Scaffold.of(oldContext).showSnackBar(snackBar);
@@ -279,9 +295,10 @@ void linkLongPressMenu(title, uri, onNewTab, oldContext) =>
                 ListTile(
                   title: Center(child: Text("Copy link text")),
                   onTap: () {
-                    Clipboard.setData(ClipboardData(text: title)).then((result) {
+                    Clipboard.setData(ClipboardData(text: title))
+                        .then((result) {
                       final snackBar =
-                      SnackBar(content: Text('Copied to Clipboard'));
+                          SnackBar(content: Text('Copied to Clipboard'));
                       Scaffold.of(oldContext).showSnackBar(snackBar);
                       Navigator.pop(context);
                     });
@@ -309,7 +326,9 @@ Widget link(title, link, currentUri, onLocation, onNewTab, context) {
           child: Text((httpWarn ? "[${uri.scheme}] " : "") + title,
               style: TextStyle(
                   fontFamily: "Source Serif Pro",
-                  color: httpWarn ? (visited ? Colors.purple[100] : Colors.purple[300]) : (visited ? Colors.blueGrey : Colors.blue)))),
+                  color: httpWarn
+                      ? (visited ? Colors.purple[100] : Colors.purple[300])
+                      : (visited ? Colors.blueGrey : Colors.blue)))),
       onLongPress: () => linkLongPressMenu(title, uri, onNewTab, context),
       onTap: () {
         onLocation(uri);
