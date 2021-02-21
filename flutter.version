@@ -1,4 +1,10 @@
+  ╔════════════════════════════════════════════════════════════════════════════╗
+  ║ A new version of Flutter is available!                                     ║
+  ║                                                                            ║
+  ║ To update to the latest version, run "flutter upgrade".                    ║
+  ╚════════════════════════════════════════════════════════════════════════════╝
+
 Flutter 1.22.5 • channel stable • https://github.com/flutter/flutter.git
-Framework • revision 7891006299 (7 weeks ago) • 2020-12-10 11:54:40 -0800
+Framework • revision 7891006299 (2 months ago) • 2020-12-10 11:54:40 -0800
 Engine • revision ae90085a84
 Tools • Dart 2.10.4
