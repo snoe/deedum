@@ -327,7 +327,7 @@ Widget link(title, link, currentUri, onLocation, onNewTab, context) {
 }
 
 Widget listItem(actualText) {
-  return Row(crossAxisAlignment: CrossAxisAlignment.baseline, children: [
+  return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
     Text("•"),
     Flexible(
         child: Padding(
