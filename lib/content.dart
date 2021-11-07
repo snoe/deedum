@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:developer';
 import 'dart:math' as math;
 
 import 'package:deedum/main.dart';
@@ -281,7 +279,7 @@ void linkLongPressMenu(title, uri, onNewTab, oldContext) =>
                         .then((result) {
                       final snackBar =
                           SnackBar(content: Text('Copied to Clipboard'));
-                      Scaffold.of(oldContext).showSnackBar(snackBar);
+                      ScaffoldMessenger.of(oldContext).showSnackBar(snackBar);
                       Navigator.pop(context);
                     });
                   },
@@ -293,7 +291,7 @@ void linkLongPressMenu(title, uri, onNewTab, oldContext) =>
                         .then((result) {
                       final snackBar =
                           SnackBar(content: Text('Copied to Clipboard'));
-                      Scaffold.of(oldContext).showSnackBar(snackBar);
+                      ScaffoldMessenger.of(oldContext).showSnackBar(snackBar);
                       Navigator.pop(context);
                     });
                   },

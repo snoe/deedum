@@ -37,7 +37,7 @@ class Tabs extends StatelessWidget {
         child: Column(
             children: <Widget>[
                   Card(
-                    color: Theme.of(context).buttonColor,
+                    color: Theme.of(context).buttonTheme.colorScheme.primary,
                     child: ListTile(
                       onTap: () {
                         onNewTab();

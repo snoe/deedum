@@ -16,7 +16,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:x509/x509.dart' as x;
 import 'package:punycode/punycode.dart';
 
-
 Future<ContentData> homepageContent() async {
   var lines = [
     "Welcome to the Geminiverse.",
@@ -93,13 +92,13 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
               ],
             )),
             actions: <Widget>[
-              FlatButton(
+              TextButton(
                 child: Text('I accept the new certificate'),
                 onPressed: () {
                   Navigator.of(context).pop(true);
                 },
               ),
-              FlatButton(
+              TextButton(
                 child: Text('Uh oh, this is unexpected',
                     style: TextStyle(color: Colors.red)),
                 onPressed: () {
@@ -131,13 +130,13 @@ String _punyEncodeUrl(String url) {
 
   return url;
 }
+
 Future<void> onURI(
     Uri uri,
     void Function(Uri, Uint8List, int) handleBytes,
     void Function(Uri, bool, bool, int) handleDone,
     void Function(String, String, int) handleLog,
     int requestID) async {
-
   bool timeout = false;
   bool opened = false;
   if (uri.host != "") {
@@ -151,7 +150,7 @@ Future<void> onURI(
         accum.addAll(feed.links);
         return accum;
       }).groupBy<String>((link) => link.entryDate);
-      var dates = linksByDate.keys.toList()..sort((a,b) => b.compareTo(a));
+      var dates = linksByDate.keys.toList()..sort((a, b) => b.compareTo(a));
       var entries = dates.map((date) {
         var links = linksByDate[date];
         var linksForDay = links

@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -42,10 +40,9 @@ class AddressBar extends StatelessWidget {
                         controller: controller,
                         onSubmitted: (value) async {
                           Uri newURL = Uri.tryParse(value);
-                          var validated = (
-                            newURL.scheme == "gemini" ||
-                            newURL.scheme == "about" ||
-                            validator.isURL(value, {
+                          var validated = (newURL.scheme == "gemini" ||
+                              newURL.scheme == "about" ||
+                              validator.isURL(value, {
                                 "protocols": ['gemini'],
                                 "require_tld": true,
                                 "require_protocol": false,
@@ -56,7 +53,8 @@ class AddressBar extends StatelessWidget {
                               newURL = Uri.parse("gemini://" + value);
                             }
                           } else {
-                            String searchEngine = appKey.currentState.settings["search"];
+                            String searchEngine =
+                                appKey.currentState.settings["search"];
                             newURL = Uri.parse(searchEngine);
                             newURL = newURL.replace(query: value);
                           }

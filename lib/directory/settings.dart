@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';

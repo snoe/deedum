@@ -146,7 +146,7 @@ class BrowserTabState extends State<BrowserTab> {
   void resetResponse(Uri location, {bool redirect = false}) {
     contentData = null;
     parsedData = null;
-    bytes = List<Uint8List>();
+    bytes = <Uint8List>[];
 
     var addressLoc = toSchemelessString(location);
     _controller.text = addressLoc;
@@ -184,13 +184,13 @@ class BrowserTabState extends State<BrowserTab> {
             title: Text('Logs'),
             contentPadding: EdgeInsets.zero,
             actions: [
-              FlatButton(
+              TextButton(
                   child: Text('Clear'),
                   onPressed: () {
                     _clearLogs();
                     Navigator.of(context).pop();
                   }),
-              FlatButton(
+              TextButton(
                 child: Text('Close'),
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -335,14 +335,14 @@ class BrowserTabState extends State<BrowserTab> {
           color: Theme.of(context).cardColor,
           child: ButtonBar(
             children: [
-              FlatButton(
+              TextButton(
                   onPressed: _historyIndex == 0
                       ? null
                       : () {
                           handleBack();
                         },
                   child: Icon(Icons.keyboard_arrow_left, size: 30)),
-              FlatButton(
+              TextButton(
                   onPressed: _historyIndex == (_history.length - 1)
                       ? null
                       : () {
@@ -404,7 +404,7 @@ class BrowserTabState extends State<BrowserTab> {
             onPressed: (_historyIndex != (_history.length - 1))
                 ? _handleForward
                 : null),
-        TabMenuWidget(this),
+        TabMenuWidget(tab: this),
       ];
     }
 

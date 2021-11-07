@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:qr/qr.dart';
@@ -50,7 +48,7 @@ String toSchemelessString(Uri uri) {
       uriString = uri.toString();
     }
   }
-  uriString =  Uri.decodeFull(uriString);
+  uriString = Uri.decodeFull(uriString);
   return uriString;
 }
 

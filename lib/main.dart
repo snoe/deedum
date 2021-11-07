@@ -80,9 +80,9 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   int tabIndex = 0;
 
   Set<String> bookmarks = Set();
-  List<String> recents = List();
-  List<Feed> feeds = List();
-  List<String> feed = List();
+  List<String> recents = [];
+  List<Feed> feeds = [];
+  List<String> feed = [];
 
   Map settings = {};
   StreamSubscription _sub;
@@ -120,7 +120,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     var redirects = [];
 
     while (contentData == null) {
-      var bytes = List<Uint8List>();
+      var bytes = <Uint8List>[];
       await onURI(uri, (_a, newBytes, _c) {
         bytes.add(newBytes);
       }, (_a, _b, _c, _d) {}, (_a, _b, _c) {}, 1);

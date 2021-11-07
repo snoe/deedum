@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 
 import 'package:deedum/shared.dart';
@@ -28,9 +26,9 @@ class Feeds extends StatelessWidget {
         child: Column(
             children: <Widget>[
                   Card(
-                    color: Theme.of(context).buttonColor,
-                    child: ListTile(leading: 
-                        IconButton(
+                    color: Theme.of(context).buttonTheme.colorScheme.primary,
+                    child: ListTile(
+                        leading: IconButton(
                             icon: Icon(Icons.refresh),
                             color: Colors.black,
                             onPressed: () {
@@ -66,7 +64,10 @@ class Feeds extends StatelessWidget {
                               dense: true,
                               subtitle: Text(toSchemelessString(feed.uri) +
                                   "\nLast Updated: " +
-                                  feed.lastFetchedAt + "\n" + feed.links.length.toString() + " entries"),
+                                  feed.lastFetchedAt +
+                                  "\n" +
+                                  feed.links.length.toString() +
+                                  " entries"),
                               title: Text(feed.title,
                                   style: TextStyle(fontSize: 14)),
                             )),
