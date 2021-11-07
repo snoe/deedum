@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:qr/qr.dart';
 import 'dart:math' as math;
 
+import 'package:sqflite/sqlite_api.dart';
+
 class ContentData {
   final Uint8List _bytes;
   final String _content;
@@ -17,7 +19,7 @@ class ContentData {
   String get content => _content;
   @override
   String toString() {
-    var preview = content == null ? "" : content;
+    var preview = content ?? "";
     return "ContentData<$mode, ${preview.substring(0, math.min(10, preview.length))}>";
   }
 }
@@ -38,7 +40,7 @@ class Feed {
 }
 
 String toSchemelessString(Uri uri) {
-  var uriString;
+  String uriString;
   if (uri != null) {
     if (!uri.hasScheme) {
       uriString = uri.toString();
@@ -73,11 +75,11 @@ Uri resolveLink(Uri currentUri, String link) {
 double get padding => 25.0;
 
 extension CollectionUtil<T> on Iterable<T> {
-  Iterable<E> mapIndexed<E, T>(E Function(int index, T item) transform) sync* {
+  Iterable<E> mapIndexed<E>(E Function(int index, T item) transform) sync* {
     var index = 0;
 
     for (final item in this) {
-      yield transform(index, item as T);
+      yield transform(index, item);
       index++;
     }
   }
@@ -91,7 +93,7 @@ extension CollectionUtil<T> on Iterable<T> {
   }
 }
 
-var database;
+Database database;
 var emojiList = [
   "😀",
   "😃",
@@ -244,8 +246,8 @@ String emojiEncode(String base64String) {
 }
 
 String qrEncode(Uint8List der) {
-  final qrCode = new QrCode.fromUint8List(
-      data: der, errorCorrectLevel: QrErrorCorrectLevel.L);
+  final qrCode =
+      QrCode.fromUint8List(data: der, errorCorrectLevel: QrErrorCorrectLevel.L);
   qrCode.make();
 
   var result = "";

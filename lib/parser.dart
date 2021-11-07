@@ -5,18 +5,21 @@ import 'dart:typed_data';
 
 import 'shared.dart';
 
+const allowMalformedUtf8Decoder = Utf8Decoder(allowMalformed: true);
+const allowInvalidLatinDecoder = Latin1Decoder(allowInvalid: true);
+
 String bytesToString(ContentType contentType, List<int> bytes) {
-  var rest;
+  String rest;
   if (contentType.charset == null ||
       contentType.charset.isEmpty ||
       contentType.charset == "utf-8") {
-    rest = Utf8Decoder(allowMalformed: true).convert(bytes);
+    rest = allowMalformedUtf8Decoder.convert(bytes);
   } else if (contentType.charset == "iso-8859-1") {
-    rest = Latin1Decoder(allowInvalid: true).convert(bytes);
+    rest = allowInvalidLatinDecoder.convert(bytes);
   } else if (contentType.charset == "us-ascii") {
-    rest = Latin1Decoder(allowInvalid: true).convert(bytes);
+    rest = allowInvalidLatinDecoder.convert(bytes);
   } else {
-    rest = Utf8Decoder(allowMalformed: true).convert(bytes);
+    rest = allowMalformedUtf8Decoder.convert(bytes);
   }
 
   return rest;
@@ -39,10 +42,10 @@ ContentData parse(List<Uint8List> chunksList) {
     }
   }
   var statusBytes = chunks.sublist(0, endofline - 1);
-  var status;
-  var meta;
+  int status;
+  String meta;
 
-  var statusMeta = Utf8Decoder(allowMalformed: true).convert(statusBytes);
+  var statusMeta = allowMalformedUtf8Decoder.convert(statusBytes);
 
   var m = RegExp(r'^(\d\d)\s(.+)$').firstMatch(statusMeta);
   if (m != null) {
@@ -55,14 +58,14 @@ ContentData parse(List<Uint8List> chunksList) {
   if (statusMeta == null) {
     result = null;
   } else if (m == null) {
-    String content = Utf8Decoder(allowMalformed: true).convert(chunks);
+    String content = allowMalformedUtf8Decoder.convert(chunks);
     result = ContentData(
         mode: "error",
         content: "INVALID RESPONSE\n--------------\n" +
             content +
             "\n--------------");
   } else if (meta.length > 1024) {
-    String content = Utf8Decoder(allowMalformed: true).convert(chunks);
+    String content = allowMalformedUtf8Decoder.convert(chunks);
     result = ContentData(
         mode: "error",
         content:
@@ -91,7 +94,7 @@ ContentData parse(List<Uint8List> chunksList) {
   } else if (status >= 30 && status < 40) {
     result = ContentData(content: meta, mode: "redirect");
   } else {
-    String content = Utf8Decoder(allowMalformed: true).convert(chunks);
+    String content = allowMalformedUtf8Decoder.convert(chunks);
     result = ContentData(
         mode: "error",
         content: "UNHANDLED STATUS\n--------------\n" +

@@ -28,22 +28,22 @@ class HistoryEntry {
 }
 
 class BrowserTab extends StatefulWidget {
-  final initialLocation;
-  final onNewTab;
-  final addRecent;
+  final Uri initialLocation;
+  final void Function(String, bool) onNewTab;
+  final ValueChanged<String> addRecent;
 
-  BrowserTab(this.initialLocation, this.onNewTab, this.addRecent, {Key key})
-      : super(key: key);
+  const BrowserTab({
+    Key key,
+    this.initialLocation,
+    this.onNewTab,
+    this.addRecent,
+  }) : super(key: key);
 
   @override
-  BrowserTabState createState() =>
-      BrowserTabState(initialLocation, onNewTab, addRecent);
+  BrowserTabState createState() => BrowserTabState();
 }
 
 class BrowserTabState extends State<BrowserTab> {
-  final initialLocation;
-  final onNewTab;
-  final addRecent;
   TextEditingController _controller;
   FocusNode _focusNode;
   List<Uint8List> bytes;
@@ -61,11 +61,10 @@ class BrowserTabState extends State<BrowserTab> {
   bool _showActions = true;
   bool viewingSource = false;
 
-  BrowserTabState(this.initialLocation, this.onNewTab, this.addRecent);
-
+  @override
   void initState() {
     super.initState();
-    var initLoc = toSchemelessString(initialLocation);
+    var initLoc = toSchemelessString(widget.initialLocation);
     _controller = TextEditingController(text: initLoc);
     _focusNode = FocusNode();
 
@@ -84,9 +83,10 @@ class BrowserTabState extends State<BrowserTab> {
   }
 
   init() async {
-    onLocation(initialLocation);
+    onLocation(widget.initialLocation);
   }
 
+  @override
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
@@ -154,7 +154,7 @@ class BrowserTabState extends State<BrowserTab> {
     uri = location;
     if (!redirect) {
       _redirects = [];
-      addRecent(location.toString());
+      widget.addRecent(location.toString());
     }
   }
 
@@ -162,7 +162,7 @@ class BrowserTabState extends State<BrowserTab> {
     log(message);
     setState(() {
       _logs = _logs.sublist(math.max(_logs.length - 100, 0), _logs.length);
-      _logs.add([level, new DateTime.now(), requestID, message]);
+      _logs.add([level, DateTime.now(), requestID, message]);
     });
   }
 
@@ -181,23 +181,23 @@ class BrowserTabState extends State<BrowserTab> {
         DateFormat formatter = DateFormat('HH:mm:ss.SSSS');
 
         return AlertDialog(
-            title: Text('Logs'),
+            title: const Text('Logs'),
             contentPadding: EdgeInsets.zero,
             actions: [
               TextButton(
-                  child: Text('Clear'),
+                  child: const Text('Clear'),
                   onPressed: () {
                     _clearLogs();
                     Navigator.of(context).pop();
                   }),
               TextButton(
-                child: Text('Close'),
+                child: const Text('Close'),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
               )
             ],
-            content: Container(
+            content: SizedBox(
               width: double.maxFinite,
               child: ListView.builder(
                 itemCount: orderedLogs.length,
@@ -208,7 +208,7 @@ class BrowserTabState extends State<BrowserTab> {
                   var requestID = log[2];
                   var message = log[3];
                   String formatted = formatter.format(timestamp);
-                  var levelColor;
+                  Color levelColor;
                   if (level == "error") {
                     levelColor = Colors.redAccent;
                   } else if (level == "warn") {
@@ -329,7 +329,7 @@ class BrowserTabState extends State<BrowserTab> {
 
   @override
   Widget build(BuildContext context) {
-    var bottomBar;
+    Widget bottomBar;
     if (isIos) {
       bottomBar = BottomAppBar(
           color: Theme.of(context).cardColor,
@@ -341,14 +341,14 @@ class BrowserTabState extends State<BrowserTab> {
                       : () {
                           handleBack();
                         },
-                  child: Icon(Icons.keyboard_arrow_left, size: 30)),
+                  child: const Icon(Icons.keyboard_arrow_left, size: 30)),
               TextButton(
                   onPressed: _historyIndex == (_history.length - 1)
                       ? null
                       : () {
                           _handleForward();
                         },
-                  child: Icon(Icons.keyboard_arrow_right, size: 30))
+                  child: const Icon(Icons.keyboard_arrow_right, size: 30))
             ],
             alignment: MainAxisAlignment.spaceBetween,
           ));
@@ -361,7 +361,7 @@ class BrowserTabState extends State<BrowserTab> {
           (contentData?.mode == "content"), //view source if valid gemtext
       onLocation: onLocation,
       onSearch: onSearch,
-      onNewTab: onNewTab,
+      onNewTab: widget.onNewTab,
     );
     var contentWidget = GestureDetector(
         onTapDown: (_) {
@@ -371,11 +371,11 @@ class BrowserTabState extends State<BrowserTab> {
             key: ObjectKey(content),
             controller: _scrollController,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
+              padding: const EdgeInsets.fromLTRB(20, 20, 17, 20),
               child: content,
             )));
 
-    var actions;
+    List<Widget> actions;
     if (_showActions) {
       actions = [
         IconButton(
@@ -386,21 +386,21 @@ class BrowserTabState extends State<BrowserTab> {
                   decoration: BoxDecoration(
                       color: Colors.transparent,
                       border: Border.all(width: 2, color: Colors.black),
-                      borderRadius: BorderRadius.all(Radius.circular(3))),
+                      borderRadius: const BorderRadius.all(Radius.circular(3))),
                   child: Align(
                       alignment: Alignment.center,
                       child: Text("${appKey.currentState.tabs.length}",
-                          style: TextStyle(
+                          style: const TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
                               fontFamily: "DejaVu Sans Mono",
                               fontSize: 13))))),
-          onPressed: () => onNewTab(menuPage: true),
+          onPressed: () => widget.onNewTab(null, true),
         ),
         IconButton(
             disabledColor: Colors.black12,
             color: Colors.black,
-            icon: Icon(Icons.chevron_right),
+            icon: const Icon(Icons.chevron_right),
             onPressed: (_historyIndex != (_history.length - 1))
                 ? _handleForward
                 : null),

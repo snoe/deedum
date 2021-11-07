@@ -24,14 +24,14 @@ import 'package:uni_links/uni_links.dart';
 
 bool get isIos =>
     foundation.defaultTargetPlatform == foundation.TargetPlatform.iOS;
-final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-final GlobalKey<AppState> appKey = new GlobalKey();
-final GlobalKey<AppState> materialKey = new GlobalKey();
+final GlobalKey<AppState> appKey = GlobalKey();
+final GlobalKey<AppState> materialKey = GlobalKey();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  database = openDatabase(
+  database = await openDatabase(
     'deedum.db',
     onCreate: (db, version) {
       db.execute(
@@ -54,11 +54,11 @@ void main() async {
     version: 3,
   );
 
-  runApp(App(key: appKey));
+  runApp(MaterialApp(home: App(key: appKey)));
 }
 
 class App extends StatefulWidget {
-  App({Key key}) : super(key: key);
+  const App({Key key}) : super(key: key);
 
   @override
   AppState createState() => AppState();
@@ -79,7 +79,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   List tabs = [];
   int tabIndex = 0;
 
-  Set<String> bookmarks = Set();
+  Set<String> bookmarks = {};
   List<String> recents = [];
   List<Feed> feeds = [];
   List<String> feed = [];
@@ -87,6 +87,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   Map settings = {};
   StreamSubscription _sub;
 
+  @override
   void initState() {
     super.initState();
 
@@ -116,8 +117,8 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   }
 
   Future<Feed> updateFeed(Uri uri) async {
-    var contentData;
-    var redirects = [];
+    ContentData contentData;
+    List<Uri> redirects = [];
 
     while (contentData == null) {
       var bytes = <Uint8List>[];
@@ -134,7 +135,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
       }
       if (parsedData.mode == "redirect") {
         var newUri = Uri.tryParse(parsedData.content);
-        if (redirects.contains(parsedData.content) || redirects.length >= 5) {
+        if (redirects.contains(newUri) || redirects.length >= 5) {
           return null;
         }
         redirects.add(newUri);
@@ -148,10 +149,10 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
 
     var result = parseFeed(uri, contentData.content);
     var feed = Feed(uri, result['title'], result['links'], contentData.content,
-        new DateFormat('yyyy-MM-dd').format(DateTime.now().toUtc()));
+        DateFormat('yyyy-MM-dd').format(DateTime.now().toUtc()));
 
     if (feed != null) {
-      final Database db = await database;
+      final Database db = database;
       await db.rawUpdate(
           "update feeds set content = ?, last_fetched_at = ? where uri = ?",
           [feed.content, feed.lastFetchedAt, feed.uri.toString()]);
@@ -160,7 +161,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   }
 
   updateFeeds() async {
-    final Database db = await database;
+    final Database db = database;
     var rows = await db.rawQuery("select * from feeds");
     List<Feed> tempfeeds = [];
     for (var row in rows) {
@@ -185,7 +186,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     };
 
     _sub = linkStream.listen((String link) {
-      onNewTab(initialLocation: link);
+      onNewTab(link);
     }, onError: (err) {
       log("oop");
     });
@@ -193,7 +194,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     try {
       var link = await getInitialLink();
       if (link != null) {
-        onNewTab(initialLocation: link);
+        onNewTab(link);
         return;
       }
     } on PlatformException {
@@ -204,7 +205,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     onNewTab();
   }
 
-  addRecent(uriString) async {
+  void addRecent(String uriString) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       recents.remove(uriString);
@@ -217,8 +218,8 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  removeFeed(feed) async {
-    final Database db = await database;
+  void removeFeed(Feed feed) async {
+    final Database db = database;
     await db
         .rawDelete("delete from feeds where uri = ?", [feed.uri.toString()]);
     setState(() {
@@ -226,13 +227,13 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  toggleFeed(uriString) async {
+  Future<void> toggleFeed(String uriString) async {
     var uri = toSchemeUri(uriString);
     if (uri != null) {
-      final Database db = await database;
+      final Database db = database;
       var rows = await db
           .rawQuery("select * from feeds where uri = ?", [uri.toString()]);
-      if (rows.length == 0) {
+      if (rows.isEmpty) {
         await db
             .rawInsert("insert into feeds (uri) values (?)", [uri.toString()]);
         var feed = await updateFeed(uri);
@@ -248,7 +249,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     }
   }
 
-  onBookmark(uriString) async {
+  void onBookmark(String uriString) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       if (bookmarks.contains(uriString)) {
@@ -261,7 +262,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  onSaveSettings(String key, String value) async {
+  void onSaveSettings(String key, String value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       if (value.trim().isNotEmpty) {
@@ -274,10 +275,8 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  onNewTab({String initialLocation, bool menuPage}) {
-    if (initialLocation == null) {
-      initialLocation = settings["homepage"];
-    }
+  void onNewTab([String initialLocation, bool menuPage]) {
+    initialLocation ??= settings['homepage'];
     if (menuPage ?? false) {
       //defaults to false if null
       setState(() {
@@ -290,21 +289,24 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
         tabs.add({
           "key": key,
           "widget": BrowserTab(
-              Uri.tryParse(initialLocation), onNewTab, addRecent,
-              key: key)
+            key: key,
+            initialLocation: Uri.tryParse(initialLocation),
+            onNewTab: onNewTab,
+            addRecent: addRecent,
+          )
         });
         tabIndex = tabs.length - 1;
       });
     }
   }
 
-  onSelectTab(newIndex) {
+  void onSelectTab(int newIndex) {
     setState(() {
       tabIndex = newIndex;
     });
   }
 
-  onDeleteTab(dropIndex) {
+  void onDeleteTab(int dropIndex) {
     setState(() {
       tabs.removeAt(dropIndex);
       if (tabIndex == dropIndex) {
@@ -340,6 +342,13 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
             data: MediaQuery.of(context).copyWith(textScaleFactor: 1.15),
           );
         },
+        localizationsDelegates: const [
+          DefaultWidgetsLocalizations.delegate,
+          DefaultMaterialLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'),
+        ],
         initialRoute: '/',
         routes: {
           '/': (context) => WillPopScope(
@@ -354,14 +363,36 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
                       tabs.map<Widget>((t) => t["widget"]).toList())),
           "/directory": (context) => Directory(
                 children: [
-                  Tabs(tabs, onNewTab, onSelectTab, onDeleteTab, onBookmark,
-                      toggleFeed),
-                  Feeds(feeds, onNewTab, removeFeed, updateFeed),
-                  Bookmarks(bookmarks, onNewTab, onBookmark),
-                  History(recents, onNewTab, onBookmark),
-                  Settings(settings, onSaveSettings)
+                  Tabs(
+                    tabs: tabs,
+                    onNewTab: onNewTab,
+                    onSelectTab: onSelectTab,
+                    onDeleteTab: onDeleteTab,
+                    onBookmark: onBookmark,
+                    onFeed: toggleFeed,
+                  ),
+                  Feeds(
+                    feeds: feeds,
+                    onNewTab: onNewTab,
+                    removeFeed: removeFeed,
+                    updateFeed: updateFeed,
+                  ),
+                  Bookmarks(
+                    bookmarks: bookmarks,
+                    onNewTab: onNewTab,
+                    onBookmark: onBookmark,
+                  ),
+                  History(
+                    recents: recents,
+                    onNewTab: onNewTab,
+                    onBookmark: onBookmark,
+                  ),
+                  Settings(
+                    settings: settings,
+                    onSaveSettings: onSaveSettings,
+                  )
                 ],
-                icons: [
+                icons: const [
                   Icons.tab,
                   Icons.rss_feed,
                   Icons.bookmark_border,

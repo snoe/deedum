@@ -1,17 +1,24 @@
+import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/directory/gem_item.dart';
 import 'package:deedum/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class History extends StatelessWidget {
-  final onNewTab;
-  final onBookmark;
+class History extends DirectoryElement {
+  final void Function(String, bool) onNewTab;
+  final ValueChanged<String> onBookmark;
   final List<String> recents;
 
   final bookmarkKey = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
 
-  History(this.recents, this.onNewTab, this.onBookmark);
+  History({
+    Key key,
+    @required this.recents,
+    @required this.onNewTab,
+    @required this.onBookmark,
+  }) : super(key: key);
 
+  @override
   String get title => [
         "██╗  ██╗██╗███████╗████████╗ ██████╗ ██████╗ ██╗   ██╗",
         "██║  ██║██║██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗╚██╗ ██╔╝",
@@ -23,37 +30,33 @@ class History extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var children;
-
-    if (recents.isNotEmpty) {
-      children = recents.reversed.map((recentLocation) {
-        var recentUri = Uri.tryParse(recentLocation);
-
-        var bookmarked = appKey.currentState.bookmarks.contains(recentLocation);
-        return GemItem(
-          Uri.decodeFull(recentUri.host),
-          title: Text(recentUri.path == "" ? "/" : Uri.decodeFull(recentUri.path)),
-          bookmarked: bookmarked,
-          showBookmarked: true,
-          showDelete: false,
-          onSelect: () => onNewTab(initialLocation: recentLocation),
-          onBookmark: () => onBookmark(recentLocation),
-        );
-      }).toList();
-    } else {
-      children = [
+    return SingleChildScrollView(
+        child: Column(children: [
+      if (recents.isNotEmpty)
+        for (final recentLocation in recents.reversed)
+          GemItem(
+            url: Uri.decodeFull(Uri.parse(recentLocation).host),
+            title: Text(Uri.parse(recentLocation).path == ""
+                ? "/"
+                : Uri.decodeFull(Uri.parse(recentLocation).path)),
+            bookmarked: appKey.currentState.bookmarks.contains(recentLocation),
+            showBookmarked: true,
+            showDelete: false,
+            onSelect: () => onNewTab(recentLocation, null),
+            onBookmark: () => onBookmark(recentLocation),
+          )
+      else
         Card(
           color: Colors.black12,
           child: ListTile(
-            onTap: onNewTab,
-            leading: Icon(Icons.explore, color: Colors.white),
-            title: Text("No History", style: TextStyle(color: Colors.white)),
-            subtitle: Text("Go forth, explore",
+            onTap: () => onNewTab(null, null),
+            leading: const Icon(Icons.explore, color: Colors.white),
+            title:
+                const Text("No History", style: TextStyle(color: Colors.white)),
+            subtitle: const Text("Go forth, explore",
                 style: TextStyle(color: Colors.white)),
           ),
         )
-      ];
-    }
-    return SingleChildScrollView(child: Column(children: children));
+    ]));
   }
 }

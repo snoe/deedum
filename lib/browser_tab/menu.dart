@@ -13,7 +13,7 @@ class TabMenuWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<_MenuSelection>(
       itemBuilder: (BuildContext context) => [
-        PopupMenuItem(
+        const PopupMenuItem(
             child: ListTile(
                 leading: Icon(Icons.code, color: Colors.black),
                 title: Text("Logs")),
@@ -21,25 +21,19 @@ class TabMenuWidget extends StatelessWidget {
         CheckedPopupMenuItem(
           checked: tab.viewingSource,
           value: _MenuSelection.source,
-          child: Text("Source"),
+          child: const Text("Source"),
         ),
       ],
       onSelected: (result) {
         switch (result) {
           case _MenuSelection.logs:
-            {
-              tab.showLogs();
-            }
+            tab.showLogs();
             break;
           case _MenuSelection.source:
-            {
-              tab.toggleSourceView();
-            }
+            tab.toggleSourceView();
             break;
           default:
-            {
-              print("unexpected");
-            }
+            throw Exception("Unknown menu selection");
         }
       },
     );

@@ -1,14 +1,20 @@
+import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class Settings extends StatelessWidget {
+class Settings extends DirectoryElement {
   final Map settings;
-  final onSaveSettings;
+  final void Function(String, String) onSaveSettings;
   final homepageKey = GlobalKey<FormState>();
 
-  Settings(this.settings, this.onSaveSettings);
+  Settings({
+    Key key,
+    @required this.settings,
+    @required this.onSaveSettings,
+  }) : super(key: key);
 
+  @override
   String get title => [
         "███████╗███████╗████████╗████████╗██╗███╗   ██╗ ██████╗ ███████╗",
         "██╔════╝██╔════╝╚══██╔══╝╚══██╔══╝██║████╗  ██║██╔════╝ ██╔════╝",
@@ -22,13 +28,13 @@ class Settings extends StatelessWidget {
   Widget build(BuildContext context) {
     var children = [
       Padding(
-        padding: EdgeInsets.all(8),
+        padding: const EdgeInsets.all(8),
         child: (Form(
             key: homepageKey,
             child: Column(children: <Widget>[
               TextFormField(
                 keyboardType: TextInputType.url,
-                decoration: InputDecoration(labelText: "Homepage"),
+                decoration: const InputDecoration(labelText: "Homepage"),
                 initialValue: removeGeminiScheme(settings["homepage"]),
                 validator: validateGeminiURL,
                 onFieldSubmitted: validateAndSaveForm,
@@ -39,7 +45,7 @@ class Settings extends StatelessWidget {
               ),
               TextFormField(
                 keyboardType: TextInputType.url,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                     labelText: "Search Engine (page that takes input)"),
                 initialValue: removeGeminiScheme(settings["search"]),
                 validator: validateGeminiURL,
