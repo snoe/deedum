@@ -184,7 +184,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
       "search": (prefs.getString("search") ?? "gemini://gus.guru/search")
     };
 
-    _sub = getLinksStream().listen((String link) {
+    _sub = linkStream.listen((String link) {
       onNewTab(initialLocation: link);
     }, onError: (err) {
       log("oop");
