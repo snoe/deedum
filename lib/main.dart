@@ -58,15 +58,15 @@ void main() async {
 }
 
 class App extends StatefulWidget {
-  const App({Key key}) : super(key: key);
+  const App({Key? key}) : super(key: key);
 
   @override
   AppState createState() => AppState();
 }
 
 class FeedEntry {
-  String entryDate;
-  String entryTitle;
+  String? entryDate;
+  String? entryTitle;
   Uri entryUri;
   String line;
   String feedTitle;
@@ -81,11 +81,11 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
 
   Set<String> bookmarks = {};
   List<String> recents = [];
-  List<Feed> feeds = [];
+  List<Feed?> feeds = [];
   List<String> feed = [];
 
   Map settings = {};
-  StreamSubscription _sub;
+  late StreamSubscription _sub;
 
   @override
   void initState() {
@@ -95,18 +95,18 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     init();
   }
 
-  parseFeed(Uri uri, String content) {
+  parseFeed(Uri? uri, String content) {
     var lines = LineSplitter.split(content);
     var title = lines
         .firstWhere((line) => line.startsWith("# "))
-        ?.replaceFirst("# ", "");
-    var links = lines.fold([], (accum, line) {
+        .replaceFirst("# ", "");
+    var links = lines.fold([], (dynamic accum, line) {
       var match =
           RegExp(r'^=>\s*(\S+)\s+(\d{4}-\d{2}-\d{2})(.*)$').matchAsPrefix(line);
       if (match != null) {
-        var entryUri = Uri.tryParse(match.group(1));
+        var entryUri = Uri.tryParse(match.group(1)!);
         if (entryUri == null || !entryUri.hasScheme) {
-          entryUri = uri.resolve(match.group(1));
+          entryUri = uri!.resolve(match.group(1)!);
         }
         accum.add(
             FeedEntry(title, entryUri, match.group(2), match.group(3), line));
@@ -116,25 +116,25 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     return {"title": title, "links": links};
   }
 
-  Future<Feed> updateFeed(Uri uri) async {
-    ContentData contentData;
-    List<Uri> redirects = [];
+  Future<Feed?> updateFeed(Uri? uri) async {
+    ContentData? contentData;
+    List<Uri?> redirects = [];
 
     while (contentData == null) {
-      var bytes = <Uint8List>[];
-      await onURI(uri, (_a, newBytes, _c) {
+      var bytes = <Uint8List?>[];
+      await onURI(uri!, (_a, newBytes, _c) {
         bytes.add(newBytes);
       }, (_a, _b, _c, _d) {}, (_a, _b, _c) {}, 1);
       if (bytes.isEmpty) {
         return null;
       }
 
-      ContentData parsedData = parse(bytes);
+      ContentData? parsedData = parse(bytes);
       if (parsedData == null) {
         return null;
       }
       if (parsedData.mode == "redirect") {
-        var newUri = Uri.tryParse(parsedData.content);
+        var newUri = Uri.tryParse(parsedData.content!);
         if (redirects.contains(newUri) || redirects.length >= 5) {
           return null;
         }
@@ -147,25 +147,23 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
       }
     }
 
-    var result = parseFeed(uri, contentData.content);
+    var result = parseFeed(uri, contentData.content!);
     var feed = Feed(uri, result['title'], result['links'], contentData.content,
         DateFormat('yyyy-MM-dd').format(DateTime.now().toUtc()));
 
-    if (feed != null) {
-      final Database db = database;
-      await db.rawUpdate(
-          "update feeds set content = ?, last_fetched_at = ? where uri = ?",
-          [feed.content, feed.lastFetchedAt, feed.uri.toString()]);
-    }
+    final Database db = database;
+    await db.rawUpdate(
+        "update feeds set content = ?, last_fetched_at = ? where uri = ?",
+        [feed.content, feed.lastFetchedAt, feed.uri.toString()]);
     return feed;
   }
 
   updateFeeds() async {
     final Database db = database;
     var rows = await db.rawQuery("select * from feeds");
-    List<Feed> tempfeeds = [];
+    List<Feed?> tempfeeds = [];
     for (var row in rows) {
-      var feed = await updateFeed(Uri.tryParse(row["uri"]));
+      var feed = await updateFeed(Uri.tryParse(row["uri"] as String));
       tempfeeds.add(feed);
     }
 
@@ -178,14 +176,14 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
     recents = (prefs.getStringList('recent') ?? []);
-    feeds = (prefs.getStringList('feeds') ?? []);
+    feeds = (prefs.getStringList('feeds') as List<Feed?>? ?? []);
     settings = {
       "homepage":
           (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/"),
       "search": (prefs.getString("search") ?? "gemini://gus.guru/search")
     };
 
-    _sub = linkStream.listen((String link) {
+    _sub = linkStream.listen((String? link) {
       onNewTab(link);
     }, onError: (err) {
       log("oop");
@@ -243,7 +241,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
       } else {
         await db.rawDelete("delete from feeds where uri = ?", [uri.toString()]);
         setState(() {
-          feeds.removeWhere((element) => element.uri == uri);
+          feeds.removeWhere((element) => element!.uri == uri);
         });
       }
     }
@@ -275,12 +273,12 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  void onNewTab([String initialLocation, bool menuPage]) {
+  void onNewTab([String? initialLocation, bool? menuPage]) {
     initialLocation ??= settings['homepage'];
     if (menuPage ?? false) {
       //defaults to false if null
       setState(() {
-        Navigator.pushNamed(navigatorKey.currentContext, "/directory");
+        Navigator.pushNamed(navigatorKey.currentContext!, "/directory");
       });
     } else {
       //else when menuPage not set and want to open normal tab
@@ -290,7 +288,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
           "key": key,
           "widget": BrowserTab(
             key: key,
-            initialLocation: Uri.tryParse(initialLocation),
+            initialLocation: Uri.tryParse(initialLocation!)!,
             onNewTab: onNewTab,
             addRecent: addRecent,
           )
@@ -338,7 +336,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
         ),
         builder: (context, child) {
           return MediaQuery(
-            child: child,
+            child: child!,
             data: MediaQuery.of(context).copyWith(textScaleFactor: 1.15),
           );
         },
@@ -354,13 +352,12 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
           '/': (context) => WillPopScope(
               onWillPop: () async {
                 GlobalObjectKey w = tabs[tabIndex]["key"];
-                BrowserTabState s = w.currentState;
+                BrowserTabState s = w.currentState as BrowserTabState;
                 return s.handleBack();
               },
               child: IndexedStack(
                   index: tabIndex,
-                  children: <Widget>[] +
-                      tabs.map<Widget>((t) => t["widget"]).toList())),
+                  children: [for (final t in tabs) t["widget"]])),
           "/directory": (context) => Directory(
                 children: [
                   Tabs(

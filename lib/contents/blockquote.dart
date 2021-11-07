@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class BlockQuote extends StatelessWidget {
-  const BlockQuote({Key key, @required this.content}) : super(key: key);
+  const BlockQuote({Key? key, required this.content}) : super(key: key);
 
   final String content;
 

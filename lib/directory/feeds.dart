@@ -5,17 +5,17 @@ import 'package:deedum/shared.dart';
 import 'package:flutter/widgets.dart';
 
 class Feeds extends DirectoryElement {
-  final List<Feed> feeds;
-  final void Function(String, bool) onNewTab;
+  final List<Feed?> feeds;
+  final void Function(String?, bool?) onNewTab;
   final ValueChanged<Feed> removeFeed;
   final ValueChanged<Uri> updateFeed;
 
   const Feeds({
-    Key key,
-    @required this.feeds,
-    @required this.onNewTab,
-    @required this.removeFeed,
-    @required this.updateFeed,
+    Key? key,
+    required this.feeds,
+    required this.onNewTab,
+    required this.removeFeed,
+    required this.updateFeed,
   }) : super(key: key);
 
   @override
@@ -31,26 +31,35 @@ class Feeds extends DirectoryElement {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-        child: Column(
-            children: <Widget>[
-                  Card(
-                    color: Theme.of(context).buttonTheme.colorScheme.primary,
-                    child: ListTile(
-                        leading: IconButton(
-                            icon: const Icon(Icons.refresh),
-                            color: Colors.black,
-                            onPressed: () {
-                              for (var feed in feeds) {
-                                updateFeed(feed.uri);
-                              }
-                            }),
-                        onTap: () => onNewTab("about:feeds", null),
-                        title: const Text("Open feed reader in new tab")),
-                  ),
-                ] +
-                feeds.mapIndexed((index, Feed feed) {
-                  var tab = Card(
-                      child: Padding(
+      child: Column(
+        children: <Widget>[
+          Card(
+            color: Theme.of(context).buttonTheme.colorScheme!.primary,
+            child: ListTile(
+                leading: IconButton(
+                    icon: const Icon(Icons.refresh),
+                    color: Colors.black,
+                    onPressed: () {
+                      for (var feed in feeds) {
+                        if (feed == null) {
+                          continue;
+                        }
+                        updateFeed(feed.uri!);
+                      }
+                    }),
+                onTap: () => onNewTab("about:feeds", null),
+                title: const Text("Open feed reader in new tab")),
+          ),
+          for (final feed in feeds)
+            if (feed != null)
+              Dismissible(
+                background: Container(color: Colors.red),
+                key: UniqueKey(),
+                onDismissed: (direction) {
+                  removeFeed(feed);
+                },
+                child: Card(
+                  child: Padding(
                     padding: const EdgeInsets.only(left: 20, right: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -59,7 +68,7 @@ class Feeds extends DirectoryElement {
                         IconButton(
                             icon: const Icon(Icons.refresh),
                             onPressed: () {
-                              updateFeed(feed.uri);
+                              updateFeed(feed.uri!);
                             }),
                         Expanded(
                             flex: 1,
@@ -73,9 +82,9 @@ class Feeds extends DirectoryElement {
                                   "\nLast Updated: " +
                                   feed.lastFetchedAt +
                                   "\n" +
-                                  feed.links.length.toString() +
+                                  feed.links!.length.toString() +
                                   " entries"),
-                              title: Text(feed.title,
+                              title: Text(feed.title!,
                                   style: const TextStyle(fontSize: 14)),
                             )),
                         IconButton(
@@ -85,15 +94,11 @@ class Feeds extends DirectoryElement {
                             }),
                       ],
                     ),
-                  ));
-                  return Dismissible(
-                    background: Container(color: Colors.red),
-                    key: UniqueKey(),
-                    onDismissed: (direction) {
-                      removeFeed(feed);
-                    },
-                    child: tab,
-                  );
-                }).toList()));
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
   }
 }

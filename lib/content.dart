@@ -15,17 +15,17 @@ const baseFontSize = 14.0;
 
 class Content extends StatefulWidget {
   const Content({
-    Key key,
-    this.currentUri,
-    this.contentData,
-    this.viewSource,
-    this.onLocation,
-    this.onSearch,
-    this.onNewTab,
+    Key? key,
+    required this.currentUri,
+    required this.contentData,
+    required this.viewSource,
+    required this.onLocation,
+    required this.onSearch,
+    required this.onNewTab,
   }) : super(key: key);
 
-  final Uri currentUri;
-  final ContentData contentData;
+  final Uri? currentUri;
+  final ContentData? contentData;
   final bool viewSource;
   final Function onLocation;
   final Function onSearch;
@@ -59,23 +59,23 @@ class _ContentState extends State<Content> {
       return const Text("");
     } else if (widget.viewSource) {
       return SelectableText(
-        widget.contentData.content,
+        widget.contentData!.content!,
         style: const TextStyle(
             fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
       );
-    } else if (widget.contentData.mode == "plain") {
-      var groups = analyze(widget.contentData.content, alwaysPre: true);
+    } else if (widget.contentData!.mode == "plain") {
+      var groups = analyze(widget.contentData!.content, alwaysPre: true)!;
       return PreText(
-        actualText: widget.contentData.content,
+        actualText: widget.contentData!.content,
         maxLine: groups[0]["maxLine"],
       );
-    } else if (widget.contentData.mode == "content") {
-      var groups = analyze(widget.contentData.content);
+    } else if (widget.contentData!.mode == "content") {
+      var groups = analyze(widget.contentData!.content)!;
       return groupsToWidget(groups);
-    } else if (widget.contentData.mode == "search") {
+    } else if (widget.contentData!.mode == "search") {
       return Column(
           children: <Widget>[
-                ExtendedText(widget.contentData.content),
+                ExtendedText(widget.contentData!.content!),
                 DecoratedBox(
                     decoration: BoxDecoration(
                         color: _inputError ? Colors.deepOrange : null),
@@ -92,17 +92,17 @@ class _ContentState extends State<Content> {
               (_inputError
                   ? [ExtendedText("\n\nInput too long: $_inputLength")]
                   : []));
-    } else if (widget.contentData.mode == "error") {
-      return ExtendedText("An error occurred\n\n" + widget.contentData.content);
-    } else if (widget.contentData.mode == "image") {
-      return Image.memory(widget.contentData.bytes, errorBuilder:
-          (BuildContext context, Object exception, StackTrace stackTrace) {
+    } else if (widget.contentData!.mode == "error") {
+      return ExtendedText("An error occurred\n\n" + widget.contentData!.content!);
+    } else if (widget.contentData!.mode == "image") {
+      return Image.memory(widget.contentData!.bytes!, errorBuilder:
+          (BuildContext context, Object exception, StackTrace? stackTrace) {
         return const ExtendedText("broken image ¯\\_(ツ)_/¯");
       });
-    } else if (widget.contentData.mode == "opening") {
-      return ExtendedText(widget.contentData.content);
+    } else if (widget.contentData!.mode == "opening") {
+      return ExtendedText(widget.contentData!.content!);
     } else {
-      return ExtendedText("Unknown mode ${widget.contentData.mode}");
+      return ExtendedText("Unknown mode ${widget.contentData!.mode}");
     }
   }
 
@@ -125,9 +125,9 @@ class _ContentState extends State<Content> {
               Link(
                 title: r['data'],
                 link: r['link'],
-                currentUri: widget.currentUri,
-                onLocation: widget.onLocation,
-                onNewTab: widget.onNewTab,
+                currentUri: widget.currentUri!,
+                onLocation: widget.onLocation as void Function(Uri),
+                onNewTab: widget.onNewTab as void Function(),
               )
             else if (r["type"] == "list")
               ListItem(content: r["data"])
@@ -138,22 +138,22 @@ class _ContentState extends State<Content> {
 }
 
 class PreText extends StatefulWidget {
-  final String actualText;
-  final int maxLine;
+  final String? actualText;
+  final int? maxLine;
 
-  const PreText({Key key, this.actualText, this.maxLine}) : super(key: key);
+  const PreText({Key? key, this.actualText, this.maxLine}) : super(key: key);
 
   @override
   _PreTextState createState() => _PreTextState();
 }
 
 class _PreTextState extends State<PreText> {
-  int _scale;
+  int? _scale;
 
   @override
   initState() {
     super.initState();
-    if (widget.maxLine > 120) {
+    if (widget.maxLine! > 120) {
       _scale = -1;
     }
   }
@@ -174,7 +174,7 @@ class _PreTextState extends State<PreText> {
       fit = SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ExtendedText(
-            widget.actualText,
+            widget.actualText!,
             selectionEnabled: true,
             style: const TextStyle(
               fontFamily: "DejaVu Sans Mono",
@@ -184,7 +184,7 @@ class _PreTextState extends State<PreText> {
     } else if (wrap) {
       double size = (TextPainter(
               text: TextSpan(
-                text: "0".padLeft(_scale),
+                text: "0".padLeft(_scale!),
                 style: const TextStyle(
                   fontFamily: "DejaVu Sans Mono",
                   fontSize: baseFontSize,
@@ -200,7 +200,7 @@ class _PreTextState extends State<PreText> {
       fit = FittedBox(
           fit: BoxFit.fill,
           child: SizedBox(
-              child: ExtendedText(widget.actualText,
+              child: ExtendedText(widget.actualText!,
                   softWrap: wrap,
                   style: const TextStyle(
                       fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
@@ -208,7 +208,7 @@ class _PreTextState extends State<PreText> {
               width: size));
     } else {
       fit = FittedBox(
-          child: ExtendedText(widget.actualText,
+          child: ExtendedText(widget.actualText!,
               selectionEnabled: true,
               style: const TextStyle(
                   fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),

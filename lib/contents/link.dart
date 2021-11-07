@@ -5,12 +5,12 @@ import 'package:flutter/services.dart';
 
 class Link extends StatelessWidget {
   const Link({
-    Key key,
-    @required this.title,
-    @required this.currentUri,
-    @required this.link,
-    @required this.onLocation,
-    @required this.onNewTab,
+    Key? key,
+    required this.title,
+    required this.currentUri,
+    required this.link,
+    required this.onLocation,
+    required this.onNewTab,
   }) : super(key: key);
 
   final Uri currentUri;
@@ -23,7 +23,7 @@ class Link extends StatelessWidget {
   Widget build(BuildContext context) {
     Uri uri = resolveLink(currentUri, link);
     bool httpWarn = uri.scheme != "gemini";
-    bool visited = appKey.currentState.recents.contains(uri.toString());
+    bool visited = appKey.currentState!.recents.contains(uri.toString());
     return GestureDetector(
         child: Padding(
             padding: const EdgeInsets.fromLTRB(0, 7, 0, 7),

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 enum _MenuSelection { logs, source }
 
 class TabMenuWidget extends StatelessWidget {
-  const TabMenuWidget({Key key, @required this.tab}) : super(key: key);
+  const TabMenuWidget({Key? key, required this.tab}) : super(key: key);
 
   final BrowserTabState tab;
 

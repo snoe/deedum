@@ -6,9 +6,9 @@ class Directory extends StatefulWidget {
   final List<IconData> icons;
 
   const Directory({
-    Key key,
-    @required this.children,
-    @required this.icons,
+    Key? key,
+    required this.children,
+    required this.icons,
   }) : super(key: key);
 
   @override
@@ -19,7 +19,7 @@ class _DirectoryState extends State<Directory>
     with SingleTickerProviderStateMixin {
   final controllerKey = const GlobalObjectKey("tabcontroller");
 
-  TabController _tabController;
+  TabController? _tabController;
   int _activeTabIndex = 0;
 
   @override
@@ -27,18 +27,18 @@ class _DirectoryState extends State<Directory>
     super.initState();
     _tabController = TabController(vsync: this, length: widget.children.length);
 
-    _tabController.addListener(_setActiveTabIndex);
+    _tabController!.addListener(_setActiveTabIndex);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController!.dispose();
     super.dispose();
   }
 
   void _setActiveTabIndex() {
     setState(() {
-      _activeTabIndex = _tabController.index;
+      _activeTabIndex = _tabController!.index;
     });
   }
 

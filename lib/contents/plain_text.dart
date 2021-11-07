@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PlainText extends StatelessWidget {
-  const PlainText({Key key, @required this.content}) : super(key: key);
+  const PlainText({Key? key, required this.content}) : super(key: key);
 
   final String content;
 

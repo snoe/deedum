@@ -6,11 +6,11 @@ import 'package:string_validator/string_validator.dart' as validator;
 
 class AddressBar extends StatelessWidget {
   const AddressBar({
-    Key key,
-    this.controller,
-    this.focusNode,
-    this.loading,
-    this.onLocation,
+    Key? key,
+    required this.controller,
+    required this.focusNode,
+    required this.loading,
+    required this.onLocation,
   }) : super(key: key);
 
   final TextEditingController controller;
@@ -46,7 +46,7 @@ class AddressBar extends StatelessWidget {
                 ),
                 controller: controller,
                 onSubmitted: (value) async {
-                  Uri newURL = Uri.tryParse(value);
+                  Uri newURL = Uri.tryParse(value)!;
                   final validated = (newURL.scheme == "gemini" ||
                       newURL.scheme == "about" ||
                       validator.isURL(value, {
@@ -61,7 +61,7 @@ class AddressBar extends StatelessWidget {
                     }
                   } else {
                     String searchEngine =
-                        appKey.currentState.settings["search"];
+                        appKey.currentState!.settings["search"];
                     newURL = Uri.parse(searchEngine);
                     newURL = newURL.replace(query: value);
                   }

@@ -5,17 +5,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class History extends DirectoryElement {
-  final void Function(String, bool) onNewTab;
+  final void Function(String?, bool?) onNewTab;
   final ValueChanged<String> onBookmark;
   final List<String> recents;
 
   final bookmarkKey = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
 
   History({
-    Key key,
-    @required this.recents,
-    @required this.onNewTab,
-    @required this.onBookmark,
+    Key? key,
+    required this.recents,
+    required this.onNewTab,
+    required this.onBookmark,
   }) : super(key: key);
 
   @override
@@ -39,7 +39,7 @@ class History extends DirectoryElement {
             title: Text(Uri.parse(recentLocation).path == ""
                 ? "/"
                 : Uri.decodeFull(Uri.parse(recentLocation).path)),
-            bookmarked: appKey.currentState.bookmarks.contains(recentLocation),
+            bookmarked: appKey.currentState!.bookmarks.contains(recentLocation),
             showBookmarked: true,
             showDelete: false,
             onSelect: () => onNewTab(recentLocation, null),

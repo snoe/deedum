@@ -41,13 +41,15 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
   Uint8List tofuBytes;
   try {
     ASN1Parser p = ASN1Parser(serverCert.der);
-    ASN1Sequence o = (p.nextObject() as ASN1Sequence).elements[0];
+    ASN1Sequence o =
+        (p.nextObject() as ASN1Sequence).elements[0] as ASN1Sequence;
     List<ASN1Object> elements = o.elements;
     if (elements.first.tag == 0xa0) {
       elements = elements.skip(1).toList();
     }
     var spkiObject = elements[5];
-    x.SubjectPublicKeyInfo spki = x.SubjectPublicKeyInfo.fromAsn1(spkiObject);
+    x.SubjectPublicKeyInfo spki =
+        x.SubjectPublicKeyInfo.fromAsn1(spkiObject as ASN1Sequence);
     tofuBytes = spki.toAsn1().encodedBytes;
   } catch (e) {
     log("Failed to find spki $e");
@@ -57,15 +59,14 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
   var tofuHash = sha256.convert(tofuBytes).bytes;
 
   final Database db = database;
-  var hostPort = "${uri.host}:${uri.port ?? 1965}";
+  var hostPort = "${uri.host}:${uri.port != 0 ? uri.port : 1965}";
   var hashes =
       await db.rawQuery("select hash from hosts where name = ?", [hostPort]);
-  if (hashes != null &&
-      hashes.length == 1 &&
-      !listEquals(hashes[0]["hash"], tofuHash)) {
+  if (hashes.length == 1 &&
+      !listEquals(hashes[0]["hash"] as List<int>?, tofuHash)) {
     var value = await showDialog(
         barrierDismissible: false, // user must tap button!
-        context: materialKey.currentContext,
+        context: materialKey.currentContext!,
         builder: (BuildContext context) {
           var size = MediaQuery.of(context).size;
           var length = math.min(size.height - 150, size.width - 200);
@@ -82,7 +83,7 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
                     height: length,
                     child: FittedBox(
                         fit: BoxFit.fill,
-                        child: SelectableText(qrEncode(tofuHash),
+                        child: SelectableText(qrEncode(tofuHash as Uint8List),
                             style: const TextStyle(
                                 fontFamily: "DejaVu Sans Mono")))),
                 Text([
@@ -126,7 +127,7 @@ String _punyEncodeUrl(String url) {
   RegExp expression = RegExp(pattern, caseSensitive: false);
 
   while (expression.hasMatch(url)) {
-    String match = expression.firstMatch(url).group(1);
+    String match = expression.firstMatch(url)!.group(1)!;
     url = url.replaceFirst(match, "xn--" + punycodeEncode(match));
   }
 
@@ -135,7 +136,7 @@ String _punyEncodeUrl(String url) {
 
 Future<void> onURI(
     Uri uri,
-    void Function(Uri, Uint8List, int) handleBytes,
+    void Function(Uri, Uint8List?, int) handleBytes,
     void Function(Uri, bool, bool, int) handleDone,
     void Function(String, String, int) handleLog,
     int requestID) async {
@@ -147,14 +148,14 @@ Future<void> onURI(
 
   try {
     if (uri.toString() == "about:feeds") {
-      var feeds = appKey.currentState.feeds;
+      var feeds = appKey.currentState!.feeds;
       var linksByDate = feeds.fold<List>([], (accum, feed) {
-        accum.addAll(feed.links);
+        accum.addAll(feed!.links!);
         return accum;
-      }).groupBy<String>((link) => link.entryDate);
-      var dates = linksByDate.keys.toList()..sort((a, b) => b.compareTo(a));
+      }).groupBy<String?>((link) => link.entryDate);
+      var dates = linksByDate.keys.toList()..sort((a, b) => b!.compareTo(a!));
       var entries = dates.map((date) {
-        var links = linksByDate[date];
+        var links = linksByDate[date]!;
         var linksForDay = links
             .map((link) =>
                 "=> ${link.entryUri} ${link.feedTitle}: ${link.entryTitle}")
@@ -174,13 +175,11 @@ Future<void> onURI(
       handleLog("info", "Connecting to $uri", requestID);
       var socket = await connect(uri);
       handleLog("info", "Connected to $uri", requestID);
-      await handleCert(uri, socket.peerCertificate);
+      await handleCert(uri, socket.peerCertificate!);
       handleLog("info", "Cert OK for $uri", requestID);
       timeout = await fetch(uri, socket, handleBytes, handleLog, requestID);
     }
-  } catch (e, s) {
-    print(e);
-    print(s);
+  } catch (e) {
     handleLog("error", e.toString(), requestID);
   }
   handleDone(uri, timeout, opened, requestID);
@@ -198,7 +197,7 @@ Future<RawSecureSocket> connect(Uri uri) async {
 Future<bool> fetch(
     Uri uri,
     RawSecureSocket socket,
-    void Function(Uri, Uint8List, int) handleBytes,
+    void Function(Uri, Uint8List?, int) handleBytes,
     void Function(String, String, int) handleLog,
     int requestID) async {
   var timeout = false;

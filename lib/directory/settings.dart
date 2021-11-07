@@ -9,9 +9,9 @@ class Settings extends DirectoryElement {
   final homepageKey = GlobalKey<FormState>();
 
   Settings({
-    Key key,
-    @required this.settings,
-    @required this.onSaveSettings,
+    Key? key,
+    required this.settings,
+    required this.onSaveSettings,
   }) : super(key: key);
 
   @override
@@ -39,7 +39,7 @@ class Settings extends DirectoryElement {
                 validator: validateGeminiURL,
                 onFieldSubmitted: validateAndSaveForm,
                 onSaved: (s) {
-                  s = prefixSchema(s);
+                  s = prefixSchema(s!);
                   onSaveSettings("homepage", s);
                 },
               ),
@@ -51,7 +51,7 @@ class Settings extends DirectoryElement {
                 validator: validateGeminiURL,
                 onFieldSubmitted: validateAndSaveForm,
                 onSaved: (s) {
-                  s = prefixSchema(s);
+                  s = prefixSchema(s!);
                   onSaveSettings("search", s);
                 },
               ),
@@ -76,13 +76,13 @@ class Settings extends DirectoryElement {
     return s;
   }
 
-  String validateGeminiURL(String s) {
-    if (s.trim().isNotEmpty) {
+  String? validateGeminiURL(String? s) {
+    if (s!.trim().isNotEmpty) {
       try {
         s = removeGeminiScheme(s);
 
         var u = toSchemeUri(s);
-        if (u.scheme.isEmpty) {
+        if (u == null || u.scheme.isEmpty) {
           return "Please use a valid gemini uri";
         }
       } catch (_) {
@@ -93,8 +93,8 @@ class Settings extends DirectoryElement {
   }
 
   void validateAndSaveForm(String s) {
-    if (homepageKey.currentState.validate()) {
-      homepageKey.currentState.save();
+    if (homepageKey.currentState!.validate()) {
+      homepageKey.currentState!.save();
     }
   }
 }

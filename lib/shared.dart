@@ -6,17 +6,17 @@ import 'dart:math' as math;
 import 'package:sqflite/sqlite_api.dart';
 
 class ContentData {
-  final Uint8List _bytes;
-  final String _content;
-  final String _mode;
-  ContentData({String content, String mode, Uint8List bytes})
+  final Uint8List? _bytes;
+  final String? _content;
+  final String? _mode;
+  ContentData({String? content, String? mode, Uint8List? bytes})
       : _content = content,
         _mode = mode,
         _bytes = bytes;
 
-  Uint8List get bytes => _bytes;
-  String get mode => _mode;
-  String get content => _content;
+  Uint8List? get bytes => _bytes;
+  String? get mode => _mode;
+  String? get content => _content;
   @override
   String toString() {
     var preview = content ?? "";
@@ -25,10 +25,10 @@ class ContentData {
 }
 
 class Feed {
-  final String title;
-  final Uri uri;
-  final List<dynamic> links;
-  final String content;
+  final String? title;
+  final Uri? uri;
+  final List<dynamic>? links;
+  final String? content;
   final String lastFetchedAt;
 
   Feed(this.uri, this.title, this.links, this.content, this.lastFetchedAt);
@@ -39,8 +39,8 @@ class Feed {
   }
 }
 
-String toSchemelessString(Uri uri) {
-  String uriString;
+String toSchemelessString(Uri? uri) {
+  late String uriString;
   if (uri != null) {
     if (!uri.hasScheme) {
       uriString = uri.toString();
@@ -54,18 +54,18 @@ String toSchemelessString(Uri uri) {
   return uriString;
 }
 
-Uri toSchemeUri(String uriString) {
-  var u = Uri.tryParse(uriString);
+Uri? toSchemeUri(String uriString) {
+  var u = Uri.tryParse(uriString)!;
   if (!u.hasScheme) {
-    u = Uri.tryParse("gemini://" + uriString);
+    return Uri.tryParse("gemini://" + uriString)!;
   } else if (u.scheme != "gemini" && u.scheme != "about") {
-    u = null;
+    return null;
   }
   return u;
 }
 
 Uri resolveLink(Uri currentUri, String link) {
-  var location = Uri.tryParse(link);
+  var location = Uri.tryParse(link)!;
   if (!location.hasScheme) {
     location = currentUri.resolve(link);
   }
@@ -93,7 +93,7 @@ extension CollectionUtil<T> on Iterable<T> {
   }
 }
 
-Database database;
+late Database database;
 var emojiList = [
   "😀",
   "😃",

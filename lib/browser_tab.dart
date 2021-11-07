@@ -16,7 +16,7 @@ import 'parser.dart';
 
 class HistoryEntry {
   final Uri location;
-  List<Uint8List> bytes;
+  List<Uint8List?>? bytes;
   double scrollPosition;
 
   HistoryEntry(this.location, this.bytes, this.scrollPosition);
@@ -29,14 +29,14 @@ class HistoryEntry {
 
 class BrowserTab extends StatefulWidget {
   final Uri initialLocation;
-  final void Function(String, bool) onNewTab;
+  final void Function(String?, bool?) onNewTab;
   final ValueChanged<String> addRecent;
 
   const BrowserTab({
-    Key key,
-    this.initialLocation,
-    this.onNewTab,
-    this.addRecent,
+    Key? key,
+    required this.initialLocation,
+    required this.onNewTab,
+    required this.addRecent,
   }) : super(key: key);
 
   @override
@@ -44,15 +44,15 @@ class BrowserTab extends StatefulWidget {
 }
 
 class BrowserTabState extends State<BrowserTab> {
-  TextEditingController _controller;
-  FocusNode _focusNode;
-  List<Uint8List> bytes;
-  ContentData contentData;
-  ContentData parsedData;
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+  List<Uint8List>? bytes;
+  ContentData? contentData;
+  ContentData? parsedData;
   List<HistoryEntry> _history = [];
   int _historyIndex = -1;
   bool _loading = false;
-  Uri uri;
+  Uri? uri;
   ScrollController _scrollController = ScrollController();
   int _requestID = 1;
 
@@ -117,26 +117,27 @@ class BrowserTabState extends State<BrowserTab> {
           contentData = ContentData(
               mode: "error", content: "No response. connection closed");
         }
-      } else if (parsedData.mode == "error") {
+      } else if (parsedData!.mode == "error") {
         contentData = parsedData;
-      } else if (parsedData.mode == 'redirect') {
-        if (_redirects.contains(parsedData.content) || _redirects.length >= 5) {
+      } else if (parsedData!.mode == 'redirect') {
+        if (_redirects.contains(parsedData!.content) ||
+            _redirects.length >= 5) {
           contentData = ContentData(
               mode: "error",
               content:
                   "REDIRECT LOOP\n--------------\n" + _redirects.join("\n"));
         } else {
-          var newLocation = Uri.tryParse(parsedData.content);
+          var newLocation = Uri.tryParse(parsedData!.content!)!;
           if (!newLocation.hasScheme) {
-            newLocation = location.resolve(parsedData.content);
+            newLocation = location.resolve(parsedData!.content!);
           }
-          _redirects.add(parsedData.content);
+          _redirects.add(parsedData!.content);
           _requestID += 1;
           resetResponse(newLocation, redirect: true);
           onURI(newLocation, _handleBytes, _handleDone, _handleLog, _requestID);
         }
       } else {
-        _history[_historyIndex].bytes = bytes;
+        _history[_historyIndex].bytes = bytes!;
         contentData = parsedData;
       }
       _loading = false;
@@ -231,7 +232,7 @@ class BrowserTabState extends State<BrowserTab> {
         viewingSource = !viewingSource;
       });
 
-  void _handleBytes(Uri location, Uint8List newBytes, int requestID) async {
+  void _handleBytes(Uri location, Uint8List? newBytes, int requestID) async {
     if (newBytes == null) {
       return;
     }
@@ -241,9 +242,9 @@ class BrowserTabState extends State<BrowserTab> {
       return;
     }
     setState(() {
-      bytes.add(newBytes);
-      parsedData = parse(bytes);
-      if (parsedData != null && parsedData.mode == "content") {
+      bytes!.add(newBytes);
+      parsedData = parse(bytes!);
+      if (parsedData != null && parsedData!.mode == "content") {
         contentData = parsedData;
       }
     });
@@ -270,10 +271,10 @@ class BrowserTabState extends State<BrowserTab> {
   onSearch(String encodedSearch) {
     if (encodedSearch.isNotEmpty) {
       var u = Uri(
-          scheme: uri.scheme,
-          host: uri.host,
-          port: uri.port,
-          path: uri.path,
+          scheme: uri!.scheme,
+          host: uri!.host,
+          port: uri!.port,
+          path: uri!.path,
           query: encodedSearch);
       onLocation(u);
     }
@@ -292,7 +293,7 @@ class BrowserTabState extends State<BrowserTab> {
       if (entry.bytes != null) {
         _scrollController =
             ScrollController(initialScrollOffset: entry.scrollPosition);
-        contentData = parse(entry.bytes);
+        contentData = parse(entry.bytes!);
       } else {
         onLocation(entry.location);
       }
@@ -329,7 +330,7 @@ class BrowserTabState extends State<BrowserTab> {
 
   @override
   Widget build(BuildContext context) {
-    Widget bottomBar;
+    Widget? bottomBar;
     if (isIos) {
       bottomBar = BottomAppBar(
           color: Theme.of(context).cardColor,
@@ -375,7 +376,7 @@ class BrowserTabState extends State<BrowserTab> {
               child: content,
             )));
 
-    List<Widget> actions;
+    List<Widget> actions = [];
     if (_showActions) {
       actions = [
         IconButton(
@@ -389,7 +390,7 @@ class BrowserTabState extends State<BrowserTab> {
                       borderRadius: const BorderRadius.all(Radius.circular(3))),
                   child: Align(
                       alignment: Alignment.center,
-                      child: Text("${appKey.currentState.tabs.length}",
+                      child: Text("${appKey.currentState!.tabs.length}",
                           style: const TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
@@ -409,7 +410,7 @@ class BrowserTabState extends State<BrowserTab> {
     }
 
     return Scaffold(
-        backgroundColor: (contentData != null && contentData.mode == "error")
+        backgroundColor: (contentData != null && contentData!.mode == "error")
             ? Colors.deepOrange
             : Theme.of(context).canvasColor,
         bottomNavigationBar: bottomBar,

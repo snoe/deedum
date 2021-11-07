@@ -4,17 +4,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class Bookmarks extends DirectoryElement {
-  final void Function(String, bool) onNewTab;
+  final void Function(String?, bool?) onNewTab;
   final ValueChanged<String> onBookmark;
   final Set<String> bookmarks;
 
   final bookmarkKey = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
 
   Bookmarks({
-    Key key,
-    @required this.bookmarks,
-    @required this.onNewTab,
-    @required this.onBookmark,
+    Key? key,
+    required this.bookmarks,
+    required this.onNewTab,
+    required this.onBookmark,
   }) : super(key: key);
 
   @override

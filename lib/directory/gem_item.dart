@@ -13,15 +13,15 @@ class GemItem extends StatelessWidget {
 
   final bool showFeed;
 
-  final Function onSelect;
-  final Function onBookmark;
-  final Function onDelete;
-  final Function onFeed;
+  final VoidCallback onSelect;
+  final VoidCallback? onBookmark;
+  final VoidCallback? onDelete;
+  final VoidCallback? onFeed;
 
   const GemItem({
-    Key key,
-    this.url,
-    this.title,
+    Key? key,
+    required this.url,
+    required this.title,
     this.selected = false,
     this.bookmarked = false,
     this.feedActive = false,
@@ -30,7 +30,7 @@ class GemItem extends StatelessWidget {
     this.showDelete = false,
     this.disableDelete = false,
     this.showFeed = false,
-    this.onSelect,
+    required this.onSelect,
     this.onBookmark,
     this.onDelete,
     this.onFeed,
