@@ -1,32 +1,34 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:math' as math;
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'shared.dart';
 
+const allowMalformedUtf8Decoder = Utf8Decoder(allowMalformed: true);
+const allowInvalidLatinDecoder = Latin1Decoder(allowInvalid: true);
+
 String bytesToString(ContentType contentType, List<int> bytes) {
-  var rest;
+  String rest;
   if (contentType.charset == null ||
-      contentType.charset.isEmpty ||
+      contentType.charset!.isEmpty ||
       contentType.charset == "utf-8") {
-    rest = Utf8Decoder(allowMalformed: true).convert(bytes);
+    rest = allowMalformedUtf8Decoder.convert(bytes);
   } else if (contentType.charset == "iso-8859-1") {
-    rest = Latin1Decoder(allowInvalid: true).convert(bytes);
+    rest = allowInvalidLatinDecoder.convert(bytes);
   } else if (contentType.charset == "us-ascii") {
-    rest = Latin1Decoder(allowInvalid: true).convert(bytes);
+    rest = allowInvalidLatinDecoder.convert(bytes);
   } else {
-    rest = Utf8Decoder(allowMalformed: true).convert(bytes);
+    rest = allowMalformedUtf8Decoder.convert(bytes);
   }
 
   return rest;
 }
 
-ContentData parse(List<Uint8List> chunksList) {
+ContentData? parse(List<Uint8List?> chunksList) {
   List<int> chunks = <int>[];
   chunks = chunksList.fold(chunks, (chunks, element) {
-    return chunks + element;
+    return chunks + element!;
   });
 
   if (chunks.isEmpty) {
@@ -40,30 +42,30 @@ ContentData parse(List<Uint8List> chunksList) {
     }
   }
   var statusBytes = chunks.sublist(0, endofline - 1);
-  var status;
-  var meta;
+  late int status;
+  String? meta;
 
-  var statusMeta = Utf8Decoder(allowMalformed: true).convert(statusBytes);
+  var statusMeta = allowMalformedUtf8Decoder.convert(statusBytes);
 
   var m = RegExp(r'^(\d\d)\s(.+)$').firstMatch(statusMeta);
   if (m != null) {
-    status = int.parse(m.group(1));
+    status = int.parse(m.group(1)!);
     meta = m.group(2);
   }
 
-  ContentData result;
+  ContentData? result;
 
-  if (statusMeta == null) {
+  if (statusMeta.isEmpty) {
     result = null;
   } else if (m == null) {
-    String content = Utf8Decoder(allowMalformed: true).convert(chunks);
+    String content = allowMalformedUtf8Decoder.convert(chunks);
     result = ContentData(
         mode: "error",
         content: "INVALID RESPONSE\n--------------\n" +
             content +
             "\n--------------");
-  } else if (meta.length > 1024) {
-    String content = Utf8Decoder(allowMalformed: true).convert(chunks);
+  } else if (meta!.length > 1024) {
+    String content = allowMalformedUtf8Decoder.convert(chunks);
     result = ContentData(
         mode: "error",
         content:
@@ -92,7 +94,7 @@ ContentData parse(List<Uint8List> chunksList) {
   } else if (status >= 30 && status < 40) {
     result = ContentData(content: meta, mode: "redirect");
   } else {
-    String content = Utf8Decoder(allowMalformed: true).convert(chunks);
+    String content = allowMalformedUtf8Decoder.convert(chunks);
     result = ContentData(
         mode: "error",
         content: "UNHANDLED STATUS\n--------------\n" +
@@ -113,9 +115,9 @@ void addToGroup(r, String type, String line) {
   }
 }
 
-List<dynamic> analyze(content, {alwaysPre = false}) {
+List<dynamic>? analyze(content, {alwaysPre = false}) {
   var lineInfo = LineSplitter.split(content)
-      .fold({"groups": [], "parse?": true}, (r, line) {
+      .fold({"groups": [], "parse?": true}, (dynamic r, line) {
     if (!alwaysPre && line.startsWith("```")) {
       r["parse?"] = !r["parse?"];
     } else if (alwaysPre || !r["parse?"]) {
@@ -123,15 +125,15 @@ List<dynamic> analyze(content, {alwaysPre = false}) {
     } else if (line.startsWith(">")) {
       addToGroup(r, "quote", line.substring(1));
     } else if (line.startsWith("#")) {
-      var m = RegExp(r'^(#*)\s*(.*)$').firstMatch(line);
-      var hashCount = math.min(m.group(1).length, 3);
+      var m = RegExp(r'^(#*)\s*(.*)$').firstMatch(line)!;
+      var hashCount = math.min(m.group(1)!.length, 3);
       r["groups"]
           .add({"type": "header", "data": m.group(2), "size": hashCount});
     } else if (line.startsWith("=>")) {
       var m = RegExp(r'^=>\s*(\S+)\s*(.*)$').firstMatch(line);
       if (m != null) {
         var link = m.group(1);
-        var rest = m.group(2).trim();
+        var rest = m.group(2)!.trim();
         var title = rest.isEmpty ? link : rest;
         r["groups"].add({"type": "link", "link": link, "data": title});
       }
@@ -142,6 +144,6 @@ List<dynamic> analyze(content, {alwaysPre = false}) {
     }
     return r;
   });
-  List groups = lineInfo["groups"];
+  List? groups = lineInfo["groups"];
   return groups;
 }

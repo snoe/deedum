@@ -16,7 +16,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:x509/x509.dart' as x;
 import 'package:punycode/punycode.dart';
 
-
 Future<ContentData> homepageContent() async {
   var lines = [
     "Welcome to the Geminiverse.",
@@ -39,16 +38,18 @@ Future<ContentData> homepageContent() async {
 }
 
 Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
-  var tofuBytes;
+  Uint8List tofuBytes;
   try {
     ASN1Parser p = ASN1Parser(serverCert.der);
-    ASN1Sequence o = (p.nextObject() as ASN1Sequence).elements[0];
+    ASN1Sequence o =
+        (p.nextObject() as ASN1Sequence).elements[0] as ASN1Sequence;
     List<ASN1Object> elements = o.elements;
     if (elements.first.tag == 0xa0) {
       elements = elements.skip(1).toList();
     }
     var spkiObject = elements[5];
-    x.SubjectPublicKeyInfo spki = x.SubjectPublicKeyInfo.fromAsn1(spkiObject);
+    x.SubjectPublicKeyInfo spki =
+        x.SubjectPublicKeyInfo.fromAsn1(spkiObject as ASN1Sequence);
     tofuBytes = spki.toAsn1().encodedBytes;
   } catch (e) {
     log("Failed to find spki $e");
@@ -57,50 +58,51 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
 
   var tofuHash = sha256.convert(tofuBytes).bytes;
 
-  final Database db = await database;
-  var hostPort = "${uri.host}:${uri.port ?? 1965}";
+  final Database db = database;
+  var hostPort = "${uri.host}:${uri.port != 0 ? uri.port : 1965}";
   var hashes =
       await db.rawQuery("select hash from hosts where name = ?", [hostPort]);
-  if (hashes != null &&
-      hashes.length == 1 &&
-      !listEquals(hashes[0]["hash"], tofuHash)) {
+  if (hashes.length == 1 &&
+      !listEquals(hashes[0]["hash"] as List<int>?, tofuHash)) {
     var value = await showDialog(
         barrierDismissible: false, // user must tap button!
-        context: materialKey.currentContext,
+        context: materialKey.currentContext!,
         builder: (BuildContext context) {
           var size = MediaQuery.of(context).size;
           var length = math.min(size.height - 150, size.width - 200);
 
           return AlertDialog(
-            title: Text("The server's certificate does not match."),
+            title: const Text("The server's certificate does not match."),
             content: SingleChildScrollView(
                 child: Column(
               children: <Widget>[
-                Text("You should confirm out-of-band that this is expected.\n"),
+                const Text(
+                    "You should confirm out-of-band that this is expected.\n"),
                 SizedBox(
                     width: length,
                     height: length,
                     child: FittedBox(
                         fit: BoxFit.fill,
-                        child: SelectableText(qrEncode(tofuHash),
-                            style: TextStyle(fontFamily: "DejaVu Sans Mono")))),
+                        child: SelectableText(qrEncode(tofuHash as Uint8List),
+                            style: const TextStyle(
+                                fontFamily: "DejaVu Sans Mono")))),
                 Text([
                   "subject: ${serverCert.subject}",
                   "issuer: ${serverCert.issuer}",
-                  "start: ${new DateFormat("y-M-d h:m").format(serverCert.startValidity)}",
-                  "end: ${new DateFormat("y-M-d h:m").format(serverCert.endValidity)}"
+                  "start: ${DateFormat("y-M-d h:m").format(serverCert.startValidity)}",
+                  "end: ${DateFormat("y-M-d h:m").format(serverCert.endValidity)}"
                 ].join("\n"))
               ],
             )),
             actions: <Widget>[
-              FlatButton(
-                child: Text('I accept the new certificate'),
+              TextButton(
+                child: const Text('I accept the new certificate'),
                 onPressed: () {
                   Navigator.of(context).pop(true);
                 },
               ),
-              FlatButton(
-                child: Text('Uh oh, this is unexpected',
+              TextButton(
+                child: const Text('Uh oh, this is unexpected',
                     style: TextStyle(color: Colors.red)),
                 onPressed: () {
                   Navigator.of(context).pop(false);
@@ -122,22 +124,22 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
 String _punyEncodeUrl(String url) {
   // from https://github.com/Teifun2/nextcloud-cookbook-flutter
   String pattern = r"(?:\.|^)([^.]*?[^\x00-\x7F][^.]*?)(?:\.|$)";
-  RegExp expression = new RegExp(pattern, caseSensitive: false);
+  RegExp expression = RegExp(pattern, caseSensitive: false);
 
   while (expression.hasMatch(url)) {
-    String match = expression.firstMatch(url).group(1);
+    String match = expression.firstMatch(url)!.group(1)!;
     url = url.replaceFirst(match, "xn--" + punycodeEncode(match));
   }
 
   return url;
 }
+
 Future<void> onURI(
     Uri uri,
-    void Function(Uri, Uint8List, int) handleBytes,
+    void Function(Uri, Uint8List?, int) handleBytes,
     void Function(Uri, bool, bool, int) handleDone,
     void Function(String, String, int) handleLog,
     int requestID) async {
-
   bool timeout = false;
   bool opened = false;
   if (uri.host != "") {
@@ -146,14 +148,14 @@ Future<void> onURI(
 
   try {
     if (uri.toString() == "about:feeds") {
-      var feeds = appKey.currentState.feeds;
+      var feeds = appKey.currentState!.feeds;
       var linksByDate = feeds.fold<List>([], (accum, feed) {
-        accum.addAll(feed.links);
+        accum.addAll(feed!.links!);
         return accum;
-      }).groupBy<String>((link) => link.entryDate);
-      var dates = linksByDate.keys.toList()..sort((a,b) => b.compareTo(a));
+      }).groupBy<String?>((link) => link.entryDate);
+      var dates = linksByDate.keys.toList()..sort((a, b) => b!.compareTo(a!));
       var entries = dates.map((date) {
-        var links = linksByDate[date];
+        var links = linksByDate[date]!;
         var linksForDay = links
             .map((link) =>
                 "=> ${link.entryUri} ${link.feedTitle}: ${link.entryTitle}")
@@ -161,7 +163,7 @@ Future<void> onURI(
         return "## $date\n$linksForDay";
       }).join("\n\n");
       var result = "20 text/gemini\r\n# Your feeds\n\n" + entries;
-      handleBytes(uri, Utf8Encoder().convert(result), requestID);
+      handleBytes(uri, const Utf8Encoder().convert(result), requestID);
     } else if (uri.scheme != "gemini") {
       if (await canLaunch(uri.toString())) {
         launch(uri.toString());
@@ -173,7 +175,7 @@ Future<void> onURI(
       handleLog("info", "Connecting to $uri", requestID);
       var socket = await connect(uri);
       handleLog("info", "Connected to $uri", requestID);
-      await handleCert(uri, socket.peerCertificate);
+      await handleCert(uri, socket.peerCertificate!);
       handleLog("info", "Cert OK for $uri", requestID);
       timeout = await fetch(uri, socket, handleBytes, handleLog, requestID);
     }
@@ -186,7 +188,8 @@ Future<void> onURI(
 Future<RawSecureSocket> connect(Uri uri) async {
   var port = uri.hasPort ? uri.port : 1965;
   return await RawSecureSocket.connect(uri.host, port,
-      timeout: Duration(seconds: 10), onBadCertificate: (X509Certificate cert) {
+      timeout: const Duration(seconds: 10),
+      onBadCertificate: (X509Certificate cert) {
     return true;
   });
 }
@@ -194,15 +197,15 @@ Future<RawSecureSocket> connect(Uri uri) async {
 Future<bool> fetch(
     Uri uri,
     RawSecureSocket socket,
-    void Function(Uri, Uint8List, int) handleBytes,
+    void Function(Uri, Uint8List?, int) handleBytes,
     void Function(String, String, int) handleLog,
     int requestID) async {
   var timeout = false;
-  var writeBuffer = Utf8Encoder().convert(uri.toString() + "\r\n");
+  var writeBuffer = const Utf8Encoder().convert(uri.toString() + "\r\n");
 
   var writeOffset = socket.write(writeBuffer);
 
-  var x = socket.timeout(Duration(seconds: 10), onTimeout: (x) {
+  var x = socket.timeout(const Duration(seconds: 10), onTimeout: (x) {
     handleLog("info", "Timeout $uri", requestID);
     timeout = true;
     x.close();

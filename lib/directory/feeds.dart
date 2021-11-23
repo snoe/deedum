@@ -1,18 +1,24 @@
-import 'dart:developer';
-
+import 'package:deedum/directory/directory_element.dart';
 import 'package:flutter/material.dart';
 
 import 'package:deedum/shared.dart';
 import 'package:flutter/widgets.dart';
 
-class Feeds extends StatelessWidget {
-  final List<Feed> feeds;
-  final onNewTab;
-  final removeFeed;
-  final updateFeed;
+class Feeds extends DirectoryElement {
+  final List<Feed?> feeds;
+  final void Function(String?, bool?) onNewTab;
+  final ValueChanged<Feed> removeFeed;
+  final ValueChanged<Uri> updateFeed;
 
-  Feeds(this.feeds, this.onNewTab, this.removeFeed, this.updateFeed);
+  const Feeds({
+    Key? key,
+    required this.feeds,
+    required this.onNewTab,
+    required this.removeFeed,
+    required this.updateFeed,
+  }) : super(key: key);
 
+  @override
   String get title => [
         "███████╗███████╗███████╗██████╗ ███████╗",
         "██╔════╝██╔════╝██╔════╝██╔══██╗██╔════╝",
@@ -25,67 +31,74 @@ class Feeds extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-        child: Column(
-            children: <Widget>[
-                  Card(
-                    color: Theme.of(context).buttonColor,
-                    child: ListTile(leading: 
-                        IconButton(
-                            icon: Icon(Icons.refresh),
-                            color: Colors.black,
-                            onPressed: () {
-                              for (var feed in feeds) {
-                                updateFeed(feed.uri);
-                              }
-                            }),
-                        onTap: () => onNewTab(initialLocation: "about:feeds"),
-                        title: Text("Open feed reader in new tab")),
-                  ),
-                ] +
-                feeds.mapIndexed((index, Feed feed) {
-                  var tab = Container(
-                      child: Card(
-                          child: Padding(
+      child: Column(
+        children: <Widget>[
+          Card(
+            color: Theme.of(context).buttonTheme.colorScheme!.primary,
+            child: ListTile(
+                leading: IconButton(
+                    icon: const Icon(Icons.refresh),
+                    color: Colors.black,
+                    onPressed: () {
+                      for (var feed in feeds) {
+                        if (feed == null) {
+                          continue;
+                        }
+                        updateFeed(feed.uri!);
+                      }
+                    }),
+                onTap: () => onNewTab("about:feeds", null),
+                title: const Text("Open feed reader in new tab")),
+          ),
+          for (final feed in feeds)
+            if (feed != null)
+              Dismissible(
+                background: Container(color: Colors.red),
+                key: UniqueKey(),
+                onDismissed: (direction) {
+                  removeFeed(feed);
+                },
+                child: Card(
+                  child: Padding(
                     padding: const EdgeInsets.only(left: 20, right: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         IconButton(
-                            icon: Icon(Icons.refresh),
+                            icon: const Icon(Icons.refresh),
                             onPressed: () {
-                              updateFeed(feed.uri);
+                              updateFeed(feed.uri!);
                             }),
                         Expanded(
                             flex: 1,
                             child: ListTile(
-                              contentPadding: EdgeInsets.only(left: 20),
+                              contentPadding: const EdgeInsets.only(left: 20),
                               onTap: () {
-                                this.onNewTab(feed.uri);
+                                onNewTab(feed.uri.toString(), null);
                               },
                               dense: true,
                               subtitle: Text(toSchemelessString(feed.uri) +
                                   "\nLast Updated: " +
-                                  feed.lastFetchedAt + "\n" + feed.links.length.toString() + " entries"),
-                              title: Text(feed.title,
-                                  style: TextStyle(fontSize: 14)),
+                                  feed.lastFetchedAt +
+                                  "\n" +
+                                  feed.links!.length.toString() +
+                                  " entries"),
+                              title: Text(feed.title!,
+                                  style: const TextStyle(fontSize: 14)),
                             )),
                         IconButton(
-                            icon: Icon(Icons.delete),
+                            icon: const Icon(Icons.delete),
                             onPressed: () {
                               removeFeed(feed);
                             }),
                       ],
                     ),
-                  )));
-                  return Dismissible(
-                    background: Container(color: Colors.red),
-                    key: UniqueKey(),
-                    onDismissed: (direction) {
-                      removeFeed(feed);
-                    },
-                    child: tab,
-                  );
-                }).toList()));
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
   }
 }

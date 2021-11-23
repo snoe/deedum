@@ -16,7 +16,7 @@ import 'parser.dart';
 
 class HistoryEntry {
   final Uri location;
-  List<Uint8List> bytes;
+  List<Uint8List?>? bytes;
   double scrollPosition;
 
   HistoryEntry(this.location, this.bytes, this.scrollPosition);
@@ -28,31 +28,31 @@ class HistoryEntry {
 }
 
 class BrowserTab extends StatefulWidget {
-  final initialLocation;
-  final onNewTab;
-  final addRecent;
+  final Uri initialLocation;
+  final void Function(String?, bool?) onNewTab;
+  final ValueChanged<String> addRecent;
 
-  BrowserTab(this.initialLocation, this.onNewTab, this.addRecent, {Key key})
-      : super(key: key);
+  const BrowserTab({
+    Key? key,
+    required this.initialLocation,
+    required this.onNewTab,
+    required this.addRecent,
+  }) : super(key: key);
 
   @override
-  BrowserTabState createState() =>
-      BrowserTabState(initialLocation, onNewTab, addRecent);
+  BrowserTabState createState() => BrowserTabState();
 }
 
 class BrowserTabState extends State<BrowserTab> {
-  final initialLocation;
-  final onNewTab;
-  final addRecent;
-  TextEditingController _controller;
-  FocusNode _focusNode;
-  List<Uint8List> bytes;
-  ContentData contentData;
-  ContentData parsedData;
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+  List<Uint8List>? bytes;
+  ContentData? contentData;
+  ContentData? parsedData;
   List<HistoryEntry> _history = [];
   int _historyIndex = -1;
   bool _loading = false;
-  Uri uri;
+  Uri? uri;
   ScrollController _scrollController = ScrollController();
   int _requestID = 1;
 
@@ -61,11 +61,10 @@ class BrowserTabState extends State<BrowserTab> {
   bool _showActions = true;
   bool viewingSource = false;
 
-  BrowserTabState(this.initialLocation, this.onNewTab, this.addRecent);
-
+  @override
   void initState() {
     super.initState();
-    var initLoc = toSchemelessString(initialLocation);
+    var initLoc = toSchemelessString(widget.initialLocation);
     _controller = TextEditingController(text: initLoc);
     _focusNode = FocusNode();
 
@@ -84,9 +83,10 @@ class BrowserTabState extends State<BrowserTab> {
   }
 
   init() async {
-    onLocation(initialLocation);
+    onLocation(widget.initialLocation);
   }
 
+  @override
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
@@ -117,26 +117,27 @@ class BrowserTabState extends State<BrowserTab> {
           contentData = ContentData(
               mode: "error", content: "No response. connection closed");
         }
-      } else if (parsedData.mode == "error") {
+      } else if (parsedData!.mode == "error") {
         contentData = parsedData;
-      } else if (parsedData.mode == 'redirect') {
-        if (_redirects.contains(parsedData.content) || _redirects.length >= 5) {
+      } else if (parsedData!.mode == 'redirect') {
+        if (_redirects.contains(parsedData!.content) ||
+            _redirects.length >= 5) {
           contentData = ContentData(
               mode: "error",
               content:
                   "REDIRECT LOOP\n--------------\n" + _redirects.join("\n"));
         } else {
-          var newLocation = Uri.tryParse(parsedData.content);
+          var newLocation = Uri.tryParse(parsedData!.content!)!;
           if (!newLocation.hasScheme) {
-            newLocation = location.resolve(parsedData.content);
+            newLocation = location.resolve(parsedData!.content!);
           }
-          _redirects.add(parsedData.content);
+          _redirects.add(parsedData!.content);
           _requestID += 1;
           resetResponse(newLocation, redirect: true);
           onURI(newLocation, _handleBytes, _handleDone, _handleLog, _requestID);
         }
       } else {
-        _history[_historyIndex].bytes = bytes;
+        _history[_historyIndex].bytes = bytes!;
         contentData = parsedData;
       }
       _loading = false;
@@ -146,7 +147,7 @@ class BrowserTabState extends State<BrowserTab> {
   void resetResponse(Uri location, {bool redirect = false}) {
     contentData = null;
     parsedData = null;
-    bytes = List<Uint8List>();
+    bytes = <Uint8List>[];
 
     var addressLoc = toSchemelessString(location);
     _controller.text = addressLoc;
@@ -154,7 +155,7 @@ class BrowserTabState extends State<BrowserTab> {
     uri = location;
     if (!redirect) {
       _redirects = [];
-      addRecent(location.toString());
+      widget.addRecent(location.toString());
     }
   }
 
@@ -162,7 +163,7 @@ class BrowserTabState extends State<BrowserTab> {
     log(message);
     setState(() {
       _logs = _logs.sublist(math.max(_logs.length - 100, 0), _logs.length);
-      _logs.add([level, new DateTime.now(), requestID, message]);
+      _logs.add([level, DateTime.now(), requestID, message]);
     });
   }
 
@@ -181,23 +182,23 @@ class BrowserTabState extends State<BrowserTab> {
         DateFormat formatter = DateFormat('HH:mm:ss.SSSS');
 
         return AlertDialog(
-            title: Text('Logs'),
+            title: const Text('Logs'),
             contentPadding: EdgeInsets.zero,
             actions: [
-              FlatButton(
-                  child: Text('Clear'),
+              TextButton(
+                  child: const Text('Clear'),
                   onPressed: () {
                     _clearLogs();
                     Navigator.of(context).pop();
                   }),
-              FlatButton(
-                child: Text('Close'),
+              TextButton(
+                child: const Text('Close'),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
               )
             ],
-            content: Container(
+            content: SizedBox(
               width: double.maxFinite,
               child: ListView.builder(
                 itemCount: orderedLogs.length,
@@ -208,7 +209,7 @@ class BrowserTabState extends State<BrowserTab> {
                   var requestID = log[2];
                   var message = log[3];
                   String formatted = formatter.format(timestamp);
-                  var levelColor;
+                  Color levelColor;
                   if (level == "error") {
                     levelColor = Colors.redAccent;
                   } else if (level == "warn") {
@@ -231,7 +232,7 @@ class BrowserTabState extends State<BrowserTab> {
         viewingSource = !viewingSource;
       });
 
-  void _handleBytes(Uri location, Uint8List newBytes, int requestID) async {
+  void _handleBytes(Uri location, Uint8List? newBytes, int requestID) async {
     if (newBytes == null) {
       return;
     }
@@ -241,9 +242,9 @@ class BrowserTabState extends State<BrowserTab> {
       return;
     }
     setState(() {
-      bytes.add(newBytes);
-      parsedData = parse(bytes);
-      if (parsedData != null && parsedData.mode == "content") {
+      bytes!.add(newBytes);
+      parsedData = parse(bytes!);
+      if (parsedData != null && parsedData!.mode == "content") {
         contentData = parsedData;
       }
     });
@@ -270,10 +271,10 @@ class BrowserTabState extends State<BrowserTab> {
   onSearch(String encodedSearch) {
     if (encodedSearch.isNotEmpty) {
       var u = Uri(
-          scheme: uri.scheme,
-          host: uri.host,
-          port: uri.port,
-          path: uri.path,
+          scheme: uri!.scheme,
+          host: uri!.host,
+          port: uri!.port,
+          path: uri!.path,
           query: encodedSearch);
       onLocation(u);
     }
@@ -292,7 +293,7 @@ class BrowserTabState extends State<BrowserTab> {
       if (entry.bytes != null) {
         _scrollController =
             ScrollController(initialScrollOffset: entry.scrollPosition);
-        contentData = parse(entry.bytes);
+        contentData = parse(entry.bytes!);
       } else {
         onLocation(entry.location);
       }
@@ -329,26 +330,26 @@ class BrowserTabState extends State<BrowserTab> {
 
   @override
   Widget build(BuildContext context) {
-    var bottomBar;
+    Widget? bottomBar;
     if (isIos) {
       bottomBar = BottomAppBar(
           color: Theme.of(context).cardColor,
           child: ButtonBar(
             children: [
-              FlatButton(
+              TextButton(
                   onPressed: _historyIndex == 0
                       ? null
                       : () {
                           handleBack();
                         },
-                  child: Icon(Icons.keyboard_arrow_left, size: 30)),
-              FlatButton(
+                  child: const Icon(Icons.keyboard_arrow_left, size: 30)),
+              TextButton(
                   onPressed: _historyIndex == (_history.length - 1)
                       ? null
                       : () {
                           _handleForward();
                         },
-                  child: Icon(Icons.keyboard_arrow_right, size: 30))
+                  child: const Icon(Icons.keyboard_arrow_right, size: 30))
             ],
             alignment: MainAxisAlignment.spaceBetween,
           ));
@@ -361,7 +362,7 @@ class BrowserTabState extends State<BrowserTab> {
           (contentData?.mode == "content"), //view source if valid gemtext
       onLocation: onLocation,
       onSearch: onSearch,
-      onNewTab: onNewTab,
+      onNewTab: widget.onNewTab,
     );
     var contentWidget = GestureDetector(
         onTapDown: (_) {
@@ -371,11 +372,11 @@ class BrowserTabState extends State<BrowserTab> {
             key: ObjectKey(content),
             controller: _scrollController,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 17, 20),
+              padding: const EdgeInsets.fromLTRB(20, 20, 17, 20),
               child: content,
             )));
 
-    var actions;
+    List<Widget> actions = [];
     if (_showActions) {
       actions = [
         IconButton(
@@ -386,30 +387,30 @@ class BrowserTabState extends State<BrowserTab> {
                   decoration: BoxDecoration(
                       color: Colors.transparent,
                       border: Border.all(width: 2, color: Colors.black),
-                      borderRadius: BorderRadius.all(Radius.circular(3))),
+                      borderRadius: const BorderRadius.all(Radius.circular(3))),
                   child: Align(
                       alignment: Alignment.center,
-                      child: Text("${appKey.currentState.tabs.length}",
-                          style: TextStyle(
+                      child: Text("${appKey.currentState!.tabs.length}",
+                          style: const TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
                               fontFamily: "DejaVu Sans Mono",
                               fontSize: 13))))),
-          onPressed: () => onNewTab(menuPage: true),
+          onPressed: () => widget.onNewTab(null, true),
         ),
         IconButton(
             disabledColor: Colors.black12,
             color: Colors.black,
-            icon: Icon(Icons.chevron_right),
+            icon: const Icon(Icons.chevron_right),
             onPressed: (_historyIndex != (_history.length - 1))
                 ? _handleForward
                 : null),
-        TabMenuWidget(this),
+        TabMenuWidget(tab: this),
       ];
     }
 
     return Scaffold(
-        backgroundColor: (contentData != null && contentData.mode == "error")
+        backgroundColor: (contentData != null && contentData!.mode == "error")
             ? Colors.deepOrange
             : Theme.of(context).canvasColor,
         bottomNavigationBar: bottomBar,

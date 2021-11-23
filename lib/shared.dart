@@ -1,34 +1,34 @@
-import 'dart:convert';
-import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:qr/qr.dart';
 import 'dart:math' as math;
 
+import 'package:sqflite/sqlite_api.dart';
+
 class ContentData {
-  final Uint8List _bytes;
-  final String _content;
-  final String _mode;
-  ContentData({String content, String mode, Uint8List bytes})
+  final Uint8List? _bytes;
+  final String? _content;
+  final String? _mode;
+  ContentData({String? content, String? mode, Uint8List? bytes})
       : _content = content,
         _mode = mode,
         _bytes = bytes;
 
-  Uint8List get bytes => _bytes;
-  String get mode => _mode;
-  String get content => _content;
+  Uint8List? get bytes => _bytes;
+  String? get mode => _mode;
+  String? get content => _content;
   @override
   String toString() {
-    var preview = content == null ? "" : content;
+    var preview = content ?? "";
     return "ContentData<$mode, ${preview.substring(0, math.min(10, preview.length))}>";
   }
 }
 
 class Feed {
-  final String title;
-  final Uri uri;
-  final List<dynamic> links;
-  final String content;
+  final String? title;
+  final Uri? uri;
+  final List<dynamic>? links;
+  final String? content;
   final String lastFetchedAt;
 
   Feed(this.uri, this.title, this.links, this.content, this.lastFetchedAt);
@@ -39,8 +39,8 @@ class Feed {
   }
 }
 
-String toSchemelessString(Uri uri) {
-  var uriString;
+String toSchemelessString(Uri? uri) {
+  late String uriString;
   if (uri != null) {
     if (!uri.hasScheme) {
       uriString = uri.toString();
@@ -50,22 +50,22 @@ String toSchemelessString(Uri uri) {
       uriString = uri.toString();
     }
   }
-  uriString =  Uri.decodeFull(uriString);
+  uriString = Uri.decodeFull(uriString);
   return uriString;
 }
 
-Uri toSchemeUri(String uriString) {
-  var u = Uri.tryParse(uriString);
+Uri? toSchemeUri(String uriString) {
+  var u = Uri.tryParse(uriString)!;
   if (!u.hasScheme) {
-    u = Uri.tryParse("gemini://" + uriString);
+    return Uri.tryParse("gemini://" + uriString)!;
   } else if (u.scheme != "gemini" && u.scheme != "about") {
-    u = null;
+    return null;
   }
   return u;
 }
 
 Uri resolveLink(Uri currentUri, String link) {
-  var location = Uri.tryParse(link);
+  var location = Uri.tryParse(link)!;
   if (!location.hasScheme) {
     location = currentUri.resolve(link);
   }
@@ -75,11 +75,11 @@ Uri resolveLink(Uri currentUri, String link) {
 double get padding => 25.0;
 
 extension CollectionUtil<T> on Iterable<T> {
-  Iterable<E> mapIndexed<E, T>(E Function(int index, T item) transform) sync* {
+  Iterable<E> mapIndexed<E>(E Function(int index, T item) transform) sync* {
     var index = 0;
 
     for (final item in this) {
-      yield transform(index, item as T);
+      yield transform(index, item);
       index++;
     }
   }
@@ -93,7 +93,7 @@ extension CollectionUtil<T> on Iterable<T> {
   }
 }
 
-var database;
+late Database database;
 var emojiList = [
   "😀",
   "😃",
@@ -246,8 +246,8 @@ String emojiEncode(String base64String) {
 }
 
 String qrEncode(Uint8List der) {
-  final qrCode = new QrCode.fromUint8List(
-      data: der, errorCorrectLevel: QrErrorCorrectLevel.L);
+  final qrCode =
+      QrCode.fromUint8List(data: der, errorCorrectLevel: QrErrorCorrectLevel.L);
   qrCode.make();
 
   var result = "";
