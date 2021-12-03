@@ -16,10 +16,10 @@ import 'parser.dart';
 
 class HistoryEntry {
   final Uri location;
-  List<Uint8List?>? bytes;
+  ContentData? contentData;
   double scrollPosition;
 
-  HistoryEntry(this.location, this.bytes, this.scrollPosition);
+  HistoryEntry(this.location, this.contentData, this.scrollPosition);
 
   @override
   String toString() {
@@ -46,7 +46,6 @@ class BrowserTab extends StatefulWidget {
 class BrowserTabState extends State<BrowserTab> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
-  List<Uint8List>? bytes;
   ContentData? contentData;
   ContentData? parsedData;
   List<HistoryEntry> _history = [];
@@ -99,45 +98,39 @@ class BrowserTabState extends State<BrowserTab> {
       return;
     }
     setState(() {
-      if (parsedData == null) {
+      if (parsedData?.mode == Modes.loading) {
         var allLogs = List.from(_logs);
         allLogs.removeWhere(
             (element) => (element[0] != "error" || element[2] != requestID));
         var logStrings = allLogs.map((log) => log[3]);
         if (badScheme) {
-          contentData = ContentData(
-              mode: "opening", content: "Launching app for $location");
+          contentData = ContentData.gem("Launching app for $location");
         } else if (logStrings.isNotEmpty) {
-          contentData =
-              ContentData(mode: "error", content: logStrings.join("\n"));
+          contentData = ContentData.error(logStrings.join("\n"));
         } else if (timeout) {
-          contentData =
-              ContentData(mode: "error", content: "No response. timeout");
+          contentData = ContentData.error("No response. timeout");
         } else {
-          contentData = ContentData(
-              mode: "error", content: "No response. connection closed");
+          contentData = ContentData.error(
+              "No response or response line. connection closed");
         }
-      } else if (parsedData!.mode == "error") {
+      } else if (parsedData!.mode == Modes.error) {
         contentData = parsedData;
-      } else if (parsedData!.mode == 'redirect') {
-        if (_redirects.contains(parsedData!.content) ||
-            _redirects.length >= 5) {
-          contentData = ContentData(
-              mode: "error",
-              content:
-                  "REDIRECT LOOP\n--------------\n" + _redirects.join("\n"));
+      } else if (parsedData!.mode == Modes.redirect) {
+        if (_redirects.contains(parsedData!.meta) || _redirects.length >= 5) {
+          contentData = ContentData.error(
+              "REDIRECT LOOP\n--------------\n" + _redirects.join("\n"));
         } else {
-          var newLocation = Uri.tryParse(parsedData!.content!)!;
+          var newLocation = Uri.tryParse(parsedData!.meta!)!;
           if (!newLocation.hasScheme) {
-            newLocation = location.resolve(parsedData!.content!);
+            newLocation = location.resolve(parsedData!.meta!);
           }
-          _redirects.add(parsedData!.content);
+          _redirects.add(parsedData!.meta!);
           _requestID += 1;
           resetResponse(newLocation, redirect: true);
           onURI(newLocation, _handleBytes, _handleDone, _handleLog, _requestID);
         }
       } else {
-        _history[_historyIndex].bytes = bytes!;
+        _history[_historyIndex].contentData = parsedData!;
         contentData = parsedData;
       }
       _loading = false;
@@ -146,8 +139,7 @@ class BrowserTabState extends State<BrowserTab> {
 
   void resetResponse(Uri location, {bool redirect = false}) {
     contentData = null;
-    parsedData = null;
-    bytes = <Uint8List>[];
+    parsedData = ContentData(BytesBuilder(copy: false));
 
     var addressLoc = toSchemelessString(location);
     _controller.text = addressLoc;
@@ -241,13 +233,14 @@ class BrowserTabState extends State<BrowserTab> {
     if (requestID != _requestID) {
       return;
     }
-    setState(() {
-      bytes!.add(newBytes);
-      parsedData = parse(bytes!);
-      if (parsedData != null && parsedData!.mode == "content") {
-        contentData = parsedData;
+    if (parsedData != null) {
+      parse(parsedData!, newBytes);
+      if (parsedData!.streamable()) {
+        setState(() {
+          contentData = parsedData;
+        });
       }
-    });
+    }
   }
 
   Future<bool> handleBack() async {
@@ -290,10 +283,10 @@ class BrowserTabState extends State<BrowserTab> {
       var entry = _history[_historyIndex];
 
       resetResponse(entry.location);
-      if (entry.bytes != null) {
+      if (entry.contentData != null) {
         _scrollController =
             ScrollController(initialScrollOffset: entry.scrollPosition);
-        contentData = parse(entry.bytes!);
+        contentData = entry.contentData;
       } else {
         onLocation(entry.location);
       }
@@ -359,7 +352,9 @@ class BrowserTabState extends State<BrowserTab> {
       currentUri: uri,
       contentData: contentData,
       viewSource: viewingSource &&
-          (contentData?.mode == "content"), //view source if valid gemtext
+          contentData != null &&
+          contentData!.bytesBuilder != null &&
+          contentData!.mode == Modes.gem,
       onLocation: onLocation,
       onSearch: onSearch,
       onNewTab: widget.onNewTab,
@@ -410,9 +405,10 @@ class BrowserTabState extends State<BrowserTab> {
     }
 
     return Scaffold(
-        backgroundColor: (contentData != null && contentData!.mode == "error")
-            ? Colors.deepOrange
-            : Theme.of(context).canvasColor,
+        backgroundColor:
+            (contentData != null && contentData!.mode == Modes.error)
+                ? Colors.deepOrange
+                : Theme.of(context).canvasColor,
         bottomNavigationBar: bottomBar,
         appBar: AppBar(
             backgroundColor: Colors.orange,

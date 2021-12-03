@@ -1,3 +1,5 @@
+// ignore: unused_import
+import 'dart:developer';
 import 'dart:math' as math;
 
 import 'package:deedum/contents/blockquote.dart';
@@ -57,25 +59,29 @@ class _ContentState extends State<Content> {
   Widget build(BuildContext context) {
     if (widget.contentData == null) {
       return const Text("");
+    } else if (widget.contentData!.mode == Modes.loading) {
+      return const Text("Loading…");
     } else if (widget.viewSource) {
       return SelectableText(
-        widget.contentData!.content!,
+        widget.contentData?.source() ?? "No source?",
         style: const TextStyle(
             fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
       );
-    } else if (widget.contentData!.mode == "plain") {
-      var groups = analyze(widget.contentData!.content, alwaysPre: true)!;
+    } else if (widget.contentData!.mode == Modes.plain) {
+      var text = widget.contentData!.stringContent()!;
+      var groups = analyze(text, alwaysPre: true)!;
       return PreText(
-        actualText: widget.contentData!.content,
+        actualText: text,
         maxLine: groups[0]["maxLine"],
       );
-    } else if (widget.contentData!.mode == "content") {
-      var groups = analyze(widget.contentData!.content)!;
+    } else if (widget.contentData!.mode == Modes.gem) {
+      var text = widget.contentData!.stringContent()!;
+      var groups = analyze(text)!;
       return groupsToWidget(groups);
-    } else if (widget.contentData!.mode == "search") {
+    } else if (widget.contentData!.mode == Modes.search) {
       return Column(
           children: <Widget>[
-                ExtendedText(widget.contentData!.content!),
+                ExtendedText(widget.contentData!.meta!),
                 DecoratedBox(
                     decoration: BoxDecoration(
                         color: _inputError ? Colors.deepOrange : null),
@@ -92,15 +98,16 @@ class _ContentState extends State<Content> {
               (_inputError
                   ? [ExtendedText("\n\nInput too long: $_inputLength")]
                   : []));
-    } else if (widget.contentData!.mode == "error") {
-      return ExtendedText("An error occurred\n\n" + widget.contentData!.content!);
-    } else if (widget.contentData!.mode == "image") {
-      return Image.memory(widget.contentData!.bytes!, errorBuilder:
+    } else if (widget.contentData!.mode == Modes.error) {
+      return ExtendedText("An error occurred\n\n" +
+          (widget.contentData!.static ?? "No message") +
+          "\n\n-----------------------------------\n\n" +
+          (widget.contentData!.source() ?? ""));
+    } else if (widget.contentData!.mode == Modes.image) {
+      return Image.memory(widget.contentData!.body()!, errorBuilder:
           (BuildContext context, Object exception, StackTrace? stackTrace) {
         return const ExtendedText("broken image ¯\\_(ツ)_/¯");
       });
-    } else if (widget.contentData!.mode == "opening") {
-      return ExtendedText(widget.contentData!.content!);
     } else {
       return ExtendedText("Unknown mode ${widget.contentData!.mode}");
     }

@@ -33,8 +33,7 @@ Future<ContentData> homepageContent() async {
     "=> gemini://gus.guru/ Gemini Universal Search",
     "=> gemini://wp.pitr.ca/en/Gemini Gemini Wikipedia Proxy"
   ];
-
-  return ContentData(content: lines.join("\n"), mode: "content");
+  return ContentData.gem(lines.join("\n"));
 }
 
 Future<void> handleCert(Uri uri, X509Certificate serverCert) async {

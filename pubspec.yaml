@@ -35,7 +35,10 @@ dependencies:
   extended_text: ^7.0.0
   flutter_markdown: ^0.6.8
   asn1lib: ^1.0.2
-  x509: ^0.2.2
+  x509:
+    git:
+      url: git://github.com/NicolaVerbeeck/x509
+      ref: bugfix/WrongCastObjectIdentifier
   crypto: ^3.0.1
   punycode: ^1.0.0
   string_validator: ^0.3.0

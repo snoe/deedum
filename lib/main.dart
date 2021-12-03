@@ -11,7 +11,6 @@ import 'package:deedum/directory/history.dart';
 import 'package:deedum/directory/settings.dart';
 import 'package:deedum/directory/tabs.dart';
 import 'package:deedum/net.dart';
-import 'package:deedum/parser.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' as foundation;
@@ -117,38 +116,33 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   }
 
   Future<Feed?> updateFeed(Uri? uri) async {
-    ContentData? contentData;
+    String? content;
     List<Uri?> redirects = [];
 
-    while (contentData == null) {
-      var bytes = <Uint8List?>[];
+    while (content == null) {
+      ContentData parsedData = ContentData(BytesBuilder(copy: false));
       await onURI(uri!, (_a, newBytes, _c) {
-        bytes.add(newBytes);
+        if (newBytes != null) {
+          parsedData.bytesBuilder!.add(newBytes);
+        }
       }, (_a, _b, _c, _d) {}, (_a, _b, _c) {}, 1);
-      if (bytes.isEmpty) {
-        return null;
-      }
 
-      ContentData? parsedData = parse(bytes);
-      if (parsedData == null) {
-        return null;
-      }
-      if (parsedData.mode == "redirect") {
-        var newUri = Uri.tryParse(parsedData.content!);
+      if (parsedData.mode == Modes.redirect) {
+        var newUri = Uri.tryParse(parsedData.meta!);
         if (redirects.contains(newUri) || redirects.length >= 5) {
           return null;
         }
         redirects.add(newUri);
         uri = newUri;
-      } else if (parsedData.mode == 'content') {
-        contentData = parsedData;
+      } else if (parsedData.mode == Modes.gem) {
+        content = parsedData.stringContent();
       } else {
         return null;
       }
     }
 
-    var result = parseFeed(uri, contentData.content!);
-    var feed = Feed(uri, result['title'], result['links'], contentData.content,
+    var result = parseFeed(uri, content);
+    var feed = Feed(uri, result['title'], result['links'], content,
         DateFormat('yyyy-MM-dd').format(DateTime.now().toUtc()));
 
     final Database db = database;

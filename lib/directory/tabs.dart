@@ -75,11 +75,13 @@ class Tabs extends DirectoryElement {
                     host = tabState!.uri.toString();
                   }
                   if (uriString != null && tabState!.contentData != null) {
+                    var contentData = tabState.contentData!;
+                    var content = contentData.stringContent();
                     var tab = GemItem(
                       url: Uri.decodeFull(host!),
                       title: ExtendedText(
-                        tabState.contentData!.content!.substring(0,
-                            math.min(tabState.contentData!.content!.length, 500)),
+                        content?.substring(0, math.min(content.length, 500)) ??
+                            "${contentData.mode} Tab",
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),

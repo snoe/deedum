@@ -1,26 +1,90 @@
+import 'dart:convert';
+// ignore: unused_import
+import 'dart:developer';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:qr/qr.dart';
-import 'dart:math' as math;
 
 import 'package:sqflite/sqlite_api.dart';
 
-class ContentData {
-  final Uint8List? _bytes;
-  final String? _content;
-  final String? _mode;
-  ContentData({String? content, String? mode, Uint8List? bytes})
-      : _content = content,
-        _mode = mode,
-        _bytes = bytes;
+const allowMalformedUtf8Decoder = Utf8Decoder(allowMalformed: true);
+const allowInvalidLatinDecoder = Latin1Decoder(allowInvalid: true);
 
-  Uint8List? get bytes => _bytes;
-  String? get mode => _mode;
-  String? get content => _content;
+String bytesToString(ContentType contentType, List<int> bytes) {
+  String rest;
+  if (contentType.charset == null ||
+      contentType.charset!.isEmpty ||
+      contentType.charset == "utf-8") {
+    rest = allowMalformedUtf8Decoder.convert(bytes);
+  } else if (contentType.charset == "iso-8859-1") {
+    rest = allowInvalidLatinDecoder.convert(bytes);
+  } else if (contentType.charset == "us-ascii") {
+    rest = allowInvalidLatinDecoder.convert(bytes);
+  } else {
+    rest = allowMalformedUtf8Decoder.convert(bytes);
+  }
+
+  return rest;
+}
+
+enum Modes { loading, error, gem, plain, image, binary, redirect, search }
+
+class ContentData {
+  late final int? status;
+  late final String? meta;
+  late final int? bodyIndex;
+  late final ContentType? contentType;
+  Modes mode = Modes.loading;
+  String? static;
+  BytesBuilder? bytesBuilder;
+
+  ContentData(this.bytesBuilder) {
+    static = null;
+  }
+  ContentData.error(this.static) {
+    mode = Modes.error;
+    bytesBuilder = null;
+  }
+  ContentData.gem(this.static) {
+    mode = Modes.gem;
+    bytesBuilder = null;
+  }
+  ContentData.plain(this.static) {
+    mode = Modes.plain;
+    bytesBuilder = null;
+  }
+
   @override
   String toString() {
-    var preview = content ?? "";
-    return "ContentData<$mode, ${preview.substring(0, math.min(10, preview.length))}>";
+    return "ContentData<$status $meta>";
+  }
+
+  String? stringContent() {
+    if (mode == Modes.gem || mode == Modes.plain) {
+      if (static != null) {
+        return static;
+      } else {
+        var body = this.body();
+        return bytesToString(contentType!, body!);
+      }
+    }
+  }
+
+  String? source() {
+    if (bytesBuilder != null) {
+      return allowMalformedUtf8Decoder.convert(bytesBuilder!.toBytes());
+    }
+  }
+
+  bool streamable() {
+    return mode == Modes.gem || mode == Modes.plain;
+  }
+
+  Uint8List? body() {
+    if (bytesBuilder != null && bodyIndex != null) {
+      return Uint8List.sublistView(bytesBuilder!.toBytes(), bodyIndex!);
+    }
   }
 }
 

@@ -1,107 +1,87 @@
 import 'dart:convert';
+// ignore: unused_import
+import 'dart:developer';
 import 'dart:math' as math;
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'shared.dart';
 
-const allowMalformedUtf8Decoder = Utf8Decoder(allowMalformed: true);
-const allowInvalidLatinDecoder = Latin1Decoder(allowInvalid: true);
+void parse(ContentData parsedData, Uint8List newBytes) {
+  parsedData.bytesBuilder!.add(newBytes);
 
-String bytesToString(ContentType contentType, List<int> bytes) {
-  String rest;
-  if (contentType.charset == null ||
-      contentType.charset!.isEmpty ||
-      contentType.charset == "utf-8") {
-    rest = allowMalformedUtf8Decoder.convert(bytes);
-  } else if (contentType.charset == "iso-8859-1") {
-    rest = allowInvalidLatinDecoder.convert(bytes);
-  } else if (contentType.charset == "us-ascii") {
-    rest = allowInvalidLatinDecoder.convert(bytes);
-  } else {
-    rest = allowMalformedUtf8Decoder.convert(bytes);
-  }
+  if (parsedData.mode == Modes.loading) {
+    int status;
+    String? meta;
+    int? prevChar;
+    var endofline = 0;
 
-  return rest;
-}
-
-ContentData? parse(List<Uint8List?> chunksList) {
-  List<int> chunks = <int>[];
-  chunks = chunksList.fold(chunks, (chunks, element) {
-    return chunks + element!;
-  });
-
-  if (chunks.isEmpty) {
-    return null;
-  }
-
-  var endofline = 1;
-  for (; endofline < chunks.length; endofline++) {
-    if (chunks[endofline - 1] == 13 && chunks[endofline] == 10) {
-      break;
-    }
-  }
-  var statusBytes = chunks.sublist(0, endofline - 1);
-  late int status;
-  String? meta;
-
-  var statusMeta = allowMalformedUtf8Decoder.convert(statusBytes);
-
-  var m = RegExp(r'^(\d\d)\s(.+)$').firstMatch(statusMeta);
-  if (m != null) {
-    status = int.parse(m.group(1)!);
-    meta = m.group(2);
-  }
-
-  ContentData? result;
-
-  if (statusMeta.isEmpty) {
-    result = null;
-  } else if (m == null) {
-    String content = allowMalformedUtf8Decoder.convert(chunks);
-    result = ContentData(
-        mode: "error",
-        content: "INVALID RESPONSE\n--------------\n" +
-            content +
-            "\n--------------");
-  } else if (meta!.length > 1024) {
-    String content = allowMalformedUtf8Decoder.convert(chunks);
-    result = ContentData(
-        mode: "error",
-        content:
-            "META TOO LONG\n--------------\n" + content + "\n--------------");
-  } else if (status >= 10 && status < 20) {
-    result = ContentData(mode: "search", content: meta);
-  } else if (status >= 20 && status < 30) {
-    if (chunks.length <= endofline) {
-      result = ContentData(content: "", mode: "content");
-    } else {
-      var bytes = chunks.sublist(endofline + 1);
-      var contentType = ContentType.parse(meta);
-
-      if (contentType.mimeType == "text/gemini") {
-        var content = bytesToString(contentType, bytes);
-        result = ContentData(content: content, mode: "content");
-      } else if (contentType.mimeType.startsWith("text/")) {
-        var content = bytesToString(contentType, bytes);
-        result = ContentData(content: content, mode: "plain");
-      } else if (contentType.mimeType.startsWith("image/")) {
-        result = ContentData(bytes: Uint8List.fromList(bytes), mode: "image");
+    var bytes = parsedData.bytesBuilder!.toBytes();
+    for (var byteIndex = 0; byteIndex < bytes.length; byteIndex++) {
+      if (prevChar == 13 && bytes[byteIndex] == 10) {
+        endofline = byteIndex;
+        break;
       } else {
-        result = ContentData(bytes: Uint8List.fromList(bytes), mode: "binary");
+        prevChar = bytes[byteIndex];
       }
     }
-  } else if (status >= 30 && status < 40) {
-    result = ContentData(content: meta, mode: "redirect");
-  } else {
-    String content = allowMalformedUtf8Decoder.convert(chunks);
-    result = ContentData(
-        mode: "error",
-        content: "UNHANDLED STATUS\n--------------\n" +
-            content +
-            "\n--------------");
+    if (endofline == 0) {
+      return;
+    }
+
+    var statusBytes = Uint8List.sublistView(bytes, 0, endofline - 1);
+    if (statusBytes.isEmpty) {
+      return;
+    }
+
+    var statusMeta = allowMalformedUtf8Decoder.convert(statusBytes);
+    if (statusMeta.isEmpty) {
+      return;
+    }
+
+    var m = RegExp(r'^(\d\d)\s(.+)$').firstMatch(statusMeta);
+    if (m == null) {
+      parsedData.mode = Modes.error;
+      parsedData.static = "INVALID RESPONSE";
+      return;
+    }
+
+    status = int.parse(m.group(1)!);
+    meta = m.group(2);
+
+    if (meta!.length > 1024) {
+      parsedData.mode = Modes.error;
+      parsedData.static = "META TOO LONG";
+      return;
+    }
+
+    if (status < 10 || status >= 40) {
+      parsedData.mode = Modes.error;
+      parsedData.static = "UNHANDLED STATUS";
+      return;
+    }
+
+    parsedData.status = status;
+    parsedData.meta = meta;
+    parsedData.bodyIndex = endofline + 1;
+    if (status >= 10 && status < 20) {
+      parsedData.mode = Modes.search;
+    } else if (status >= 20 && status < 30) {
+      parsedData.contentType = ContentType.parse(meta);
+
+      if (parsedData.contentType!.mimeType == "text/gemini") {
+        parsedData.mode = Modes.gem;
+      } else if (parsedData.contentType!.mimeType.startsWith("text/")) {
+        parsedData.mode = Modes.plain;
+      } else if (parsedData.contentType!.mimeType.startsWith("image/")) {
+        parsedData.mode = Modes.image;
+      } else {
+        parsedData.mode = Modes.binary;
+      }
+    } else if (status >= 30 && status < 40) {
+      parsedData.mode = Modes.redirect;
+    }
   }
-  return result;
 }
 
 void addToGroup(r, String type, String line) {

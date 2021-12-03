@@ -7,17 +7,21 @@ class ListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      const Text("•"),
-      Flexible(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
-          child: SelectableText(
-            content,
-            style: const TextStyle(fontWeight: FontWeight.w400, height: 1.7),
-          ),
-        ),
-      )
-    ]);
+    return Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          const Text("•"),
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
+              child: SelectableText(
+                content,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w400, height: 1.7),
+              ),
+            ),
+          )
+        ]);
   }
 }

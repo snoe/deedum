@@ -15,6 +15,10 @@ flutter install
 
 I haven't been able to get ios building yet because of xcode / macos version restrictions.
 
+
+Shoutout to the great client tests here:
+gemini://egsam.glv.one (http://github.com/pitr/egsam)
+
 ### Test server
 
 It is useful to have a server to test against.
