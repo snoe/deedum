@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 class Settings extends DirectoryElement {
   final Map settings;
   final void Function(String, String) onSaveSettings;
-  final homepageKey = GlobalKey<FormState>();
+  static final homepageKey = GlobalKey<FormState>();
 
-  Settings({
+  const Settings({
     Key? key,
     required this.settings,
     required this.onSaveSettings,

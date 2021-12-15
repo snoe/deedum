@@ -61,7 +61,7 @@ void linkLongPressMenu(title, uri, onNewTab, oldContext) =>
                         ClipboardData(text: uri.toString()));
                     const snackBar =
                         SnackBar(content: Text('Copied to Clipboard'));
-                    ScaffoldMessenger.of(oldContext).showSnackBar(snackBar);
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     Navigator.pop(context);
                   },
                 ),
@@ -72,7 +72,7 @@ void linkLongPressMenu(title, uri, onNewTab, oldContext) =>
 
                     const snackBar =
                         SnackBar(content: Text('Copied to Clipboard'));
-                    ScaffoldMessenger.of(oldContext).showSnackBar(snackBar);
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     Navigator.pop(context);
                   },
                 ),

@@ -45,24 +45,33 @@ class _DirectoryState extends State<Directory>
   @override
   Widget build(BuildContext context) {
     var title = widget.children[_activeTabIndex].title;
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.orange,
-        centerTitle: true,
-        title: Text(title,
-            textScaleFactor: 1.15,
-            style:
-                const TextStyle(fontSize: 5.5, fontFamily: "DejaVu Sans Mono")),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: widget.icons.map<Widget>((i) => Tab(icon: Icon(i))).toList(),
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: widget.children,
-      ),
-    );
+    return GestureDetector(
+        onTap: () {
+          FocusScopeNode currentFocus = FocusScope.of(context);
+
+          if (!currentFocus.hasPrimaryFocus) {
+            currentFocus.unfocus();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: AppBar(
+            backgroundColor: Colors.orange,
+            centerTitle: true,
+            title: Text(title,
+                textScaleFactor: 1.15,
+                style: const TextStyle(
+                    fontSize: 5.5, fontFamily: "DejaVu Sans Mono")),
+            bottom: TabBar(
+              controller: _tabController,
+              tabs:
+                  widget.icons.map<Widget>((i) => Tab(icon: Icon(i))).toList(),
+            ),
+          ),
+          body: TabBarView(
+            controller: _tabController,
+            children: widget.children,
+          ),
+        ));
   }
 }
