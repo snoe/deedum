@@ -51,6 +51,7 @@ class _DirectoryState extends State<Directory>
         backgroundColor: Colors.orange,
         centerTitle: true,
         title: Text(title,
+            textScaleFactor: 1.15,
             style:
                 const TextStyle(fontSize: 5.5, fontFamily: "DejaVu Sans Mono")),
         bottom: TabBar(

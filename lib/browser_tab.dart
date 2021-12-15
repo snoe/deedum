@@ -32,11 +32,16 @@ class BrowserTab extends StatefulWidget {
   final void Function(String?, bool?) onNewTab;
   final ValueChanged<String> addRecent;
 
+  final ValueChanged<String> onBookmark;
+  final ValueChanged<String> onFeed;
+
   const BrowserTab({
     Key? key,
     required this.initialLocation,
     required this.onNewTab,
     required this.addRecent,
+    required this.onBookmark,
+    required this.onFeed,
   }) : super(key: key);
 
   @override
@@ -252,7 +257,7 @@ class BrowserTabState extends State<BrowserTab> {
     }
   }
 
-  Future<bool> _handleForward() async {
+  Future<bool> handleForward() async {
     if (_historyIndex < (_history.length - 1)) {
       _handleHistory(1);
       return false;
@@ -340,7 +345,7 @@ class BrowserTabState extends State<BrowserTab> {
                   onPressed: _historyIndex == (_history.length - 1)
                       ? null
                       : () {
-                          _handleForward();
+                          handleForward();
                         },
                   child: const Icon(Icons.keyboard_arrow_right, size: 30))
             ],
@@ -368,7 +373,12 @@ class BrowserTabState extends State<BrowserTab> {
             controller: _scrollController,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 17, 20),
-              child: content,
+              child: DefaultTextStyle(
+                  child: content,
+                  style: TextStyle(
+                      inherit: true,
+                      fontSize: baseFontSize,
+                      color: Theme.of(context).textTheme.bodyText1!.color)),
             )));
 
     List<Widget> actions = [];
@@ -386,6 +396,7 @@ class BrowserTabState extends State<BrowserTab> {
                   child: Align(
                       alignment: Alignment.center,
                       child: Text("${appKey.currentState!.tabs.length}",
+                          textScaleFactor: 1.15,
                           style: const TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
@@ -393,14 +404,12 @@ class BrowserTabState extends State<BrowserTab> {
                               fontSize: 13))))),
           onPressed: () => widget.onNewTab(null, true),
         ),
-        IconButton(
-            disabledColor: Colors.black12,
-            color: Colors.black,
-            icon: const Icon(Icons.chevron_right),
-            onPressed: (_historyIndex != (_history.length - 1))
-                ? _handleForward
-                : null),
-        TabMenuWidget(tab: this),
+        TabMenuWidget(
+            tab: this,
+            onBookmark: widget.onBookmark,
+            onFeed: widget.onFeed,
+            onLocation: onLocation,
+            onForward: handleForward),
       ];
     }
 

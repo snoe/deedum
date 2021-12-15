@@ -11,6 +11,7 @@ import 'package:deedum/directory/history.dart';
 import 'package:deedum/directory/settings.dart';
 import 'package:deedum/directory/tabs.dart';
 import 'package:deedum/net.dart';
+import 'package:deedum/parser.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' as foundation;
@@ -97,7 +98,8 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
   parseFeed(Uri? uri, String content) {
     var lines = LineSplitter.split(content);
     var title = lines
-        .firstWhere((line) => line.startsWith("# "))
+        .firstWhere((line) => line.startsWith("# "),
+            orElse: () => uri!.toString())
         .replaceFirst("# ", "");
     var links = lines.fold([], (dynamic accum, line) {
       var match =
@@ -123,7 +125,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
       ContentData parsedData = ContentData(BytesBuilder(copy: false));
       await onURI(uri!, (_a, newBytes, _c) {
         if (newBytes != null) {
-          parsedData.bytesBuilder!.add(newBytes);
+          parse(parsedData, newBytes);
         }
       }, (_a, _b, _c, _d) {}, (_a, _b, _c) {}, 1);
 
@@ -224,14 +226,15 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     if (uri != null) {
       final Database db = database;
       var rows = await db
-          .rawQuery("select * from feeds where uri = ?", [uri.toString()]);
+          .rawQuery("select uri from feeds where uri = ?", [uri.toString()]);
+
       if (rows.isEmpty) {
-        await db
-            .rawInsert("insert into feeds (uri) values (?)", [uri.toString()]);
         var feed = await updateFeed(uri);
-        setState(() {
-          feeds.add(feed);
-        });
+        if (feed != null) {
+          setState(() {
+            feeds.add(feed);
+          });
+        }
       } else {
         await db.rawDelete("delete from feeds where uri = ?", [uri.toString()]);
         setState(() {
@@ -285,6 +288,8 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
             initialLocation: Uri.tryParse(initialLocation!)!,
             onNewTab: onNewTab,
             addRecent: addRecent,
+            onBookmark: onBookmark,
+            onFeed: toggleFeed,
           )
         });
         tabIndex = tabs.length - 1;
@@ -328,12 +333,6 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
           primarySwatch: Colors.grey,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
-        builder: (context, child) {
-          return MediaQuery(
-            child: child!,
-            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.15),
-          );
-        },
         localizationsDelegates: const [
           DefaultWidgetsLocalizations.delegate,
           DefaultMaterialLocalizations.delegate,

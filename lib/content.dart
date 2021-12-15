@@ -13,7 +13,7 @@ import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-const baseFontSize = 14.0;
+const baseFontSize = 16.0;
 
 class Content extends StatefulWidget {
   const Content({
