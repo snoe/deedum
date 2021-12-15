@@ -148,9 +148,9 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
         DateFormat('yyyy-MM-dd').format(DateTime.now().toUtc()));
 
     final Database db = database;
-    await db.rawUpdate(
-        "update feeds set content = ?, last_fetched_at = ? where uri = ?",
-        [feed.content, feed.lastFetchedAt, feed.uri.toString()]);
+    await db.rawInsert(
+        "insert or replace into feeds (uri, content, last_fetched_at) values (?,?,?)",
+        [feed.uri.toString(), feed.content, feed.lastFetchedAt]);
     return feed;
   }
 

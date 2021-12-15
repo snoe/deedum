@@ -80,7 +80,7 @@ void linkLongPressMenu(title, uri, onNewTab, oldContext) =>
                   title: const Center(child: Text("Open link in new tab")),
                   onTap: () {
                     Navigator.pop(context);
-                    onNewTab(initialLocation: uri.toString());
+                    onNewTab(uri.toString());
                   },
                 ),
               ],
