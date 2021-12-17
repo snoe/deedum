@@ -1,9 +1,13 @@
 # deedum
 
+A browser for the gemini protocol.
+
+
 A [Project Gemini](https://gemini.circumlunar.space/) browser.
 
-Should be in app/play stores soon!
+Gemini is a new, collaboratively designed internet protocol, which explores the space in between gopher and the web, striving to address (perceived) limitations of one while avoiding the (undeniable) pitfalls of the other.
 
+On android fdroid, play store, builds for ios.
 ## Development
 
 Build should just require installing [flutter](https://flutter.dev/), connecting an android phone over usb (with developer mode turned on):
