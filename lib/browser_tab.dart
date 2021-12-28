@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:deedum/address_bar.dart';
+import 'package:deedum/browser_tab/search.dart';
 import 'package:deedum/content.dart';
 import 'package:deedum/main.dart';
 import 'package:deedum/browser_tab/menu.dart';
@@ -103,47 +104,60 @@ class BrowserTabState extends State<BrowserTab> {
       return;
     }
     setState(() {
-      if (parsedData?.mode == Modes.loading) {
-        var allLogs = List.from(_logs);
-        allLogs.removeWhere(
-            (element) => (element[0] != "error" || element[2] != requestID));
-        var logStrings = allLogs.map((log) => log[3]);
-        if (badScheme) {
-          contentData = ContentData.gem("Launching app for $location");
-        } else if (logStrings.isNotEmpty) {
-          contentData = ContentData.error(logStrings.join("\n"));
-        } else if (timeout) {
-          contentData = ContentData.error("No response. timeout");
-        } else {
-          contentData = ContentData.error(
-              "No response or response line. connection closed");
+      var redirectLoop = parsedData!.mode == Modes.redirect &&
+          (_redirects.contains(parsedData!.meta ?? false) ||
+              _redirects.length >= 5);
+      if (parsedData!.mode == Modes.redirect && !redirectLoop) {
+        var newLocation = Uri.tryParse(parsedData!.meta!)!;
+        if (!newLocation.hasScheme) {
+          newLocation = location.resolve(parsedData!.meta!);
         }
-      } else if (parsedData!.mode == Modes.error) {
-        contentData = parsedData;
-      } else if (parsedData!.mode == Modes.redirect) {
-        if (_redirects.contains(parsedData!.meta) || _redirects.length >= 5) {
+        _redirects.add(parsedData!.meta!);
+        _requestID += 1;
+        resetResponse(newLocation, redirect: true);
+        onURI(newLocation, _handleBytes, _handleDone, _handleLog, _requestID);
+      } else if (parsedData!.mode == Modes.search) {
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return SearchAlert(
+                  prompt: parsedData!.meta!,
+                  uri: location,
+                  onLocation: onLocation);
+            });
+      } else {
+        // Content changing
+        _scrollController = ScrollController(initialScrollOffset: 0);
+        if (parsedData?.mode == Modes.loading) {
+          var allLogs = List.from(_logs);
+          allLogs.removeWhere(
+              (element) => (element[0] != "error" || element[2] != requestID));
+          var logStrings = allLogs.map((log) => log[3]);
+          if (badScheme) {
+            contentData = ContentData.gem("Launching app for $location");
+          } else if (logStrings.isNotEmpty) {
+            contentData = ContentData.error(logStrings.join("\n"));
+          } else if (timeout) {
+            contentData = ContentData.error("No response. timeout");
+          } else {
+            contentData = ContentData.error(
+                "No response or response line. Connection closed");
+          }
+        } else if (parsedData!.mode == Modes.error) {
+          contentData = parsedData;
+        } else if (parsedData!.mode == Modes.redirect) {
           contentData = ContentData.error(
               "REDIRECT LOOP\n--------------\n" + _redirects.join("\n"));
         } else {
-          var newLocation = Uri.tryParse(parsedData!.meta!)!;
-          if (!newLocation.hasScheme) {
-            newLocation = location.resolve(parsedData!.meta!);
-          }
-          _redirects.add(parsedData!.meta!);
-          _requestID += 1;
-          resetResponse(newLocation, redirect: true);
-          onURI(newLocation, _handleBytes, _handleDone, _handleLog, _requestID);
+          _history[_historyIndex].contentData = parsedData!;
+          contentData = parsedData;
         }
-      } else {
-        _history[_historyIndex].contentData = parsedData!;
-        contentData = parsedData;
       }
       _loading = false;
     });
   }
 
   void resetResponse(Uri location, {bool redirect = false}) {
-    contentData = null;
     parsedData = ContentData(BytesBuilder(copy: false));
 
     var addressLoc = toSchemelessString(location);
@@ -242,6 +256,7 @@ class BrowserTabState extends State<BrowserTab> {
       parse(parsedData!, newBytes);
       if (parsedData!.streamable()) {
         setState(() {
+          _scrollController = ScrollController(initialScrollOffset: 0);
           contentData = parsedData;
         });
       }
@@ -263,18 +278,6 @@ class BrowserTabState extends State<BrowserTab> {
       return false;
     } else {
       return true;
-    }
-  }
-
-  onSearch(String encodedSearch) {
-    if (encodedSearch.isNotEmpty) {
-      var u = Uri(
-          scheme: uri!.scheme,
-          host: uri!.host,
-          port: uri!.port,
-          path: uri!.path,
-          query: encodedSearch);
-      onLocation(u);
     }
   }
 
@@ -309,7 +312,6 @@ class BrowserTabState extends State<BrowserTab> {
     _requestID += 1;
 
     setState(() {
-      _scrollController = ScrollController(initialScrollOffset: 0);
       _loading = true;
 
       resetResponse(location);
@@ -361,7 +363,6 @@ class BrowserTabState extends State<BrowserTab> {
           contentData!.bytesBuilder != null &&
           contentData!.mode == Modes.gem,
       onLocation: onLocation,
-      onSearch: onSearch,
       onNewTab: widget.onNewTab,
     );
     var contentWidget = GestureDetector(
@@ -369,7 +370,7 @@ class BrowserTabState extends State<BrowserTab> {
           _focusNode.unfocus();
         },
         child: SingleChildScrollView(
-            key: ObjectKey(content),
+            key: ObjectKey(contentData),
             controller: _scrollController,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 17, 20),
@@ -428,6 +429,9 @@ class BrowserTabState extends State<BrowserTab> {
               loading: _loading,
             ),
             actions: actions),
-        body: contentWidget);
+        body: IgnorePointer(
+          child: contentWidget,
+          ignoring: _loading,
+        ));
   }
 }

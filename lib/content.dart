@@ -22,7 +22,6 @@ class Content extends StatefulWidget {
     required this.contentData,
     required this.viewSource,
     required this.onLocation,
-    required this.onSearch,
     required this.onNewTab,
   }) : super(key: key);
 
@@ -30,7 +29,6 @@ class Content extends StatefulWidget {
   final ContentData? contentData;
   final bool viewSource;
   final Function onLocation;
-  final Function onSearch;
   final Function onNewTab;
 
   @override
@@ -39,15 +37,6 @@ class Content extends StatefulWidget {
 
 class _ContentState extends State<Content> {
   var plainTextControls = false;
-  bool _inputError = false;
-  int _inputLength = 0;
-
-  _setInputError(value, length) {
-    setState(() {
-      _inputError = value;
-      _inputLength = length;
-    });
-  }
 
   showControls(show) {
     setState(() {
@@ -78,26 +67,6 @@ class _ContentState extends State<Content> {
       var text = widget.contentData!.stringContent()!;
       var groups = analyze(text)!;
       return groupsToWidget(groups);
-    } else if (widget.contentData!.mode == Modes.search) {
-      return Column(
-          children: <Widget>[
-                ExtendedText(widget.contentData!.meta!),
-                DecoratedBox(
-                    decoration: BoxDecoration(
-                        color: _inputError ? Colors.deepOrange : null),
-                    child: TextField(onSubmitted: (value) {
-                      var encodedSearch = Uri.encodeComponent(value);
-                      if (encodedSearch.length <= 1024) {
-                        widget.onSearch(encodedSearch);
-                        _setInputError(false, encodedSearch.length);
-                      } else {
-                        _setInputError(true, encodedSearch.length);
-                      }
-                    }))
-              ] +
-              (_inputError
-                  ? [ExtendedText("\n\nInput too long: $_inputLength")]
-                  : []));
     } else if (widget.contentData!.mode == Modes.error) {
       return ExtendedText("An error occurred\n\n" +
           (widget.contentData!.static ?? "No message") +

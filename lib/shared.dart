@@ -28,7 +28,17 @@ String bytesToString(ContentType contentType, List<int> bytes) {
   return rest;
 }
 
-enum Modes { loading, error, gem, plain, image, binary, redirect, search }
+enum Modes {
+  loading,
+  error,
+  gem,
+  plain,
+  image,
+  binary,
+  redirect,
+  search,
+  clientCert
+}
 
 class ContentData {
   late final int? status;
