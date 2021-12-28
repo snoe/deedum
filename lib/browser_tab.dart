@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:deedum/address_bar.dart';
+import 'package:deedum/browser_tab/client_cert.dart';
 import 'package:deedum/browser_tab/search.dart';
 import 'package:deedum/content.dart';
 import 'package:deedum/main.dart';
@@ -30,20 +31,23 @@ class HistoryEntry {
 
 class BrowserTab extends StatefulWidget {
   final Uri initialLocation;
+  final List<Identity> identities;
   final void Function(String?, bool?) onNewTab;
   final ValueChanged<String> addRecent;
-
   final ValueChanged<String> onBookmark;
   final ValueChanged<String> onFeed;
+  final void Function(Identity, Uri) onIdentity;
 
-  const BrowserTab({
-    Key? key,
-    required this.initialLocation,
-    required this.onNewTab,
-    required this.addRecent,
-    required this.onBookmark,
-    required this.onFeed,
-  }) : super(key: key);
+  const BrowserTab(
+      {Key? key,
+      required this.initialLocation,
+      required this.identities,
+      required this.onNewTab,
+      required this.addRecent,
+      required this.onBookmark,
+      required this.onFeed,
+      required this.onIdentity})
+      : super(key: key);
 
   @override
   BrowserTabState createState() => BrowserTabState();
@@ -58,6 +62,7 @@ class BrowserTabState extends State<BrowserTab> {
   int _historyIndex = -1;
   bool _loading = false;
   Uri? uri;
+  Identity? identity;
   ScrollController _scrollController = ScrollController();
   int _requestID = 1;
 
@@ -69,6 +74,7 @@ class BrowserTabState extends State<BrowserTab> {
   @override
   void initState() {
     super.initState();
+    log("initstate");
     var initLoc = toSchemelessString(widget.initialLocation);
     _controller = TextEditingController(text: initLoc);
     _focusNode = FocusNode();
@@ -89,6 +95,7 @@ class BrowserTabState extends State<BrowserTab> {
 
   init() async {
     onLocation(widget.initialLocation);
+    log("hello?");
   }
 
   @override
@@ -98,9 +105,43 @@ class BrowserTabState extends State<BrowserTab> {
     super.dispose();
   }
 
+  void onIdentity(Identity selectedIdentity, Uri selectedUri) async {
+    widget.onIdentity(selectedIdentity, selectedUri);
+    setState(() {
+      identity = widget.identities
+          .firstOrNull((element) => element.matches(selectedUri));
+    });
+  }
+
   void _handleDone(
       Uri location, bool timeout, bool badScheme, int requestID) async {
     if (requestID != _requestID) {
+      return;
+    }
+    setState(() {
+      _loading = false;
+    });
+
+    if (parsedData!.mode == Modes.clientCert) {
+      var certSet = await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return ClientCertAlert(prompt: parsedData!.meta!, uri: location);
+          });
+      if (certSet) {
+        onIdentity(certSet, location);
+        onLocation(location);
+      }
+      return;
+    } else if (parsedData!.mode == Modes.search) {
+      var newLocation = await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return SearchAlert(prompt: parsedData!.meta!, uri: location);
+          });
+      if (newLocation != null) {
+        onLocation(newLocation);
+      }
       return;
     }
     setState(() {
@@ -116,15 +157,6 @@ class BrowserTabState extends State<BrowserTab> {
         _requestID += 1;
         resetResponse(newLocation, redirect: true);
         onURI(newLocation, _handleBytes, _handleDone, _handleLog, _requestID);
-      } else if (parsedData!.mode == Modes.search) {
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return SearchAlert(
-                  prompt: parsedData!.meta!,
-                  uri: location,
-                  onLocation: onLocation);
-            });
       } else {
         // Content changing
         _scrollController = ScrollController(initialScrollOffset: 0);
@@ -153,7 +185,6 @@ class BrowserTabState extends State<BrowserTab> {
           contentData = parsedData;
         }
       }
-      _loading = false;
     });
   }
 
@@ -161,6 +192,8 @@ class BrowserTabState extends State<BrowserTab> {
     parsedData = ContentData(BytesBuilder(copy: false));
 
     var addressLoc = toSchemelessString(location);
+    identity =
+        widget.identities.firstOrNull((element) => element.matches(location));
     _controller.text = addressLoc;
     _focusNode.unfocus();
     uri = location;
@@ -423,6 +456,7 @@ class BrowserTabState extends State<BrowserTab> {
         appBar: AppBar(
             backgroundColor: Colors.orange,
             title: AddressBar(
+              tab: this,
               focusNode: _focusNode,
               controller: _controller,
               onLocation: onLocation,

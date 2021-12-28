@@ -2,11 +2,22 @@
 import 'dart:developer';
 
 import 'package:deedum/browser_tab.dart';
+import 'package:deedum/browser_tab/client_cert.dart';
 import 'package:deedum/main.dart';
+import 'package:deedum/shared.dart';
 
 import 'package:flutter/material.dart';
 
-enum _MenuSelection { logs, source, bookmark, feed, root, parent, forward }
+enum _MenuSelection {
+  logs,
+  source,
+  bookmark,
+  feed,
+  root,
+  parent,
+  forward,
+  identity
+}
 
 class TabMenuWidget extends StatelessWidget {
   const TabMenuWidget(
@@ -33,6 +44,10 @@ class TabMenuWidget extends StatelessWidget {
         var bookmarked = appKey.currentState!.bookmarks.contains(uriString);
         var feedActive = appKey.currentState!.feeds
             .any((element) => tab.uri?.toString() == uriString);
+        Identity? activeIdentity = tab.uri == null
+            ? null
+            : appKey.currentState!.identities
+                .firstOrNull((element) => element.matches(tab.uri!));
         return [
           PopupMenuItem(
             child: ListTile(
@@ -80,6 +95,19 @@ class TabMenuWidget extends StatelessWidget {
             value: _MenuSelection.feed,
           ),
           const PopupMenuDivider(),
+          PopupMenuItem(
+            child: ListTile(
+                leading: Icon(
+                    bookmarked
+                        ? Icons.person_remove_outlined
+                        : Icons.person_add_outlined,
+                    color: Colors.black),
+                title: Text(activeIdentity != null
+                    ? "Remove from identity"
+                    : "Add to identity")),
+            value: _MenuSelection.identity,
+          ),
+          const PopupMenuDivider(),
           const PopupMenuItem(
               child: ListTile(
                   leading: Icon(Icons.code, color: Colors.black),
@@ -92,7 +120,7 @@ class TabMenuWidget extends StatelessWidget {
           ),
         ];
       },
-      onSelected: (result) {
+      onSelected: (result) async {
         switch (result) {
           case _MenuSelection.logs:
             tab.showLogs();
@@ -124,15 +152,26 @@ class TabMenuWidget extends StatelessWidget {
           case _MenuSelection.parent:
             if (tab.uri != null) {
               var uri = tab.uri!;
-              List<String> segments = List.from(uri.pathSegments);
-              if (segments.isNotEmpty) {
-                var last = segments.removeLast();
-                if (last == "") {
-                  segments.removeLast();
-                }
-                var newUri = uri.replace(pathSegments: segments);
-                newUri = newUri.replace(path: newUri.path + "/");
+              Uri? newUri = parentPath(uri);
+              if (newUri != null) {
                 onLocation(newUri);
+              }
+            }
+            break;
+          case _MenuSelection.identity:
+            if (tab.uri != null) {
+              if (tab.identity != null) {
+                tab.onIdentity(tab.identity!, tab.uri!);
+              } else {
+                var newIdentity = await showDialog(
+                    context: context,
+                    builder: (context) {
+                      return ClientCertAlert(
+                          prompt: "Add to identity?", uri: tab.uri!);
+                    });
+                if (newIdentity != null) {
+                  tab.onIdentity(newIdentity, tab.uri!);
+                }
               }
             }
             break;

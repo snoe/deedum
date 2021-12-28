@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:basic_utils/basic_utils.dart';
 import 'package:qr/qr.dart';
 
 import 'package:sqflite/sqlite_api.dart';
@@ -113,6 +114,41 @@ class Feed {
   }
 }
 
+class Identity {
+  final String name;
+  late final Uint8List cert;
+  late final Uint8List privateKey;
+  final List<String> pages = [];
+
+  Identity(this.name, {days = 365000}) {
+    Map<String, String> subject = {'CN': name};
+
+    AsymmetricKeyPair keyPair = CryptoUtils.generateRSAKeyPair();
+
+    var x = X509Utils.generateRsaCsrPem(subject,
+        keyPair.privateKey as RSAPrivateKey, keyPair.publicKey as RSAPublicKey);
+
+    var y = X509Utils.generateSelfSignedCertificate(keyPair.privateKey, x, 100);
+    var z = CryptoUtils.encodeRSAPrivateKeyToPem(
+        keyPair.privateKey as RSAPrivateKey);
+    var utf8encoder = const Utf8Encoder();
+    cert = utf8encoder.convert(y);
+    privateKey = utf8encoder.convert(z);
+  }
+
+  addPage(String page) {
+    pages.add(page);
+  }
+
+  matches(Uri uri) {
+    var check = uri.toString();
+    return pages.any((page) {
+      return check == page ||
+          check.startsWith(page.endsWith("/") ? page : page + "/");
+    });
+  }
+}
+
 String toSchemelessString(Uri? uri) {
   late String uriString;
   if (uri != null) {
@@ -164,6 +200,14 @@ extension CollectionUtil<T> on Iterable<T> {
       (map[key(element)] ??= []).add(element);
     }
     return map;
+  }
+
+  T? firstOrNull(bool Function(T) test) {
+    try {
+      return firstWhere(test);
+    } catch (e) {
+      return null;
+    }
   }
 }
 
@@ -337,4 +381,17 @@ String qrEncode(Uint8List der) {
     result += "\n";
   }
   return result;
+}
+
+Uri? parentPath(Uri uri) {
+  List<String> segments = List.from(uri.pathSegments);
+  if (segments.isNotEmpty) {
+    var last = segments.removeLast();
+    if (last == "") {
+      segments.removeLast();
+    }
+    var newUri = uri.replace(pathSegments: segments);
+    newUri = newUri.replace(path: newUri.path + "/");
+    return newUri;
+  }
 }

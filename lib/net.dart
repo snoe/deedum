@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:asn1lib/asn1lib.dart';
+import 'package:asn1lib/asn1lib.dart' as asn;
 import 'package:crypto/crypto.dart';
 import 'package:deedum/main.dart';
 import 'package:deedum/shared.dart';
@@ -39,16 +39,16 @@ Future<ContentData> homepageContent() async {
 Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
   Uint8List tofuBytes;
   try {
-    ASN1Parser p = ASN1Parser(serverCert.der);
-    ASN1Sequence o =
-        (p.nextObject() as ASN1Sequence).elements[0] as ASN1Sequence;
-    List<ASN1Object> elements = o.elements;
+    asn.ASN1Parser p = asn.ASN1Parser(serverCert.der);
+    asn.ASN1Sequence o =
+        (p.nextObject() as asn.ASN1Sequence).elements[0] as asn.ASN1Sequence;
+    List<asn.ASN1Object> elements = o.elements;
     if (elements.first.tag == 0xa0) {
       elements = elements.skip(1).toList();
     }
     var spkiObject = elements[5];
     x.SubjectPublicKeyInfo spki =
-        x.SubjectPublicKeyInfo.fromAsn1(spkiObject as ASN1Sequence);
+        x.SubjectPublicKeyInfo.fromAsn1(spkiObject as asn.ASN1Sequence);
     tofuBytes = spki.toAsn1().encodedBytes;
   } catch (e) {
     log("Failed to find spki $e");
@@ -172,7 +172,7 @@ Future<void> onURI(
       }
     } else {
       handleLog("info", "Connecting to $uri", requestID);
-      var socket = await connect(uri);
+      var socket = await connect(uri, handleLog, requestID);
       handleLog("info", "Connected to $uri", requestID);
       await handleCert(uri, socket.peerCertificate!);
       handleLog("info", "Cert OK for $uri", requestID);
@@ -184,11 +184,22 @@ Future<void> onURI(
   handleDone(uri, timeout, opened, requestID);
 }
 
-Future<RawSecureSocket> connect(Uri uri) async {
+Future<RawSecureSocket> connect(Uri uri,
+    void Function(String, String, int) handleLog, int requestId) async {
   var port = uri.hasPort ? uri.port : 1965;
+  SecurityContext securityContext = SecurityContext();
+
+  Identity? identity = appKey.currentState!.identities
+      .firstOrNull((element) => element.matches(uri));
+
+  if (identity != null) {
+    handleLog("info", "Using identity: ${identity.name}", requestId);
+    securityContext.useCertificateChainBytes(identity.cert);
+    securityContext.usePrivateKeyBytes(identity.privateKey);
+  }
   return await RawSecureSocket.connect(uri.host, port,
       timeout: const Duration(seconds: 10),
-      onBadCertificate: (X509Certificate cert) {
+      context: securityContext, onBadCertificate: (X509Certificate cert) {
     return true;
   });
 }

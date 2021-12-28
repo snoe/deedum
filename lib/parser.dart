@@ -55,7 +55,7 @@ void parse(ContentData parsedData, Uint8List newBytes) {
       return;
     }
 
-    if (status < 10 || status >= 40) {
+    if (status < 10 || status >= 70) {
       parsedData.mode = Modes.error;
       parsedData.static = "UNHANDLED STATUS";
       return;
@@ -80,6 +80,14 @@ void parse(ContentData parsedData, Uint8List newBytes) {
       }
     } else if (status >= 30 && status < 40) {
       parsedData.mode = Modes.redirect;
+    } else if (status >= 40 && status < 50) {
+      parsedData.mode = Modes.error;
+      parsedData.static = "Temporary Failure";
+    } else if (status >= 50 && status < 60) {
+      parsedData.mode = Modes.error;
+      parsedData.static = "Permanent Failure";
+    } else if (status >= 60 && status < 70) {
+      parsedData.mode = Modes.clientCert;
     }
   }
 }

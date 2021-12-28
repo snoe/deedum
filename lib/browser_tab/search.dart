@@ -6,18 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 class SearchAlert extends StatefulWidget {
-  final void Function(Uri) onLocation;
-
   final String prompt;
   final Uri uri;
 
   final TextEditingController searchController = TextEditingController();
 
-  SearchAlert(
-      {Key? key,
-      required this.prompt,
-      required this.uri,
-      required this.onLocation})
+  SearchAlert({Key? key, required this.prompt, required this.uri})
       : super(key: key);
 
   @override
@@ -28,13 +22,6 @@ class SearchAlertState extends State<SearchAlert> {
   bool _inputError = false;
   int _inputLength = 0;
   Uri? _newLocation;
-
-  _inputSubmitted(value) {
-    if (!_inputError) {
-      widget.onLocation(_newLocation!);
-      Navigator.of(context).pop();
-    }
-  }
 
   _inputChanged(value) {
     String? encodedSearch;
@@ -81,8 +68,7 @@ class SearchAlertState extends State<SearchAlert> {
               child: TextField(
                   focusNode: focusNode,
                   controller: widget.searchController,
-                  onChanged: _inputChanged,
-                  onSubmitted: _inputSubmitted),
+                  onChanged: _inputChanged),
             ),
             Text(_inputError
                 ? "Input too long by ${_inputLength - 1024} bytes."
@@ -90,16 +76,16 @@ class SearchAlertState extends State<SearchAlert> {
           ]),
       actions: <Widget>[
         TextButton(
-            onPressed: () {
-              _inputSubmitted(widget.searchController.text);
-            },
-            child: const Text('Submit')),
-        TextButton(
           onPressed: () {
             Navigator.of(context).pop();
           },
           child: const Text('Cancel'),
         ),
+        TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(_newLocation!);
+            },
+            child: const Text('Submit')),
       ],
     );
   }

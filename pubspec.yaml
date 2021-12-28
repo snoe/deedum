@@ -42,6 +42,7 @@ dependencies:
   crypto: ^3.0.1
   punycode: ^1.0.0
   string_validator: ^0.3.0
+  basic_utils: ^3.9.4
 
 dev_dependencies:
   flutter_test:

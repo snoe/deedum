@@ -1,3 +1,5 @@
+import 'package:deedum/browser_tab.dart';
+import 'package:deedum/shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -7,12 +9,14 @@ import 'package:string_validator/string_validator.dart' as validator;
 class AddressBar extends StatelessWidget {
   const AddressBar({
     Key? key,
+    required this.tab,
     required this.controller,
     required this.focusNode,
     required this.loading,
     required this.onLocation,
   }) : super(key: key);
 
+  final BrowserTabState tab;
   final TextEditingController controller;
   final bool loading;
   final ValueChanged<Uri> onLocation;
@@ -20,13 +24,22 @@ class AddressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var background = Colors.orange[300];
+    var identity = appKey.currentState!.identities
+        .firstOrNull((element) => element.matches(tab.uri!));
+    if (loading) {
+      background = Colors.green[300];
+    } else if (identity != null) {
+      background = Colors.blue[300];
+    }
+
     return Row(
       children: [
         Expanded(
           flex: 1,
           child: DecoratedBox(
             decoration: BoxDecoration(
-                color: loading ? Colors.green[300] : Colors.orange[300],
+                color: background,
                 borderRadius: const BorderRadius.all(Radius.circular(5))),
             child: Container(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),

@@ -8,6 +8,7 @@ import 'package:deedum/directory/bookmarks.dart';
 import 'package:deedum/directory/directory.dart';
 import 'package:deedum/directory/feeds.dart';
 import 'package:deedum/directory/history.dart';
+import 'package:deedum/directory/identities.dart';
 import 'package:deedum/directory/settings.dart';
 import 'package:deedum/directory/tabs.dart';
 import 'package:deedum/net.dart';
@@ -76,13 +77,14 @@ class FeedEntry {
 }
 
 class AppState extends State<App> with AutomaticKeepAliveClientMixin {
-  List tabs = [];
+  List<dynamic> tabs = [];
   int tabIndex = 0;
 
   Set<String> bookmarks = {};
   List<String> recents = [];
   List<Feed?> feeds = [];
   List<String> feed = [];
+  List<Identity> identities = [];
 
   Map settings = {};
   late StreamSubscription _sub;
@@ -173,6 +175,7 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
     bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
     recents = (prefs.getStringList('recent') ?? []);
     feeds = (prefs.getStringList('feeds') as List<Feed?>? ?? []);
+
     settings = {
       "homepage":
           (prefs.getString("homepage") ?? "gemini://gemini.circumlunar.space/"),
@@ -209,6 +212,27 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
       }
 
       prefs.setStringList('recent', recents);
+    });
+  }
+
+  void onIdentity(Identity identity, Uri uri) async {
+    setState(() {
+      if (identity.matches(uri)) {
+        identity.pages
+            .removeWhere((element) => uri.toString().startsWith(element));
+      } else {
+        identity.addPage(uri.toString());
+      }
+    });
+  }
+
+  void createIdentity(String name, {Uri? uri}) async {
+    setState(() {
+      var id = Identity(name);
+      if (uri != null) {
+        id.addPage(uri.toString());
+      }
+      identities.add(id);
     });
   }
 
@@ -286,10 +310,12 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
           "widget": BrowserTab(
             key: key,
             initialLocation: Uri.tryParse(initialLocation!)!,
+            identities: identities,
             onNewTab: onNewTab,
             addRecent: addRecent,
             onBookmark: onBookmark,
             onFeed: toggleFeed,
+            onIdentity: onIdentity,
           )
         });
         tabIndex = tabs.length - 1;
@@ -377,16 +403,22 @@ class AppState extends State<App> with AutomaticKeepAliveClientMixin {
                     onNewTab: onNewTab,
                     onBookmark: onBookmark,
                   ),
+                  Identities(
+                    identities: identities,
+                    createIdentity: createIdentity,
+                    onIdentity: onIdentity,
+                  ),
                   Settings(
                     settings: settings,
                     onSaveSettings: onSaveSettings,
-                  )
+                  ),
                 ],
                 icons: const [
                   Icons.tab,
                   Icons.rss_feed,
                   Icons.bookmark_border,
                   Icons.history,
+                  Icons.person,
                   Icons.settings
                 ],
               )
