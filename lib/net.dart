@@ -30,7 +30,7 @@ Future<ContentData> homepageContent() async {
     "```",
     "# Links",
     "=> gemini://gemini.circumlunar.space/ Project Gemini",
-    "=> gemini://gus.guru/ Gemini Universal Search",
+    "=> gemini://geminispace.info/ Gemini Search Engine",
     "=> gemini://wp.pitr.ca/en/Gemini Gemini Wikipedia Proxy"
   ];
   return ContentData.gem(lines.join("\n"));
@@ -136,8 +136,10 @@ String _punyEncodeUrl(String url) {
 Future<void> onURI(
     Uri uri,
     void Function(Uri, Uint8List?, int) handleBytes,
-    void Function(Uri, bool, bool, int) handleDone,
+    void Function(Uri, bool, bool, List<Identity>, List<Feed?>, int) handleDone,
     void Function(String, String, int) handleLog,
+    List<Identity> identities,
+    List<Feed?> feeds,
     int requestID) async {
   bool timeout = false;
   bool opened = false;
@@ -147,7 +149,6 @@ Future<void> onURI(
 
   try {
     if (uri.toString() == "about:feeds") {
-      var feeds = appKey.currentState!.feeds;
       var linksByDate = feeds.fold<List>([], (accum, feed) {
         accum.addAll(feed!.links!);
         return accum;
@@ -172,7 +173,7 @@ Future<void> onURI(
       }
     } else {
       handleLog("info", "Connecting to $uri", requestID);
-      var socket = await connect(uri, handleLog, requestID);
+      var socket = await connect(uri, handleLog, identities, requestID);
       handleLog("info", "Connected to $uri", requestID);
       await handleCert(uri, socket.peerCertificate!);
       handleLog("info", "Cert OK for $uri", requestID);
@@ -181,16 +182,19 @@ Future<void> onURI(
   } catch (e) {
     handleLog("error", e.toString(), requestID);
   }
-  handleDone(uri, timeout, opened, requestID);
+  handleDone(uri, timeout, opened, identities, feeds, requestID);
 }
 
-Future<RawSecureSocket> connect(Uri uri,
-    void Function(String, String, int) handleLog, int requestId) async {
+Future<RawSecureSocket> connect(
+    Uri uri,
+    void Function(String, String, int) handleLog,
+    List<Identity> identities,
+    int requestId) async {
   var port = uri.hasPort ? uri.port : 1965;
   SecurityContext securityContext = SecurityContext();
 
-  Identity? identity = appKey.currentState!.identities
-      .firstOrNull((element) => element.matches(uri));
+  Identity? identity =
+      identities.firstOrNull((element) => element.matches(uri));
 
   if (identity != null) {
     handleLog("info", "Using identity: ${identity.name}", requestId);

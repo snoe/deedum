@@ -43,6 +43,10 @@ dependencies:
   punycode: ^1.0.0
   string_validator: ^0.3.0
   basic_utils: ^3.9.4
+  provider: ^6.0.1
+  riverpod: ^1.0.3
+  fast_immutable_collections: ^7.1.2
+  flutter_riverpod: ^1.0.3
 
 dev_dependencies:
   flutter_test:

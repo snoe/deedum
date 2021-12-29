@@ -1,17 +1,15 @@
+import 'package:deedum/app_state.dart';
 import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class Settings extends DirectoryElement {
-  final Map settings;
-  final void Function(String, String) onSaveSettings;
   static final homepageKey = GlobalKey<FormState>();
 
   const Settings({
     Key? key,
-    required this.settings,
-    required this.onSaveSettings,
   }) : super(key: key);
 
   @override
@@ -25,7 +23,8 @@ class Settings extends DirectoryElement {
       ].join("\n");
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    var appState = ref.watch(appStateProvider);
     var children = [
       Padding(
         padding: const EdgeInsets.all(8),
@@ -35,24 +34,24 @@ class Settings extends DirectoryElement {
               TextFormField(
                 keyboardType: TextInputType.url,
                 decoration: const InputDecoration(labelText: "Homepage"),
-                initialValue: removeGeminiScheme(settings["homepage"]),
+                initialValue: removeGeminiScheme(appState.settings["homepage"]),
                 validator: validateGeminiURL,
                 onFieldSubmitted: validateAndSaveForm,
                 onSaved: (s) {
                   s = prefixSchema(s!);
-                  onSaveSettings("homepage", s);
+                  appState.onSaveSettings("homepage", s);
                 },
               ),
               TextFormField(
                 keyboardType: TextInputType.url,
                 decoration: const InputDecoration(
                     labelText: "Search Engine (page that takes input)"),
-                initialValue: removeGeminiScheme(settings["search"]),
+                initialValue: removeGeminiScheme(appState.settings["search"]),
                 validator: validateGeminiURL,
                 onFieldSubmitted: validateAndSaveForm,
                 onSaved: (s) {
                   s = prefixSchema(s!);
-                  onSaveSettings("search", s);
+                  appState.onSaveSettings("search", s);
                 },
               ),
             ]))),

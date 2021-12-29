@@ -1,21 +1,14 @@
+import 'package:deedum/app_state.dart';
 import 'package:deedum/browser_tab/client_cert.dart';
 import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/directory/gem_item.dart';
-import 'package:deedum/shared.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class Identities extends DirectoryElement {
-  final List<Identity> identities;
-  final bookmarkKey = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
-  final void Function(Identity, Uri) onIdentity;
-  final void Function(String, {Uri? uri}) createIdentity;
-
-  Identities({
+  const Identities({
     Key? key,
-    required this.identities,
-    required this.onIdentity,
-    required this.createIdentity,
   }) : super(key: key);
 
   @override
@@ -29,7 +22,8 @@ class Identities extends DirectoryElement {
       ].join("\n");
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    var appState = ref.watch(appStateProvider);
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -40,7 +34,8 @@ class Identities extends DirectoryElement {
                 showDialog(
                     context: context,
                     builder: (BuildContext context) {
-                      return ClientCertAddAlert(createIdentity: createIdentity);
+                      return ClientCertAddAlert(
+                          createIdentity: appState.createIdentity);
                     });
               },
               leading: const Icon(Icons.explore, color: Colors.white),
@@ -50,7 +45,7 @@ class Identities extends DirectoryElement {
                   style: TextStyle(color: Colors.white)),
             ),
           ),
-          for (final identity in identities)
+          for (final identity in appState.identities)
             GemItem(
               title: Column(children: [
                 for (var page in identity.pages)
@@ -58,7 +53,7 @@ class Identities extends DirectoryElement {
                     title: Text(page),
                     trailing: const Icon(Icons.delete),
                     onTap: () {
-                      onIdentity(identity, Uri.parse(page));
+                      appState.onIdentity(identity, Uri.parse(page));
                     },
                   )
               ]),

@@ -1,33 +1,44 @@
-import 'package:deedum/browser_tab.dart';
-import 'package:deedum/shared.dart';
+// ignore: unused_import
+import 'dart:developer';
+
+import 'package:deedum/app_state.dart';
+import 'package:deedum/browser_tab/client_cert.dart';
+import 'package:deedum/browser_tab/search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:deedum/main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:string_validator/string_validator.dart' as validator;
 
-class AddressBar extends StatelessWidget {
-  const AddressBar({
+class AddressBar2 extends ConsumerWidget {
+  const AddressBar2({
     Key? key,
-    required this.tab,
     required this.controller,
     required this.focusNode,
-    required this.loading,
-    required this.onLocation,
   }) : super(key: key);
 
-  final BrowserTabState tab;
   final TextEditingController controller;
-  final bool loading;
-  final ValueChanged<Uri> onLocation;
   final FocusNode focusNode;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appState = ref.watch(appStateProvider);
+    SchedulerBinding.instance?.addPostFrameCallback((_) {
+      if (appState.currentShouldCertDialog()) {
+        showCertDialog(context, appState);
+      } else if (appState.currentShouldSearchDialog()) {
+        showSearchDialog(context, appState);
+      }
+    });
+    ref.listen(appStateProvider, (AppState? previous, AppState next) {
+      if (previous?.currentUri() == next.currentUri()) {
+        controller.text = next.currentUri().toString();
+      }
+    });
     var background = Colors.orange[300];
-    var identity = appKey.currentState!.identities
-        .firstOrNull((element) => element.matches(tab.uri!));
-    if (loading) {
+    var identity = appState.currentIdentity();
+    if (appState.currentLoading()) {
       background = Colors.green[300];
     } else if (identity != null) {
       background = Colors.blue[300];
@@ -73,12 +84,12 @@ class AddressBar extends StatelessWidget {
                       newURL = Uri.parse("gemini://" + value);
                     }
                   } else {
-                    String searchEngine =
-                        appKey.currentState!.settings["search"];
+                    String searchEngine = appState.settings["search"];
+
                     newURL = Uri.parse(searchEngine);
                     newURL = newURL.replace(query: value);
                   }
-                  onLocation(newURL);
+                  appState.onLocation(newURL);
                 },
               ),
             ),
@@ -86,5 +97,33 @@ class AddressBar extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> showSearchDialog(BuildContext context, AppState appState) async {
+    var location = appState.currentUri()!;
+    var newLocation = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return SearchAlert(prompt: appState.currentMeta()!, uri: location);
+        });
+    if (newLocation != null) {
+      appState.onLocation(newLocation);
+    }
+    return;
+  }
+
+  Future<void> showCertDialog(BuildContext context, AppState appState) async {
+    var location = appState.currentUri()!;
+    var selectedIdentity = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return ClientCertAlert(
+              prompt: appState.currentMeta()!, uri: location);
+        });
+    if (selectedIdentity != null) {
+      appState.onIdentity(selectedIdentity, location);
+      appState.onLocation(location);
+    }
+    return;
   }
 }

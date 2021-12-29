@@ -1,29 +1,26 @@
-import 'package:deedum/main.dart';
+import 'package:deedum/app_state.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class Link extends StatelessWidget {
+class Link extends ConsumerWidget {
   const Link({
     Key? key,
     required this.title,
-    required this.currentUri,
     required this.link,
-    required this.onLocation,
-    required this.onNewTab,
   }) : super(key: key);
 
-  final Uri currentUri;
   final String link;
   final String title;
-  final ValueChanged<Uri> onLocation;
-  final VoidCallback onNewTab;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    var appState = ref.watch(appStateProvider);
+    var currentUri = appState.currentUri()!;
     Uri uri = resolveLink(currentUri, link);
     bool httpWarn = uri.scheme != "gemini";
-    bool visited = appKey.currentState!.recents.contains(uri.toString());
+    bool visited = appState.recents.contains(uri.toString());
     return GestureDetector(
         child: Padding(
             padding: const EdgeInsets.fromLTRB(0, 7, 0, 7),
@@ -32,9 +29,10 @@ class Link extends StatelessWidget {
                     color: httpWarn
                         ? (visited ? Colors.purple[100] : Colors.purple[300])
                         : (visited ? Colors.blueGrey : Colors.blue)))),
-        onLongPress: () => linkLongPressMenu(title, uri, onNewTab, context),
+        onLongPress: () =>
+            linkLongPressMenu(title, uri, appState.onNewTab, context),
         onTap: () {
-          onLocation(uri);
+          appState.onLocation(uri);
         });
   }
 }

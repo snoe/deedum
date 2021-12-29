@@ -1,20 +1,14 @@
+import 'package:deedum/app_state.dart';
 import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/directory/gem_item.dart';
+import 'package:deedum/next/app.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class Bookmarks extends DirectoryElement {
-  final void Function(String?, bool?) onNewTab;
-  final ValueChanged<String> onBookmark;
-  final Set<String> bookmarks;
-
-  final bookmarkKey = GlobalObjectKey(DateTime.now().millisecondsSinceEpoch);
-
-  Bookmarks({
+  const Bookmarks({
     Key? key,
-    required this.bookmarks,
-    required this.onNewTab,
-    required this.onBookmark,
   }) : super(key: key);
 
   @override
@@ -28,12 +22,13 @@ class Bookmarks extends DirectoryElement {
       ].join("\n");
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    var appState = ref.watch(appStateProvider);
     return SingleChildScrollView(
       child: Column(
         children: [
-          if (bookmarks.isNotEmpty)
-            for (final bookmark in bookmarks)
+          if (appState.bookmarks.isNotEmpty)
+            for (final bookmark in appState.bookmarks)
               GemItem(
                 url: Uri.decodeFull(Uri.parse(bookmark).host),
                 title: Text(Uri.parse(bookmark).path == ""
@@ -41,14 +36,19 @@ class Bookmarks extends DirectoryElement {
                     : Uri.decodeFull(Uri.parse(bookmark).path)),
                 showBookmarked: false,
                 showDelete: true,
-                onSelect: () => onNewTab(bookmark, null),
-                onDelete: () => onBookmark(bookmark),
+                onSelect: () {
+                  appState.onNewTab(bookmark);
+                  Navigator.pop(navigatorKey.currentContext!);
+                },
+                onDelete: () => appState.onBookmark(bookmark),
               )
           else
             Card(
               color: Colors.black12,
               child: ListTile(
-                onTap: () => onNewTab(null, null),
+                onTap: () {
+                  Navigator.pop(navigatorKey.currentContext!);
+                },
                 leading: const Icon(Icons.explore, color: Colors.white),
                 title: const Text("No Bookmarks",
                     style: TextStyle(color: Colors.white)),

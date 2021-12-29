@@ -1,12 +1,13 @@
 // ignore: unused_import
 import 'dart:developer';
 
-import 'package:deedum/browser_tab.dart';
+import 'package:deedum/app_state.dart';
 import 'package:deedum/browser_tab/client_cert.dart';
-import 'package:deedum/main.dart';
 import 'package:deedum/shared.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 enum _MenuSelection {
   logs,
@@ -19,45 +20,90 @@ enum _MenuSelection {
   identity
 }
 
-class TabMenuWidget extends StatelessWidget {
-  const TabMenuWidget(
-      {Key? key,
-      required this.tab,
-      required this.onBookmark,
-      required this.onFeed,
-      required this.onLocation,
-      required this.onForward})
-      : super(key: key);
+class TabMenuWidget extends ConsumerWidget {
+  const TabMenuWidget({Key? key}) : super(key: key);
 
-  final BrowserTabState tab;
-  final ValueChanged<String> onBookmark;
-  final ValueChanged<String> onFeed;
-  final Function(Uri) onLocation;
-  final Function() onForward;
+  Future<void> showLogs(context, AppState appState) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        var orderedLogs = appState.currentLogs().reversed.toList();
+        DateFormat formatter = DateFormat('HH:mm:ss.SSSS');
+
+        return AlertDialog(
+            title: const Text('Logs'),
+            contentPadding: EdgeInsets.zero,
+            actions: [
+              TextButton(
+                  child: const Text('Clear'),
+                  onPressed: () {
+                    appState.clearCurrentLogs();
+                    Navigator.of(context).pop();
+                  }),
+              TextButton(
+                child: const Text('Close'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                itemCount: orderedLogs.length,
+                itemBuilder: (context, i) {
+                  var log = orderedLogs[i];
+                  var level = log[0];
+                  var timestamp = log[1];
+                  var requestID = log[2];
+                  var message = log[3];
+                  String formatted = formatter.format(timestamp);
+                  Color levelColor;
+                  if (level == "error") {
+                    levelColor = Colors.redAccent;
+                  } else if (level == "warn") {
+                    levelColor = Colors.yellowAccent;
+                  } else {
+                    levelColor = Theme.of(context).dialogBackgroundColor;
+                  }
+                  return ListTile(
+                      title: Text("[$formatted] #$requestID"),
+                      subtitle: Text(message),
+                      tileColor: levelColor);
+                },
+              ),
+            ));
+      },
+    );
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    var appState = ref.watch(appStateProvider);
+    var currentUri = appState.currentUri();
+    var currentIdentity = appState.currentIdentity();
     return PopupMenuButton<_MenuSelection>(
       icon: Icon(Icons.adaptive.more, color: Theme.of(context).shadowColor),
       itemBuilder: (BuildContext context) {
-        var uriString = tab.uri?.toString();
-        var bookmarked = appKey.currentState!.bookmarks.contains(uriString);
-        var feedActive = appKey.currentState!.feeds
-            .any((element) => tab.uri?.toString() == uriString);
-        Identity? activeIdentity = tab.uri == null
+        var uriString = currentUri.toString();
+        var bookmarked = appState.bookmarks.contains(uriString);
+        var feedActive = appState.feeds
+            .any((element) => element?.uri.toString() == uriString);
+        Identity? activeIdentity = currentUri == null
             ? null
-            : appKey.currentState!.identities
-                .firstOrNull((element) => element.matches(tab.uri!));
+            : appState.identities
+                .firstOrNull((element) => element.matches(currentUri));
         return [
           PopupMenuItem(
             child: ListTile(
                 leading: const Text("", textAlign: TextAlign.center),
                 title: Text("Go to root",
                     style: TextStyle(
-                        color: tab.uri?.pathSegments.isNotEmpty ?? false
+                        color: currentUri?.pathSegments.isNotEmpty ?? false
                             ? null
                             : Theme.of(context).disabledColor))),
-            enabled: tab.uri?.pathSegments.isNotEmpty ?? false,
+            enabled: currentUri?.pathSegments.isNotEmpty ?? false,
             value: _MenuSelection.root,
           ),
           PopupMenuItem(
@@ -65,17 +111,22 @@ class TabMenuWidget extends StatelessWidget {
               leading: const Text("", textAlign: TextAlign.center),
               title: Text("Go to parent",
                   style: TextStyle(
-                      color: tab.uri?.pathSegments.isNotEmpty ?? false
+                      color: currentUri?.pathSegments.isNotEmpty ?? false
                           ? null
                           : Theme.of(context).disabledColor)),
             ),
-            enabled: tab.uri?.pathSegments.isNotEmpty ?? false,
+            enabled: currentUri?.pathSegments.isNotEmpty ?? false,
             value: _MenuSelection.parent,
           ),
-          const PopupMenuItem(
+          PopupMenuItem(
               child: ListTile(
-                  leading: Icon(Icons.chevron_right, color: Colors.black),
-                  title: Text("Go forward")),
+                  leading: const Icon(Icons.chevron_right, color: Colors.black),
+                  title: Text("Go forward",
+                      style: TextStyle(
+                          color: appState.canGoForward()
+                              ? null
+                              : Theme.of(context).disabledColor))),
+              enabled: appState.canGoForward(),
               value: _MenuSelection.forward),
           const PopupMenuDivider(),
           PopupMenuItem(
@@ -114,7 +165,7 @@ class TabMenuWidget extends StatelessWidget {
                   title: Text("Logs")),
               value: _MenuSelection.logs),
           CheckedPopupMenuItem(
-            checked: tab.viewingSource,
+            checked: appState.viewingSource(),
             value: _MenuSelection.source,
             child: const Text("Source"),
           ),
@@ -123,60 +174,58 @@ class TabMenuWidget extends StatelessWidget {
       onSelected: (result) async {
         switch (result) {
           case _MenuSelection.logs:
-            tab.showLogs();
+            showLogs(context, appState);
             break;
           case _MenuSelection.source:
-            tab.toggleSourceView();
+            appState.toggleSourceView();
             break;
           case _MenuSelection.bookmark:
-            if (tab.uri != null) {
-              onBookmark(tab.uri!.toString());
+            if (currentUri != null) {
+              appState.onBookmark(currentUri.toString());
             }
             break;
           case _MenuSelection.feed:
-            if (tab.uri != null) {
-              onFeed(tab.uri!.toString());
+            if (currentUri != null) {
+              appState.onFeed(currentUri.toString());
             }
             break;
           case _MenuSelection.root:
-            if (tab.uri != null) {
-              var uri = tab.uri!;
-              List<String> segments = List.from(uri.pathSegments);
-              var newUri = uri.replace(path: "/");
+            if (currentUri != null) {
+              List<String> segments = List.from(currentUri.pathSegments);
+              var newUri = currentUri.replace(path: "/");
 
               if (segments.isNotEmpty) {
-                onLocation(newUri);
+                appState.onLocation(newUri);
               }
             }
             break;
           case _MenuSelection.parent:
-            if (tab.uri != null) {
-              var uri = tab.uri!;
-              Uri? newUri = parentPath(uri);
+            if (currentUri != null) {
+              Uri? newUri = parentPath(currentUri);
               if (newUri != null) {
-                onLocation(newUri);
+                appState.onLocation(newUri);
               }
             }
             break;
           case _MenuSelection.identity:
-            if (tab.uri != null) {
-              if (tab.identity != null) {
-                tab.onIdentity(tab.identity!, tab.uri!);
+            if (currentUri != null) {
+              if (currentIdentity != null) {
+                appState.onIdentity(currentIdentity, currentUri);
               } else {
                 var newIdentity = await showDialog(
                     context: context,
                     builder: (context) {
                       return ClientCertAlert(
-                          prompt: "Add to identity?", uri: tab.uri!);
+                          prompt: "Add to identity?", uri: currentUri);
                     });
                 if (newIdentity != null) {
-                  tab.onIdentity(newIdentity, tab.uri!);
+                  appState.onIdentity(newIdentity, currentUri);
                 }
               }
             }
             break;
           case _MenuSelection.forward:
-            onForward();
+            appState.handleForward();
             break;
           default:
             throw Exception("Unknown menu selection");

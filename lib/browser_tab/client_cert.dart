@@ -1,12 +1,13 @@
 // ignore: unused_import
 import 'dart:developer';
 
-import 'package:deedum/main.dart';
+import 'package:deedum/app_state.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ClientCertAlert extends StatefulWidget {
+class ClientCertAlert extends ConsumerStatefulWidget {
   final String prompt;
   final Uri uri;
 
@@ -19,7 +20,7 @@ class ClientCertAlert extends StatefulWidget {
   ClientCertAlertState createState() => ClientCertAlertState();
 }
 
-class ClientCertAlertState extends State<ClientCertAlert> {
+class ClientCertAlertState extends ConsumerState<ClientCertAlert> {
   Identity? selectedIdentity;
 
   @override
@@ -31,6 +32,7 @@ class ClientCertAlertState extends State<ClientCertAlert> {
   Widget build(BuildContext context) {
     var focusNode = FocusNode();
     focusNode.requestFocus();
+    var appState = ref.watch(appStateProvider);
     return AlertDialog(
       title: const Text('Input requested'),
       content: Column(
@@ -42,14 +44,11 @@ class ClientCertAlertState extends State<ClientCertAlert> {
                 value: selectedIdentity,
                 icon: const Icon(Icons.keyboard_arrow_down),
                 onChanged: (Identity? e) {
-                  log("${e?.name}");
                   setState(() {
                     selectedIdentity = e;
                   });
                 },
-
-                // Array list of items
-                items: appKey.currentState!.identities.map((Identity id) {
+                items: appState.identities.map((Identity id) {
                   return DropdownMenuItem(
                     value: id,
                     child: Text(id.name),

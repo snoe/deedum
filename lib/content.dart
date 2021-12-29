@@ -12,10 +12,11 @@ import 'package:deedum/shared.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const baseFontSize = 16.0;
 
-class Content extends StatefulWidget {
+class Content extends ConsumerStatefulWidget {
   const Content({
     Key? key,
     required this.currentUri,
@@ -32,10 +33,10 @@ class Content extends StatefulWidget {
   final Function onNewTab;
 
   @override
-  State<Content> createState() => _ContentState();
+  ConsumerState<Content> createState() => _ContentState();
 }
 
-class _ContentState extends State<Content> {
+class _ContentState extends ConsumerState<Content> {
   var plainTextControls = false;
 
   showControls(show) {
@@ -101,9 +102,6 @@ class _ContentState extends State<Content> {
               Link(
                 title: r['data'],
                 link: r['link'],
-                currentUri: widget.currentUri!,
-                onLocation: widget.onLocation as void Function(Uri),
-                onNewTab: widget.onNewTab as void Function(),
               )
             else if (r["type"] == "list")
               ListItem(content: r["data"])

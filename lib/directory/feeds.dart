@@ -1,21 +1,15 @@
+import 'package:deedum/app_state.dart';
 import 'package:deedum/directory/directory_element.dart';
+import 'package:deedum/next/app.dart';
 import 'package:flutter/material.dart';
 
 import 'package:deedum/shared.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class Feeds extends DirectoryElement {
-  final List<Feed?> feeds;
-  final void Function(String?, bool?) onNewTab;
-  final ValueChanged<Feed> removeFeed;
-  final ValueChanged<Uri> updateFeed;
-
   const Feeds({
     Key? key,
-    required this.feeds,
-    required this.onNewTab,
-    required this.removeFeed,
-    required this.updateFeed,
   }) : super(key: key);
 
   @override
@@ -29,7 +23,8 @@ class Feeds extends DirectoryElement {
       ].join("\n");
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    var appState = ref.watch(appStateProvider);
     return SingleChildScrollView(
       child: Column(
         children: <Widget>[
@@ -40,23 +35,26 @@ class Feeds extends DirectoryElement {
                     icon: const Icon(Icons.refresh),
                     color: Colors.black,
                     onPressed: () {
-                      for (var feed in feeds) {
+                      for (var feed in appState.feeds) {
                         if (feed == null) {
                           continue;
                         }
-                        updateFeed(feed.uri!);
+                        appState.updateFeed(feed.uri!);
                       }
                     }),
-                onTap: () => onNewTab("about:feeds", null),
+                onTap: () {
+                  appState.onNewTab("about:feeds");
+                  Navigator.pop(navigatorKey.currentContext!);
+                },
                 title: const Text("Open feed reader in new tab")),
           ),
-          for (final feed in feeds)
+          for (final feed in appState.feeds)
             if (feed != null)
               Dismissible(
                 background: Container(color: Colors.red),
                 key: UniqueKey(),
                 onDismissed: (direction) {
-                  removeFeed(feed);
+                  appState.removeFeed(feed);
                 },
                 child: Card(
                   child: Padding(
@@ -68,14 +66,15 @@ class Feeds extends DirectoryElement {
                         IconButton(
                             icon: const Icon(Icons.refresh),
                             onPressed: () {
-                              updateFeed(feed.uri!);
+                              appState.updateFeed(feed.uri!);
                             }),
                         Expanded(
                             flex: 1,
                             child: ListTile(
                               contentPadding: const EdgeInsets.only(left: 20),
                               onTap: () {
-                                onNewTab(feed.uri.toString(), null);
+                                appState.onNewTab(feed.uri.toString());
+                                Navigator.pop(navigatorKey.currentContext!);
                               },
                               dense: true,
                               subtitle: Text(toSchemelessString(feed.uri) +
@@ -90,7 +89,7 @@ class Feeds extends DirectoryElement {
                         IconButton(
                             icon: const Icon(Icons.delete),
                             onPressed: () {
-                              removeFeed(feed);
+                              appState.removeFeed(feed);
                             }),
                       ],
                     ),
