@@ -32,7 +32,7 @@ class Home extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AppState appState = ref.watch(appStateProvider);
     var tabCount = appState.tabCount();
-    if (_controller.text.isEmpty) {
+    if (_controller.text.isEmpty && appState.currentUri() != null) {
       _controller.text = appState.currentUri().toString();
     }
     Widget? bottomBar;

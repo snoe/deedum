@@ -18,23 +18,26 @@ class GemItem extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onFeed;
 
-  const GemItem({
-    Key? key,
-    required this.url,
-    required this.title,
-    this.selected = false,
-    this.bookmarked = false,
-    this.feedActive = false,
-    this.showTitle = true,
-    this.showBookmarked = false,
-    this.showDelete = false,
-    this.disableDelete = false,
-    this.showFeed = false,
-    required this.onSelect,
-    this.onBookmark,
-    this.onDelete,
-    this.onFeed,
-  }) : super(key: key);
+  final Icon icon;
+
+  const GemItem(
+      {Key? key,
+      required this.url,
+      required this.title,
+      this.selected = false,
+      this.bookmarked = false,
+      this.feedActive = false,
+      this.showTitle = true,
+      this.showBookmarked = false,
+      this.showDelete = false,
+      this.disableDelete = false,
+      this.showFeed = false,
+      required this.onSelect,
+      this.onBookmark,
+      this.onDelete,
+      this.onFeed,
+      this.icon = const Icon(Icons.description)})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +53,7 @@ class GemItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.description),
+              icon,
               Expanded(
                   flex: 1,
                   child: ListTile(

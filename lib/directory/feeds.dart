@@ -36,9 +36,6 @@ class Feeds extends DirectoryElement {
                     color: Colors.black,
                     onPressed: () {
                       for (var feed in appState.feeds) {
-                        if (feed == null) {
-                          continue;
-                        }
                         appState.updateFeed(feed.uri!);
                       }
                     }),
@@ -49,53 +46,52 @@ class Feeds extends DirectoryElement {
                 title: const Text("Open feed reader in new tab")),
           ),
           for (final feed in appState.feeds)
-            if (feed != null)
-              Dismissible(
-                background: Container(color: Colors.red),
-                key: UniqueKey(),
-                onDismissed: (direction) {
-                  appState.removeFeed(feed);
-                },
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 20, right: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        IconButton(
-                            icon: const Icon(Icons.refresh),
-                            onPressed: () {
-                              appState.updateFeed(feed.uri!);
-                            }),
-                        Expanded(
-                            flex: 1,
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.only(left: 20),
-                              onTap: () {
-                                appState.onNewTab(feed.uri.toString());
-                                Navigator.pop(navigatorKey.currentContext!);
-                              },
-                              dense: true,
-                              subtitle: Text(toSchemelessString(feed.uri) +
-                                  "\nLast Updated: " +
-                                  feed.lastFetchedAt +
-                                  "\n" +
-                                  feed.links!.length.toString() +
-                                  " entries"),
-                              title: Text(feed.title!,
-                                  style: const TextStyle(fontSize: 14)),
-                            )),
-                        IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              appState.removeFeed(feed);
-                            }),
-                      ],
-                    ),
+            Dismissible(
+              background: Container(color: Colors.red),
+              key: UniqueKey(),
+              onDismissed: (direction) {
+                appState.removeFeed(feed);
+              },
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 20, right: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      IconButton(
+                          icon: const Icon(Icons.refresh),
+                          onPressed: () {
+                            appState.updateFeed(feed.uri!);
+                          }),
+                      Expanded(
+                          flex: 1,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.only(left: 20),
+                            onTap: () {
+                              appState.onNewTab(feed.uri.toString());
+                              Navigator.pop(navigatorKey.currentContext!);
+                            },
+                            dense: true,
+                            subtitle: Text(toSchemelessString(feed.uri) +
+                                "\nLast Updated: " +
+                                feed.lastFetchedAt +
+                                "\n" +
+                                feed.links!.length.toString() +
+                                " entries"),
+                            title: Text(feed.title!,
+                                style: const TextStyle(fontSize: 14)),
+                          )),
+                      IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            appState.removeFeed(feed);
+                          }),
+                    ],
                   ),
                 ),
               ),
+            ),
         ],
       ),
     );

@@ -32,7 +32,7 @@ class Tabs extends DirectoryElement {
       var selected = appState.currentTabIndex() == index;
       var bookmarked = appState.bookmarks.contains(uriString);
       var feedActive =
-          appState.feeds.any((element) => element!.uri.toString() == uriString);
+          appState.feeds.any((element) => element.uri.toString() == uriString);
       var host = tab.uri.host;
       if (host == "") {
         host = tab.uri.toString();

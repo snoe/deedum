@@ -16,10 +16,11 @@ void main() async {
     'deedum.db',
     onCreate: (db, version) {
       db.execute(
-        "CREATE TABLE hosts(name TEXT PRIMARY KEY, hash BLOB, expires_at BLOB, created_at TEXT)",
-      );
+          "CREATE TABLE hosts(name TEXT PRIMARY KEY, hash BLOB, expires_at BLOB, created_at TEXT)");
       db.execute(
           "CREATE TABLE feeds(uri TEXT PRIMARY KEY, content TEXT, last_fetched_at TEXT, attempts INTEGER default 0)");
+      db.execute(
+          "CREATE TABLE identities(name TEXT PRIMARY KEY, cert TEXT, private_key TEXT)");
     },
     onUpgrade: (db, old, _new) {
       if (old == 1) {
@@ -31,8 +32,12 @@ void main() async {
         db.execute(
             "CREATE TABLE feeds(uri TEXT PRIMARY KEY, content TEXT, last_fetched_at TEXT, attempts INTEGER default 0)");
       }
+      if (old == 3) {
+        db.execute(
+            "CREATE TABLE identities(name TEXT PRIMARY KEY, cert TEXT, private_key TEXT)");
+      }
     },
-    version: 3,
+    version: 4,
   );
 
   runApp(const ProviderScope(child: App2()));

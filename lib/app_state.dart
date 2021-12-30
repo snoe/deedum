@@ -23,7 +23,7 @@ class AppState with ChangeNotifier {
   TabState tabState = TabState();
   Set<String> bookmarks = {};
   List<String> recents = [];
-  List<Feed?> feeds = [];
+  List<Feed> feeds = [];
   List<String> feed = [];
   List<Identity> identities = [];
   Map settings = {};
@@ -35,7 +35,6 @@ class AppState with ChangeNotifier {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bookmarks = (prefs.getStringList('bookmarks') ?? []).toSet();
     recents = (prefs.getStringList('recent') ?? []);
-    feeds = (prefs.getStringList('feeds') as List<Feed?>? ?? []);
 
     settings = {
       "homepage":
@@ -43,7 +42,15 @@ class AppState with ChangeNotifier {
       "search":
           (prefs.getString("search") ?? "gemini://geminispace.info/search")
     };
-
+    updateFeeds();
+    final Database db = database;
+    var rows = await db.rawQuery("select * from identities");
+    for (var row in rows) {
+      var identity = Identity(row["name"] as String,
+          existingCertString: row["cert"] as String,
+          existingPrivateKeyString: row["private_key"] as String);
+      identities.add(identity);
+    }
     onNewTab(null);
   }
 
@@ -117,7 +124,7 @@ class AppState with ChangeNotifier {
         }
       } else {
         await db.rawDelete("delete from feeds where uri = ?", [uri.toString()]);
-        feeds.removeWhere((element) => element!.uri == uri);
+        feeds.removeWhere((element) => element.uri == uri);
       }
     }
     notifyListeners();
@@ -229,12 +236,13 @@ class AppState with ChangeNotifier {
   void updateFeeds() async {
     final Database db = database;
     var rows = await db.rawQuery("select * from feeds");
-    List<Feed?> tempfeeds = [];
+    List<Feed> tempfeeds = [];
     for (var row in rows) {
       var feed = await updateFeed(Uri.tryParse(row["uri"] as String));
-      tempfeeds.add(feed);
+      if (feed != null) {
+        tempfeeds.add(feed);
+      }
     }
-
     feeds = tempfeeds;
     notifyListeners();
   }
@@ -258,8 +266,17 @@ class AppState with ChangeNotifier {
     notifyListeners();
   }
 
-  void createIdentity(String name, {Uri? uri}) {
-    var id = Identity(name);
+  void createIdentity(String name,
+      {Uri? uri,
+      String? existingCertString,
+      String? existingPrivateKeyString}) async {
+    var id = Identity(name,
+        existingCertString: existingCertString,
+        existingPrivateKeyString: existingPrivateKeyString);
+    Database db = database;
+    db.rawInsert(
+        "insert into identities (name, cert, private_key) values (?,?,?)",
+        [id.name, id.certString, id.privateKeyString]);
     if (uri != null) {
       id.addPage(uri.toString());
     }
@@ -309,6 +326,16 @@ class AppState with ChangeNotifier {
 
   void clearCurrentLogs() {
     tabState.current()?._logs.clear();
+    notifyListeners();
+  }
+
+  void removeIdentity(Identity identity) async {
+    Database db = database;
+    var x = await db
+        .rawDelete("delete from identities where name = ?", [identity.name]);
+    if (x > 0) {
+      identities.remove(identity);
+    }
     notifyListeners();
   }
 }

@@ -89,7 +89,7 @@ class TabMenuWidget extends ConsumerWidget {
         var uriString = currentUri.toString();
         var bookmarked = appState.bookmarks.contains(uriString);
         var feedActive = appState.feeds
-            .any((element) => element?.uri.toString() == uriString);
+            .any((element) => element.uri.toString() == uriString);
         Identity? activeIdentity = currentUri == null
             ? null
             : appState.identities
