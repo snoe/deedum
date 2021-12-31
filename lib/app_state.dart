@@ -452,6 +452,7 @@ class Tab {
         _redirects.add(parsedData!.meta!);
         _requestID += 1;
         resetResponse(newLocation, redirect: true);
+        history[historyIndex].location = newLocation;
         onURI(newLocation, _handleBytes, _handleDone, _handleLog, identities,
             feeds, _requestID);
       } else {
@@ -570,7 +571,7 @@ class Tab {
 }
 
 class HistoryEntry {
-  final Uri location;
+  Uri location;
   ContentData? contentData;
   double scrollPosition;
 
