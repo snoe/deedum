@@ -6,7 +6,7 @@ import 'dart:typed_data';
 
 import 'package:asn1lib/asn1lib.dart' as asn;
 import 'package:crypto/crypto.dart';
-import 'package:deedum/main.dart';
+import 'package:deedum/next/app.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -65,7 +65,7 @@ Future<void> handleCert(Uri uri, X509Certificate serverCert) async {
       !listEquals(hashes[0]["hash"] as List<int>?, tofuHash)) {
     var value = await showDialog(
         barrierDismissible: false, // user must tap button!
-        context: materialKey.currentContext!,
+        context: navigatorKey.currentContext!,
         builder: (BuildContext context) {
           var size = MediaQuery.of(context).size;
           var length = math.min(size.height - 150, size.width - 200);

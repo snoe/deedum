@@ -1,11 +1,8 @@
-import 'dart:math' as math;
-
 import 'package:deedum/app_state.dart';
 import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/directory/gem_item.dart';
 import 'package:deedum/next/app.dart';
 import 'package:extended_text/extended_text.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -39,12 +36,10 @@ class Tabs extends DirectoryElement {
       }
       if (tab.contentData != null) {
         var contentData = tab.contentData!;
-        var content = contentData.stringContent();
         var tabItem = GemItem(
           url: Uri.decodeFull(host),
           title: ExtendedText(
-            content?.substring(0, math.min(content.length, 500)) ??
-                "${contentData.mode} Tab",
+            contentData.summaryLine(),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),

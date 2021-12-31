@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 // ignore: unused_import
 import 'dart:developer';
@@ -49,21 +50,30 @@ class ContentData {
   Modes mode = Modes.loading;
   String? static;
   BytesBuilder? bytesBuilder;
+  late final StreamController<List<int>>? streamController;
 
-  ContentData(this.bytesBuilder) {
+  final List<String> lines = [];
+
+  ContentData() {
     static = null;
+    bytesBuilder = BytesBuilder(copy: false);
+    streamController = StreamController<List<int>>();
+    var lineStream = streamController?.stream
+        .transform(utf8.decoder)
+        .transform(const LineSplitter());
+    lineStream?.listen((event) {
+      lines.add(event);
+    });
   }
   ContentData.error(this.static) {
     mode = Modes.error;
     bytesBuilder = null;
+    streamController = null;
   }
   ContentData.gem(this.static) {
     mode = Modes.gem;
     bytesBuilder = null;
-  }
-  ContentData.plain(this.static) {
-    mode = Modes.plain;
-    bytesBuilder = null;
+    streamController = null;
   }
 
   @override
@@ -71,24 +81,21 @@ class ContentData {
     return "ContentData<$status $meta>";
   }
 
-  String? stringContent() {
-    if (mode == Modes.gem || mode == Modes.plain) {
-      if (static != null) {
-        return static;
-      } else {
-        var body = this.body();
-        return bytesToString(contentType!, body!);
-      }
-    }
+  String summaryLine() {
+    return lines.isNotEmpty && lines[0].trim().isNotEmpty
+        ? lines[0]
+        : static != null
+            ? static!
+            : meta!;
   }
 
   String? source() {
     if (bytesBuilder != null) {
-      return allowMalformedUtf8Decoder.convert(bytesBuilder!.toBytes());
+      return bytesToString(contentType!, bytesBuilder!.toBytes());
     }
   }
 
-  bool streamable() {
+  bool lineBased() {
     return mode == Modes.gem || mode == Modes.plain;
   }
 
@@ -421,12 +428,12 @@ String emojiEncode(String base64String) {
 String qrEncode(Uint8List der) {
   final qrCode =
       QrCode.fromUint8List(data: der, errorCorrectLevel: QrErrorCorrectLevel.L);
-  qrCode.make();
+  final qrImage = QrImage(qrCode);
 
   var result = "";
-  for (int x = 0; x < qrCode.moduleCount; x++) {
-    for (int y = 0; y < qrCode.moduleCount; y++) {
-      if (qrCode.isDark(y, x)) {
+  for (int x = 0; x < qrImage.moduleCount; x++) {
+    for (int y = 0; y < qrImage.moduleCount; y++) {
+      if (qrImage.isDark(y, x)) {
         result += "█";
         // render a dark square on the canvas
       } else {

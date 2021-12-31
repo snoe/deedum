@@ -10,7 +10,6 @@ import 'package:deedum/contents/plain_text.dart';
 import 'package:deedum/parser.dart';
 import 'package:deedum/shared.dart';
 import 'package:extended_text/extended_text.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -58,16 +57,17 @@ class _ContentState extends ConsumerState<Content> {
             fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
       );
     } else if (widget.contentData!.mode == Modes.plain) {
-      var text = widget.contentData!.stringContent()!;
-      var groups = analyze(text, alwaysPre: true)!;
+      var lines = widget.contentData!.lines;
+      var groups = analyze(lines, alwaysPre: true)!;
       return PreText(
-        actualText: text,
+        actualText: lines.join("\n"),
         maxLine: groups[0]["maxLine"],
       );
     } else if (widget.contentData!.mode == Modes.gem) {
-      var text = widget.contentData!.stringContent()!;
-      var groups = analyze(text)!;
-      return groupsToWidget(groups);
+      var lines = widget.contentData!.lines;
+      var groups = analyze(lines)!;
+      var result = groupsToWidget(groups);
+      return result;
     } else if (widget.contentData!.mode == Modes.error) {
       return ExtendedText("An error occurred\n\n" +
           (widget.contentData!.static ?? "No message") +

@@ -6,8 +6,6 @@ import 'package:deedum/browser_tab/client_cert.dart';
 import 'package:deedum/browser_tab/search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:string_validator/string_validator.dart' as validator;
 

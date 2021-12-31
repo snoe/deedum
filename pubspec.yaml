@@ -26,13 +26,13 @@ dependencies:
 
   sqflite: ^2.0.0+4
   path: ^1.8.0
-  qr: ^2.1.0
+  qr: ^3.0.0
   intl: ^0.17.0
   shared_preferences: ^2.0.8
   url_launcher: ^6.0.12
   cupertino_icons: ^1.0.4
   uni_links: ^0.5.1
-  extended_text: ^7.0.0
+  extended_text: ^8.0.2
   flutter_markdown: ^0.6.8
   asn1lib: ^1.0.2
   x509:

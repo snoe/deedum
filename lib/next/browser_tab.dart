@@ -5,7 +5,6 @@ import 'package:deedum/app_state.dart';
 import 'package:deedum/content.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BrowserTab2 extends ConsumerWidget {

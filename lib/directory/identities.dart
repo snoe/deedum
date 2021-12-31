@@ -4,7 +4,6 @@ import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/directory/gem_item.dart';
 import 'package:deedum/next/app.dart';
 import 'package:deedum/shared.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

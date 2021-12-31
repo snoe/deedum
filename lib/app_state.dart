@@ -1,12 +1,9 @@
-import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:deedum/net.dart';
 import 'package:deedum/parser.dart';
 import 'package:deedum/shared.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -173,8 +170,7 @@ class AppState with ChangeNotifier {
     return tabState.current()?.shouldSearchDialog() ?? false;
   }
 
-  parseFeed(Uri? uri, String content) {
-    var lines = LineSplitter.split(content);
+  parseFeed(Uri? uri, List<String> lines) {
     var title = lines
         .firstWhere((line) => line.startsWith("# "),
             orElse: () => uri!.toString())
@@ -196,11 +192,11 @@ class AppState with ChangeNotifier {
   }
 
   Future<Feed?> updateFeed(Uri? uri) async {
-    String? content;
+    List<String>? lines;
     List<Uri?> redirects = [];
 
-    while (content == null) {
-      ContentData parsedData = ContentData(BytesBuilder(copy: false));
+    while (lines == null) {
+      ContentData parsedData = ContentData();
       await onURI(uri!, (_a, newBytes, _c) {
         if (newBytes != null) {
           parse(parsedData, newBytes);
@@ -215,14 +211,14 @@ class AppState with ChangeNotifier {
         redirects.add(newUri);
         uri = newUri;
       } else if (parsedData.mode == Modes.gem) {
-        content = parsedData.stringContent();
+        lines = parsedData.lines;
       } else {
         return null;
       }
     }
 
-    var result = parseFeed(uri, content);
-    var feed = Feed(uri, result['title'], result['links'], content,
+    var result = parseFeed(uri, lines);
+    var feed = Feed(uri, result['title'], result['links'], lines.join("\n"),
         DateFormat('yyyy-MM-dd').format(DateTime.now().toUtc()));
 
     final Database db = database;
@@ -411,14 +407,16 @@ class Tab {
     if (newBytes == null) {
       return;
     }
+
     _handleLog(
         "debug", "Received ${newBytes.length} bytes $location", requestID);
+
     if (requestID != _requestID) {
       return;
     }
     if (parsedData != null) {
       parse(parsedData!, newBytes);
-      if (parsedData!.streamable()) {
+      if (parsedData!.lineBased()) {
         contentData = parsedData;
       }
     }
@@ -487,7 +485,7 @@ class Tab {
   }
 
   void resetResponse(Uri location, {bool redirect = false}) {
-    parsedData = ContentData(BytesBuilder(copy: false));
+    parsedData = ContentData();
     uri = location;
     if (!redirect) {
       _redirects = [];

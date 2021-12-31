@@ -1,4 +1,3 @@
-import 'dart:convert';
 // ignore: unused_import
 import 'dart:developer';
 import 'dart:math' as math;
@@ -89,23 +88,30 @@ void parse(ContentData parsedData, Uint8List newBytes) {
     } else if (status >= 60 && status < 70) {
       parsedData.mode = Modes.clientCert;
     }
+    if (parsedData.lineBased() && bytes.length > endofline + 1) {
+      parsedData.streamController!.sink.add(bytes.sublist(endofline + 1));
+    }
+  } else if (parsedData.lineBased()) {
+    parsedData.streamController!.sink.add(newBytes);
   }
 }
 
 void addToGroup(r, String type, String line) {
   if (r["groups"].isNotEmpty && r["groups"].last["type"] == type) {
     var group = r["groups"].removeLast();
-    group["data"] += "\n" + line;
+    (group["data"] as StringBuffer)
+      ..write("\n")
+      ..write(line);
     group["maxLine"] = math.max(line.length, (group["maxLine"] as int));
     r["groups"].add(group);
   } else {
-    r["groups"].add({"type": type, "data": line, "maxLine": line.length});
+    r["groups"].add(
+        {"type": type, "data": StringBuffer(line), "maxLine": line.length});
   }
 }
 
-List<dynamic>? analyze(content, {alwaysPre = false}) {
-  var lineInfo = LineSplitter.split(content)
-      .fold({"groups": [], "parse?": true}, (dynamic r, line) {
+List<dynamic>? analyze(List<String> lines, {alwaysPre = false}) {
+  var lineInfo = lines.fold({"groups": [], "parse?": true}, (dynamic r, line) {
     if (!alwaysPre && line.startsWith("```")) {
       r["parse?"] = !r["parse?"];
     } else if (alwaysPre || !r["parse?"]) {
@@ -115,23 +121,31 @@ List<dynamic>? analyze(content, {alwaysPre = false}) {
     } else if (line.startsWith("#")) {
       var m = RegExp(r'^(#*)\s*(.*)$').firstMatch(line)!;
       var hashCount = math.min(m.group(1)!.length, 3);
-      r["groups"]
-          .add({"type": "header", "data": m.group(2), "size": hashCount});
+      r["groups"].add({
+        "type": "header",
+        "data": StringBuffer(m.group(2)!),
+        "size": hashCount
+      });
     } else if (line.startsWith("=>")) {
       var m = RegExp(r'^=>\s*(\S+)\s*(.*)$').firstMatch(line);
       if (m != null) {
         var link = m.group(1);
         var rest = m.group(2)!.trim();
         var title = rest.isEmpty ? link : rest;
-        r["groups"].add({"type": "link", "link": link, "data": title});
+        r["groups"]
+            .add({"type": "link", "link": link, "data": StringBuffer(title!)});
       }
     } else if (line.startsWith("* ")) {
-      r["groups"].add({"type": "list", "data": line.substring(2)});
+      r["groups"]
+          .add({"type": "list", "data": StringBuffer(line.substring(2))});
     } else {
       addToGroup(r, "line", line);
     }
     return r;
   });
   List? groups = lineInfo["groups"];
-  return groups;
+  return groups?.map((e) {
+    e["data"] = e["data"].toString();
+    return e;
+  }).toList();
 }

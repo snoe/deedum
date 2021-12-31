@@ -13,7 +13,6 @@ import 'package:deedum/directory/tabs.dart';
 import 'package:deedum/next/address_bar.dart';
 import 'package:deedum/next/browser_tab.dart';
 import 'package:flutter/material.dart' hide Tab;
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' as foundation;
 
@@ -98,7 +97,7 @@ class Home extends ConsumerWidget {
               : Theme.of(context).canvasColor,
           appBar: AppBar(
               backgroundColor: Colors.orange,
-              title: AddressBar2(
+              title: AddressBar(
                 focusNode: _focusNode,
                 controller: _controller,
               ),
@@ -117,8 +116,8 @@ class Home extends ConsumerWidget {
   }
 }
 
-class App2 extends StatelessWidget {
-  const App2({Key? key}) : super(key: key);
+class App extends StatelessWidget {
+  const App({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

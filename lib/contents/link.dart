@@ -21,19 +21,23 @@ class Link extends ConsumerWidget {
     Uri uri = resolveLink(currentUri, link);
     bool httpWarn = uri.scheme != "gemini";
     bool visited = appState.recents.contains(uri.toString());
-    return GestureDetector(
-        child: Padding(
-            padding: const EdgeInsets.fromLTRB(0, 7, 0, 7),
-            child: Text((httpWarn ? "[${uri.scheme}] " : "") + title,
-                style: TextStyle(
-                    color: httpWarn
-                        ? (visited ? Colors.purple[100] : Colors.purple[300])
-                        : (visited ? Colors.blueGrey : Colors.blue)))),
-        onLongPress: () =>
-            linkLongPressMenu(title, uri, appState.onNewTab, context),
-        onTap: () {
-          appState.onLocation(uri);
-        });
+    return IgnorePointer(
+        child: GestureDetector(
+            child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 7, 0, 7),
+                child: Text((httpWarn ? "[${uri.scheme}] " : "") + title,
+                    style: TextStyle(
+                        color: httpWarn
+                            ? (visited
+                                ? Colors.purple[100]
+                                : Colors.purple[300])
+                            : (visited ? Colors.blueGrey : Colors.blue)))),
+            onLongPress: () =>
+                linkLongPressMenu(title, uri, appState.onNewTab, context),
+            onTap: () {
+              appState.onLocation(uri);
+            }),
+        ignoring: appState.currentLoading());
   }
 }
 
