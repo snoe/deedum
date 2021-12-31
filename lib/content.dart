@@ -7,35 +7,33 @@ import 'package:deedum/contents/heading.dart';
 import 'package:deedum/contents/link.dart';
 import 'package:deedum/contents/list_item.dart';
 import 'package:deedum/contents/plain_text.dart';
+import 'package:deedum/models/content_data.dart';
 import 'package:deedum/parser.dart';
 import 'package:deedum/shared.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const baseFontSize = 16.0;
 
-class Content extends ConsumerStatefulWidget {
+class Content extends StatefulWidget {
   const Content({
     Key? key,
-    required this.currentUri,
     required this.contentData,
     required this.viewSource,
     required this.onLocation,
     required this.onNewTab,
   }) : super(key: key);
 
-  final Uri? currentUri;
   final ContentData? contentData;
   final bool viewSource;
   final Function onLocation;
   final Function onNewTab;
 
   @override
-  ConsumerState<Content> createState() => _ContentState();
+  State<Content> createState() => _ContentState();
 }
 
-class _ContentState extends ConsumerState<Content> {
+class _ContentState extends State<Content> {
   var plainTextControls = false;
 
   showControls(show) {
@@ -61,7 +59,7 @@ class _ContentState extends ConsumerState<Content> {
       var groups = analyze(lines, alwaysPre: true)!;
       return PreText(
         actualText: lines.join("\n"),
-        maxLine: groups[0]["maxLine"],
+        maxLine: groups[0]["maxLine"] ?? 1,
       );
     } else if (widget.contentData!.mode == Modes.gem) {
       var lines = widget.contentData!.lines;
@@ -102,6 +100,7 @@ class _ContentState extends ConsumerState<Content> {
               Link(
                 title: r['data'],
                 link: r['link'],
+                loadedUri: widget.contentData!.loadedUri!,
               )
             else if (r["type"] == "list")
               ListItem(content: r["data"])
@@ -112,10 +111,11 @@ class _ContentState extends ConsumerState<Content> {
 }
 
 class PreText extends StatefulWidget {
-  final String? actualText;
-  final int? maxLine;
+  final String actualText;
+  final int maxLine;
 
-  const PreText({Key? key, this.actualText, this.maxLine}) : super(key: key);
+  const PreText({Key? key, required this.actualText, required this.maxLine})
+      : super(key: key);
 
   @override
   _PreTextState createState() => _PreTextState();
@@ -127,8 +127,11 @@ class _PreTextState extends State<PreText> {
   @override
   initState() {
     super.initState();
-    if (widget.maxLine! > 120) {
+    if (widget.maxLine > 120) {
       _scale = -1;
+    }
+    if (widget.maxLine <= 32) {
+      _scale = 32;
     }
   }
 
@@ -148,7 +151,7 @@ class _PreTextState extends State<PreText> {
       fit = SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ExtendedText(
-            widget.actualText!,
+            widget.actualText,
             selectionEnabled: true,
             style: const TextStyle(
               fontFamily: "DejaVu Sans Mono",
@@ -174,7 +177,7 @@ class _PreTextState extends State<PreText> {
       fit = FittedBox(
           fit: BoxFit.fill,
           child: SizedBox(
-              child: ExtendedText(widget.actualText!,
+              child: ExtendedText(widget.actualText,
                   softWrap: wrap,
                   style: const TextStyle(
                       fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
@@ -182,7 +185,7 @@ class _PreTextState extends State<PreText> {
               width: size));
     } else {
       fit = FittedBox(
-          child: ExtendedText(widget.actualText!,
+          child: ExtendedText(widget.actualText,
               selectionEnabled: true,
               style: const TextStyle(
                   fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),

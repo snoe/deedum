@@ -1,4 +1,4 @@
-import 'package:deedum/app_state.dart';
+import 'package:deedum/models/app_state.dart';
 import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/directory/gem_item.dart';
 import 'package:deedum/next/app.dart';
@@ -34,51 +34,46 @@ class Tabs extends DirectoryElement {
       if (host == "") {
         host = tab.uri.toString();
       }
-      if (tab.contentData != null) {
-        var contentData = tab.contentData!;
-        var tabItem = GemItem(
-          url: Uri.decodeFull(host),
-          title: ExtendedText(
-            contentData.summaryLine(),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-          selected: selected,
-          bookmarked: bookmarked,
-          feedActive: feedActive,
-          showTitle: true,
-          showBookmarked: true,
-          showDelete: true,
-          disableDelete: index == 0,
-          showFeed: true,
-          onSelect: () {
-            appState.onSelectTab(index);
-            Navigator.pop(navigatorKey.currentContext!);
-          },
-          onBookmark: () => appState.onBookmark(uriString),
-          onDelete: () {
+      var tabItem = GemItem(
+        url: Uri.decodeFull(host),
+        title: ExtendedText(
+          tab.contentData?.summaryLine() ?? "Loading…",
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        selected: selected,
+        bookmarked: bookmarked,
+        feedActive: feedActive,
+        showTitle: true,
+        showBookmarked: true,
+        showDelete: true,
+        disableDelete: index == 0,
+        showFeed: true,
+        onSelect: () {
+          appState.onSelectTab(index);
+          Navigator.pop(navigatorKey.currentContext!);
+        },
+        onBookmark: () => appState.onBookmark(uriString),
+        onDelete: () {
+          if (index != 0) {
+            appState.onDeleteTab(index);
+          }
+        },
+        onFeed: () => appState.onFeed(uriString),
+      );
+      if (index == 0) {
+        return tabItem;
+      } else {
+        return Dismissible(
+          background: Container(color: Colors.red),
+          key: UniqueKey(),
+          onDismissed: (direction) {
             if (index != 0) {
               appState.onDeleteTab(index);
             }
           },
-          onFeed: () => appState.onFeed(uriString),
+          child: tabItem,
         );
-        if (index == 0) {
-          return tabItem;
-        } else {
-          return Dismissible(
-            background: Container(color: Colors.red),
-            key: UniqueKey(),
-            onDismissed: (direction) {
-              if (index != 0) {
-                appState.onDeleteTab(index);
-              }
-            },
-            child: tabItem,
-          );
-        }
-      } else {
-        return const Text("No tab?");
       }
     }).toList();
     return SingleChildScrollView(

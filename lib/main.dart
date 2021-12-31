@@ -40,5 +40,5 @@ void main() async {
     version: 4,
   );
 
-  runApp(const ProviderScope(child: App2()));
+  runApp(const ProviderScope(child: App()));
 }

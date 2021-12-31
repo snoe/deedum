@@ -1,10 +1,13 @@
+import 'dart:convert';
 // ignore: unused_import
 import 'dart:developer';
 import 'dart:math' as math;
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'shared.dart';
+import 'package:deedum/models/content_data.dart';
+
+const allowMalformedUtf8Decoder = Utf8Decoder(allowMalformed: true);
 
 void parse(ContentData parsedData, Uint8List newBytes) {
   parsedData.bytesBuilder!.add(newBytes);
@@ -88,11 +91,14 @@ void parse(ContentData parsedData, Uint8List newBytes) {
     } else if (status >= 60 && status < 70) {
       parsedData.mode = Modes.clientCert;
     }
-    if (parsedData.lineBased() && bytes.length > endofline + 1) {
-      parsedData.streamController!.sink.add(bytes.sublist(endofline + 1));
+    if (bytes.length > endofline + 1) {
+      newBytes = bytes.sublist(endofline + 1);
+    } else {
+      newBytes = Uint8List(0);
     }
-  } else if (parsedData.lineBased()) {
-    parsedData.streamController!.sink.add(newBytes);
+  }
+  if (parsedData.lineBased()) {
+    parsedData.upsertToByteStream(newBytes);
   }
 }
 

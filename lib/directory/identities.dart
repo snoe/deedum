@@ -1,4 +1,4 @@
-import 'package:deedum/app_state.dart';
+import 'package:deedum/models/app_state.dart';
 import 'package:deedum/browser_tab/client_cert.dart';
 import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/directory/gem_item.dart';

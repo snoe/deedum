@@ -1,8 +1,9 @@
 // ignore: unused_import
 import 'dart:developer';
 
-import 'package:deedum/app_state.dart';
+import 'package:deedum/models/app_state.dart';
 import 'package:deedum/browser_tab/client_cert.dart';
+import 'package:deedum/models/identity.dart';
 import 'package:deedum/shared.dart';
 
 import 'package:flutter/material.dart';

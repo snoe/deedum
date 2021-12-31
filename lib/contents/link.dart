@@ -1,4 +1,7 @@
-import 'package:deedum/app_state.dart';
+// ignore: unused_import
+import 'dart:developer';
+
+import 'package:deedum/models/app_state.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,16 +12,17 @@ class Link extends ConsumerWidget {
     Key? key,
     required this.title,
     required this.link,
+    required this.loadedUri,
   }) : super(key: key);
 
   final String link;
   final String title;
+  final Uri loadedUri;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     var appState = ref.watch(appStateProvider);
-    var currentUri = appState.currentUri()!;
-    Uri uri = resolveLink(currentUri, link);
+    Uri uri = resolveLink(loadedUri, link);
     bool httpWarn = uri.scheme != "gemini";
     bool visited = appState.recents.contains(uri.toString());
     return IgnorePointer(

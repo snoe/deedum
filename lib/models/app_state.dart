@@ -1,6 +1,11 @@
+// ignore: unused_import
 import 'dart:developer';
-import 'dart:typed_data';
 
+import 'package:deedum/models/content_data.dart';
+import 'package:deedum/models/feed.dart';
+import 'package:deedum/models/identity.dart';
+import 'package:deedum/models/tab.dart';
+import 'package:deedum/models/tab_state.dart';
 import 'package:deedum/net.dart';
 import 'package:deedum/parser.dart';
 import 'package:deedum/shared.dart';
@@ -8,7 +13,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:math' as math;
 
 import 'package:sqflite/sqflite.dart';
 
@@ -72,6 +76,7 @@ class AppState with ChangeNotifier {
     }
 
     prefs.setStringList('recent', recents);
+    notifyListeners();
   }
 
   void onNewTab(String? initialLocation) {
@@ -143,7 +148,7 @@ class AppState with ChangeNotifier {
   }
 
   List currentLogs() {
-    return tabState.current()!._logs;
+    return tabState.current()!.logs;
   }
 
   void onLocation(location) {
@@ -321,7 +326,7 @@ class AppState with ChangeNotifier {
   }
 
   void clearCurrentLogs() {
-    tabState.current()?._logs.clear();
+    tabState.current()?.logs.clear();
     notifyListeners();
   }
 
@@ -336,240 +341,6 @@ class AppState with ChangeNotifier {
   }
 }
 
-class TabState {
-  int tabIndex = -1;
-  Map<int, Tab> tabs = {};
-  List<int> tabOrder = [];
-
-  void add(int ident, Tab tab) {
-    tabs[ident] = tab;
-    tabOrder.add(ident);
-  }
-
-  void removeIndex(int dropIndex) {
-    var ident = tabOrder[dropIndex];
-    tabOrder.removeAt(dropIndex);
-    tabs.remove(ident);
-    if (tabIndex == dropIndex) {
-      tabIndex = 0;
-    } else if (tabIndex > dropIndex) {
-      tabIndex -= 1;
-    }
-  }
-
-  Tab fromIndex(int index) {
-    return tabs[tabOrder[index]]!;
-  }
-
-  Tab? current() {
-    if (tabIndex >= 0) {
-      return fromIndex(tabIndex);
-    }
-  }
-}
-
-class Tab {
-  int ident;
-  bool loading = false;
-  late Uri uri;
-  ContentData? parsedData;
-  ContentData? contentData;
-
-  List<HistoryEntry> history = [];
-
-  int historyIndex = -1;
-  int _requestID = 1;
-
-  List _redirects = [];
-  List _logs = [];
-  bool viewingSource = false;
-
-  void Function(String uriString) addRecent;
-
-  void Function() notifyListeners;
-  ScrollController scrollController = ScrollController(initialScrollOffset: 0);
-
-  Tab(this.ident, initialLocation, this.addRecent, this.notifyListeners,
-      identities, feeds) {
-    uri = Uri.tryParse(initialLocation!)!;
-    onLocation(uri, identities, feeds);
-  }
-
-  bool shouldCertDialog() {
-    return loading == false && parsedData!.mode == Modes.clientCert;
-  }
-
-  bool shouldSearchDialog() {
-    return loading == false && parsedData!.mode == Modes.search;
-  }
-
-  void _handleBytes(Uri location, Uint8List? newBytes, int requestID) async {
-    if (newBytes == null) {
-      return;
-    }
-
-    _handleLog(
-        "debug", "Received ${newBytes.length} bytes $location", requestID);
-
-    if (requestID != _requestID) {
-      return;
-    }
-    if (parsedData != null) {
-      parse(parsedData!, newBytes);
-      if (parsedData!.lineBased()) {
-        contentData = parsedData;
-      }
-    }
-    notifyListeners();
-  }
-
-  void _handleLog(String level, String message, int requestID) async {
-    log(message);
-    _logs = _logs.sublist(math.max(_logs.length - 100, 0), _logs.length);
-    _logs.add([level, DateTime.now(), requestID, message]);
-
-    notifyListeners();
-  }
-
-  void _handleDone(Uri location, bool timeout, bool badScheme,
-      List<Identity> identities, List<Feed?> feeds, int requestID) async {
-    if (requestID != _requestID) {
-      return;
-    }
-    loading = false;
-    var requiresInput = parsedData!.mode == Modes.clientCert ||
-        parsedData!.mode == Modes.search;
-
-    if (!requiresInput) {
-      var redirectLoop = parsedData!.mode == Modes.redirect &&
-          (_redirects.contains(parsedData!.meta ?? false) ||
-              _redirects.length >= 5);
-      if (parsedData!.mode == Modes.redirect && !redirectLoop) {
-        var newLocation = Uri.tryParse(parsedData!.meta!)!;
-        if (!newLocation.hasScheme) {
-          newLocation = location.resolve(parsedData!.meta!);
-        }
-        _redirects.add(parsedData!.meta!);
-        _requestID += 1;
-        resetResponse(newLocation, redirect: true);
-        history[historyIndex].location = newLocation;
-        onURI(newLocation, _handleBytes, _handleDone, _handleLog, identities,
-            feeds, _requestID);
-      } else {
-        if (parsedData?.mode == Modes.loading) {
-          var allLogs = List.from(_logs);
-          allLogs.removeWhere(
-              (element) => (element[0] != "error" || element[2] != requestID));
-          var logStrings = allLogs.map((log) => log[3]);
-          if (badScheme) {
-            contentData = ContentData.gem("Launching app for $location");
-          } else if (logStrings.isNotEmpty) {
-            contentData = ContentData.error(logStrings.join("\n"));
-          } else if (timeout) {
-            contentData = ContentData.error("No response. timeout");
-          } else {
-            contentData = ContentData.error(
-                "No response or response line. Connection closed");
-          }
-        } else if (parsedData!.mode == Modes.error) {
-          contentData = parsedData;
-        } else if (parsedData!.mode == Modes.redirect) {
-          contentData = ContentData.error(
-              "REDIRECT LOOP\n--------------\n" + _redirects.join("\n"));
-        } else {
-          history[historyIndex].contentData = parsedData!;
-          contentData = parsedData;
-        }
-      }
-    }
-    notifyListeners();
-  }
-
-  void resetResponse(Uri location, {bool redirect = false}) {
-    parsedData = ContentData();
-    uri = location;
-    if (!redirect) {
-      _redirects = [];
-      addRecent(location.toString());
-    }
-
-    notifyListeners();
-  }
-
-  void onLocation(Uri location, List<Identity> identities, List<Feed?> feeds,
-      {double scrollPosition = 0}) {
-    if (historyIndex != -1) {
-      var oldPosition = scrollPosition;
-      history[historyIndex].scrollPosition = oldPosition;
-    }
-
-    _requestID += 1;
-
-    loading = true;
-
-    resetResponse(location);
-
-    if (history.isNotEmpty && history[historyIndex].location == location) {
-      historyIndex -= 1;
-    }
-    history = history.sublist(0, historyIndex + 1);
-    history.add(HistoryEntry(location, null, 0));
-
-    historyIndex = history.length - 1;
-
-    onURI(location, _handleBytes, _handleDone, _handleLog, identities, feeds,
-        _requestID);
-  }
-
-  void _handleHistory(int dir, List<Identity> identities, List<Feed?> feeds) {
-    _requestID += 1;
-
-    var oldPosition = scrollController.position.pixels;
-    history[historyIndex].scrollPosition = oldPosition;
-    historyIndex += dir;
-    var entry = history[historyIndex];
-
-    resetResponse(entry.location);
-    if (entry.contentData != null) {
-      scrollController =
-          ScrollController(initialScrollOffset: entry.scrollPosition);
-      contentData = entry.contentData;
-    } else {
-      onLocation(entry.location, identities, feeds);
-    }
-
-    loading = false;
-
-    notifyListeners();
-  }
-
-  bool handleBack(List<Identity> identities, List<Feed?> feeds) {
-    if (canGoBack()) {
-      _handleHistory(-1, identities, feeds);
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  bool handleForward(List<Identity> identities, List<Feed?> feeds) {
-    if (canGoForward()) {
-      _handleHistory(1, identities, feeds);
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  bool canGoBack() {
-    return historyIndex > 0;
-  }
-
-  bool canGoForward() {
-    return historyIndex < (history.length - 1);
-  }
-}
-
 class HistoryEntry {
   Uri location;
   ContentData? contentData;
@@ -581,15 +352,4 @@ class HistoryEntry {
   String toString() {
     return "$location $scrollPosition";
   }
-}
-
-class FeedEntry {
-  String? entryDate;
-  String? entryTitle;
-  Uri entryUri;
-  String line;
-  String feedTitle;
-
-  FeedEntry(this.feedTitle, this.entryUri, this.entryDate, this.entryTitle,
-      this.line);
 }

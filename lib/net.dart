@@ -6,6 +6,9 @@ import 'dart:typed_data';
 
 import 'package:asn1lib/asn1lib.dart' as asn;
 import 'package:crypto/crypto.dart';
+import 'package:deedum/models/content_data.dart';
+import 'package:deedum/models/feed.dart';
+import 'package:deedum/models/identity.dart';
 import 'package:deedum/next/app.dart';
 import 'package:deedum/shared.dart';
 import 'package:flutter/foundation.dart';

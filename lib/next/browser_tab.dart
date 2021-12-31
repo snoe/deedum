@@ -1,9 +1,9 @@
 // ignore: unused_import
 import 'dart:developer';
 
-import 'package:deedum/app_state.dart';
+import 'package:deedum/models/app_state.dart';
 import 'package:deedum/content.dart';
-import 'package:deedum/shared.dart';
+import 'package:deedum/models/content_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,7 +24,6 @@ class BrowserTab2 extends ConsumerWidget {
     var appState = ref.watch(appStateProvider);
     var tab = appState.tabByIdent(ident);
     var content = Content(
-      currentUri: tab.uri,
       contentData: tab.contentData,
       viewSource: tab.viewingSource &&
           tab.contentData != null &&

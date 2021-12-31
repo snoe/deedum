@@ -1,7 +1,7 @@
 // ignore: unused_import
 import 'dart:developer';
 
-import 'package:deedum/app_state.dart';
+import 'package:deedum/models/app_state.dart';
 import 'package:deedum/browser_tab/client_cert.dart';
 import 'package:deedum/browser_tab/search.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +9,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:string_validator/string_validator.dart' as validator;
 
-class AddressBar2 extends ConsumerWidget {
-  const AddressBar2({
+class AddressBar extends ConsumerWidget {
+  const AddressBar({
     Key? key,
     required this.controller,
     required this.focusNode,
@@ -68,17 +68,18 @@ class AddressBar2 extends ConsumerWidget {
                 ),
                 controller: controller,
                 onSubmitted: (value) async {
-                  Uri newURL = Uri.tryParse(value)!;
-                  final validated = (newURL.scheme == "gemini" ||
-                      newURL.scheme == "about" ||
-                      validator.isURL(value, {
-                        "protocols": ['gemini'],
-                        "require_tld": true,
-                        "require_protocol": false,
-                        "allow_underscores": true
-                      }));
+                  Uri? newURL = Uri.tryParse(value);
+                  final validated = (newURL != null &&
+                      (newURL.scheme == "gemini" ||
+                          newURL.scheme == "about" ||
+                          validator.isURL(value, {
+                            "protocols": ['gemini'],
+                            "require_tld": true,
+                            "require_protocol": false,
+                            "allow_underscores": true
+                          })));
                   if (validated) {
-                    if (!newURL.hasScheme) {
+                    if (!newURL!.hasScheme) {
                       newURL = Uri.parse("gemini://" + value);
                     }
                   } else {

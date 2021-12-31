@@ -1,7 +1,7 @@
 // ignore: unused_import
 import 'dart:developer';
 
-import 'package:deedum/app_state.dart';
+import 'package:deedum/models/app_state.dart';
 import 'package:deedum/browser_tab/menu.dart';
 import 'package:deedum/directory/bookmarks.dart';
 import 'package:deedum/directory/directory.dart';
@@ -10,6 +10,7 @@ import 'package:deedum/directory/history.dart';
 import 'package:deedum/directory/identities.dart';
 import 'package:deedum/directory/settings.dart';
 import 'package:deedum/directory/tabs.dart';
+import 'package:deedum/models/tab.dart';
 import 'package:deedum/next/address_bar.dart';
 import 'package:deedum/next/browser_tab.dart';
 import 'package:flutter/material.dart' hide Tab;
