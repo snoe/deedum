@@ -131,7 +131,6 @@ class Tab {
   }
 
   void resetResponse(Uri location, {bool redirect = false}) {
-    log("Reset $uri $location");
     parsedData = ContentData();
     uri = location;
     if (!redirect) {
@@ -142,11 +141,11 @@ class Tab {
     notifyListeners();
   }
 
-  void onLocation(Uri location, List<Identity> identities, List<Feed?> feeds,
-      {double scrollPosition = 0}) {
+  void onLocation(Uri location, List<Identity> identities, List<Feed?> feeds) {
     if (historyIndex != -1) {
-      var oldPosition = scrollPosition;
+      var oldPosition = scrollController.position.pixels;
       history[historyIndex].scrollPosition = oldPosition;
+      scrollController = ScrollController(initialScrollOffset: 0);
     }
 
     _requestID += 1;

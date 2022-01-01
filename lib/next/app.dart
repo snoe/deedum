@@ -61,32 +61,30 @@ class Home extends ConsumerWidget {
     }
 
     List<Widget> actions = [];
-    if (!_focusNode.hasFocus) {
-      actions = [
-        IconButton(
-          icon: SizedBox(
-              width: 23,
-              height: 23,
-              child: DecoratedBox(
-                  decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      border: Border.all(width: 2, color: Colors.black),
-                      borderRadius: const BorderRadius.all(Radius.circular(3))),
-                  child: Align(
-                      alignment: Alignment.center,
-                      child: Text("$tabCount",
-                          textScaleFactor: 1.15,
-                          style: const TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: "DejaVu Sans Mono",
-                              fontSize: 13))))),
-          onPressed: () =>
-              {Navigator.pushNamed(navigatorKey.currentContext!, "/directory")},
-        ),
-        const TabMenuWidget(),
-      ];
-    }
+    actions = [
+      IconButton(
+        icon: SizedBox(
+            width: 23,
+            height: 23,
+            child: DecoratedBox(
+                decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    border: Border.all(width: 2, color: Colors.black),
+                    borderRadius: const BorderRadius.all(Radius.circular(3))),
+                child: Align(
+                    alignment: Alignment.center,
+                    child: Text("$tabCount",
+                        textScaleFactor: 1.15,
+                        style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "DejaVu Sans Mono",
+                            fontSize: 13))))),
+        onPressed: () =>
+            {Navigator.pushNamed(navigatorKey.currentContext!, "/directory")},
+      ),
+      const TabMenuWidget(),
+    ];
     return WillPopScope(
         onWillPop: () async {
           return appState.handleBack();
@@ -103,16 +101,14 @@ class Home extends ConsumerWidget {
                 controller: _controller,
               ),
               actions: actions),
-          body: IgnorePointer(
-              child: IndexedStack(index: appState.tabState.tabIndex, children: [
-                for (final Tab t in appState.indexedTabs((p0, p1) => p1))
-                  BrowserTab2(
-                      key: ObjectKey(t.ident),
-                      focusNode: _focusNode,
-                      ident: t.ident,
-                      scrollController: t.scrollController)
-              ]),
-              ignoring: appState.currentLoading()),
+          body: IndexedStack(index: appState.tabState.tabIndex, children: [
+            for (final Tab t in appState.indexedTabs((p0, p1) => p1))
+              BrowserTab2(
+                  key: ObjectKey(t.ident),
+                  focusNode: _focusNode,
+                  ident: t.ident,
+                  scrollController: t.scrollController)
+          ]),
         ));
   }
 }

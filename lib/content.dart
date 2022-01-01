@@ -59,7 +59,7 @@ class _ContentState extends State<Content> {
       var groups = analyze(lines, alwaysPre: true)!;
       return PreText(
         actualText: lines.join("\n"),
-        maxLine: groups[0]["maxLine"] ?? 1,
+        maxLine: groups.isEmpty ? 1 : groups[0]["maxLine"] ?? 1,
       );
     } else if (widget.contentData!.mode == Modes.gem) {
       var lines = widget.contentData!.lines;
