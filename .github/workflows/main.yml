@@ -9,7 +9,7 @@ jobs:
       with:
         distribution: 'adopt'
         java-version: '12.x'
-    - uses: subosito/flutter-action@v1
+    - uses: subosito/flutter-action@v2
       with:
         flutter-version: '2.8.1'
     - run: flutter pub get
