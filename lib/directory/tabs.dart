@@ -30,14 +30,14 @@ class Tabs extends DirectoryElement {
       var bookmarked = appState.bookmarks.contains(uriString);
       var feedActive =
           appState.feeds.any((element) => element.uri.toString() == uriString);
-      var host = tab.uri.host;
+      var host = tab.uri?.host;
       if (host == "") {
         host = tab.uri.toString();
       }
       var tabItem = GemItem(
-        url: Uri.decodeFull(host),
+        url: host != null ? Uri.decodeFull(host) : null,
         title: ExtendedText(
-          tab.contentData?.summaryLine() ?? "Loading…",
+          tab.contentData?.summaryLine() ?? (host != null ? "Loading…" : ""),
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
         ),
@@ -47,7 +47,7 @@ class Tabs extends DirectoryElement {
         showTitle: true,
         showBookmarked: true,
         showDelete: true,
-        disableDelete: index == 0,
+        disableDelete: false,
         showFeed: true,
         onSelect: () {
           appState.onSelectTab(index);
@@ -55,26 +55,18 @@ class Tabs extends DirectoryElement {
         },
         onBookmark: () => appState.onBookmark(uriString),
         onDelete: () {
-          if (index != 0) {
-            appState.onDeleteTab(index);
-          }
+          appState.onDeleteTab(index);
         },
         onFeed: () => appState.onFeed(uriString),
       );
-      if (index == 0) {
-        return tabItem;
-      } else {
-        return Dismissible(
-          background: Container(color: Colors.red),
-          key: UniqueKey(),
-          onDismissed: (direction) {
-            if (index != 0) {
-              appState.onDeleteTab(index);
-            }
-          },
-          child: tabItem,
-        );
-      }
+      return Dismissible(
+        background: Container(color: Colors.red),
+        key: UniqueKey(),
+        onDismissed: (direction) {
+          appState.onDeleteTab(index);
+        },
+        child: tabItem,
+      );
     }).toList();
     return SingleChildScrollView(
         child: Column(

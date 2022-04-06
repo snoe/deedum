@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class GemItem extends StatelessWidget {
-  final String url;
+  final String? url;
   final Widget title;
   final bool bookmarked;
   final bool feedActive;
@@ -22,7 +22,7 @@ class GemItem extends StatelessWidget {
 
   const GemItem(
       {Key? key,
-      required this.url,
+      this.url,
       required this.title,
       this.selected = false,
       this.bookmarked = false,
@@ -60,7 +60,8 @@ class GemItem extends StatelessWidget {
                     contentPadding: const EdgeInsets.only(left: 20),
                     onTap: onSelect,
                     subtitle: title,
-                    title: Text(url, style: const TextStyle(fontSize: 14)),
+                    title: Text(url ?? "No url",
+                        style: const TextStyle(fontSize: 14)),
                   )),
               showFeed
                   ? IconButton(

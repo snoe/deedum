@@ -31,7 +31,8 @@ class AddressBar extends ConsumerWidget {
     });
     ref.listen(appStateProvider, (AppState? previous, AppState next) {
       if (previous?.currentUri() == next.currentUri()) {
-        controller.text = next.currentUri().toString();
+        Uri? uri = next.currentUri();
+        controller.text = uri != null ? uri.toString() : "";
       }
     });
     var background = Colors.orange[300];

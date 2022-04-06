@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:deedum/models/app_state.dart';
 import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/shared.dart';
@@ -37,7 +39,9 @@ class Settings extends DirectoryElement {
                 validator: validateGeminiURL,
                 onFieldSubmitted: validateAndSaveForm,
                 onSaved: (s) {
-                  s = prefixSchema(s!);
+                  if (s!.trim().isNotEmpty) {
+                    s = prefixSchema(s);
+                  }
                   appState.onSaveSettings("homepage", s);
                 },
               ),
@@ -67,17 +71,17 @@ class Settings extends DirectoryElement {
     return s;
   }
 
-  String removeGeminiScheme(String s) {
-    if (s.startsWith("gemini://")) {
+  String? removeGeminiScheme(String? s) {
+    if (s != null && s.startsWith("gemini://")) {
       return s.substring(9);
     }
     return s;
   }
 
   String? validateGeminiURL(String? s) {
-    if (s!.trim().isNotEmpty) {
+    if (s != null && s.trim().isNotEmpty) {
       try {
-        s = removeGeminiScheme(s);
+        s = removeGeminiScheme(s)!;
 
         var u = toSchemeUri(s);
         if (u == null || u.scheme.isEmpty) {

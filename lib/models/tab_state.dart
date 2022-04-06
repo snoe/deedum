@@ -21,8 +21,10 @@ class TabState {
     }
   }
 
-  Tab fromIndex(int index) {
-    return tabs[tabOrder[index]]!;
+  Tab? fromIndex(int index) {
+    if (tabs.isNotEmpty) {
+      return tabs[tabOrder[index]]!;
+    }
   }
 
   Tab? current() {

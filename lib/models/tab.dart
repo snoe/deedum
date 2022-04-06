@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 class Tab {
   int ident;
   bool loading = false;
-  late Uri uri;
+  Uri? uri;
   ContentData? parsedData;
   ContentData? contentData;
 
@@ -33,16 +33,20 @@ class Tab {
 
   Tab(this.ident, initialLocation, this.addRecent, this.notifyListeners,
       identities, feeds) {
-    uri = Uri.tryParse(initialLocation!)!;
-    onLocation(uri, identities, feeds);
+    if (initialLocation != null) {
+      uri = Uri.tryParse(initialLocation!)!;
+      onLocation(uri!, identities, feeds);
+    } else {
+      uri = null;
+    }
   }
 
   bool shouldCertDialog() {
-    return loading == false && parsedData!.mode == Modes.clientCert;
+    return loading == false && parsedData?.mode == Modes.clientCert;
   }
 
   bool shouldSearchDialog() {
-    return loading == false && parsedData!.mode == Modes.search;
+    return loading == false && parsedData?.mode == Modes.search;
   }
 
   void _handleBytes(Uri location, Uint8List? newBytes, int requestID) async {

@@ -7,8 +7,8 @@ import 'package:deedum/models/content_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BrowserTab2 extends ConsumerWidget {
-  const BrowserTab2(
+class BrowserTab extends ConsumerWidget {
+  const BrowserTab(
       {Key? key,
       required this.ident,
       required this.scrollController,

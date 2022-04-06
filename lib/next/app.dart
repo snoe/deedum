@@ -103,7 +103,7 @@ class Home extends ConsumerWidget {
               actions: actions),
           body: IndexedStack(index: appState.tabState.tabIndex, children: [
             for (final Tab t in appState.indexedTabs((p0, p1) => p1))
-              BrowserTab2(
+              BrowserTab(
                   key: ObjectKey(t.ident),
                   focusNode: _focusNode,
                   ident: t.ident,
