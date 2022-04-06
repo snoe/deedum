@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:extended_text/extended_text.dart';
 
 class PlainText extends StatelessWidget {
   const PlainText({Key? key, required this.content}) : super(key: key);
@@ -7,7 +8,8 @@ class PlainText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SelectableText(content,
+    return ExtendedText(content,
+        selectionEnabled: true,
         style: const TextStyle(fontWeight: FontWeight.w400, height: 1.5));
   }
 }

@@ -145,7 +145,6 @@ class _PreTextState extends State<PreText> {
   Widget build(BuildContext context) {
     var availableWidth = MediaQuery.of(context).size.width - (padding * 2);
     Widget fit;
-    var wrap = _scale != null;
 
     if (_scale == -1) {
       fit = SingleChildScrollView(
@@ -158,7 +157,7 @@ class _PreTextState extends State<PreText> {
               fontSize: baseFontSize,
             ),
           ));
-    } else if (wrap) {
+    } else if (_scale != null) {
       double size = (TextPainter(
               text: TextSpan(
                 text: "0".padLeft(_scale!),
@@ -178,7 +177,7 @@ class _PreTextState extends State<PreText> {
           fit: BoxFit.fill,
           child: SizedBox(
               child: ExtendedText(widget.actualText,
-                  softWrap: wrap,
+                  softWrap: true,
                   style: const TextStyle(
                       fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
                   selectionEnabled: true),

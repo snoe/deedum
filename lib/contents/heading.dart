@@ -1,3 +1,4 @@
+import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
 
 class Heading extends StatelessWidget {
@@ -14,8 +15,9 @@ class Heading extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
-      child: SelectableText(
+      child: ExtendedText(
         content,
+        selectionEnabled: true,
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: fontSize,

@@ -1,8 +1,9 @@
+import 'dart:developer';
+
 import 'package:deedum/models/app_state.dart';
 import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/directory/gem_item.dart';
 import 'package:deedum/next/app.dart';
-import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,9 +35,10 @@ class Tabs extends DirectoryElement {
       if (host == "") {
         host = tab.uri.toString();
       }
+      log("${tab.contentData}");
       var tabItem = GemItem(
         url: host != null ? Uri.decodeFull(host) : null,
-        title: ExtendedText(
+        title: Text(
           tab.contentData?.summaryLine() ?? (host != null ? "Loading…" : ""),
           overflow: TextOverflow.ellipsis,
           maxLines: 1,

@@ -1,3 +1,4 @@
+import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
 
 class ListItem extends StatelessWidget {
@@ -15,8 +16,9 @@ class ListItem extends StatelessWidget {
           Flexible(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
-              child: SelectableText(
+              child: ExtendedText(
                 content,
+                selectionEnabled: true,
                 style:
                     const TextStyle(fontWeight: FontWeight.w400, height: 1.7),
               ),

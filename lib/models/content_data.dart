@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'dart:typed_data';
@@ -50,11 +51,12 @@ class ContentData {
   }
 
   String summaryLine() {
-    return lines.isNotEmpty && lines[0].trim().isNotEmpty
-        ? lines[0]
-        : static != null
-            ? static!
-            : meta!;
+    var fallback = static != null ? static! : meta!;
+    if (lines.isNotEmpty) {
+      return lines.firstWhere((element) => element.trim().isNotEmpty,
+          orElse: () => fallback);
+    }
+    return fallback;
   }
 
   String? source() {
