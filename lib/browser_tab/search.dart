@@ -63,9 +63,11 @@ class SearchAlertState extends State<SearchAlert> {
             SelectableText(widget.prompt),
             DecoratedBox(
               decoration:
-                  BoxDecoration(color: _inputError ? Colors.deepOrange : null),
+              BoxDecoration(color: _inputError ? Colors.deepOrange : null),
               child: TextField(
                   focusNode: focusNode,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
                   controller: widget.searchController,
                   onChanged: _inputChanged),
             ),

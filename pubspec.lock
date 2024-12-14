@@ -497,6 +497,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.2.0"
+  terminal_color_parser:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: "feature/lesser_deps"
+      resolved-ref: f017d459dc682d1c4b14625a288ba72b8e67b11a
+      url: "https://github.com/jchaves/terminal_color_parser_dart"
+    source: git
+    version: "0.7.0"
   test_api:
     dependency: transitive
     description:
@@ -504,6 +513,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.4.3"
+  toggle_switch:
+    dependency: "direct main"
+    description:
+      name: toggle_switch
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.1"
   typed_data:
     dependency: transitive
     description:
@@ -633,5 +649,5 @@ packages:
     source: hosted
     version: "3.1.1"
 sdks:
-  dart: ">=2.15.0 <3.0.0"
+  dart: ">=2.15.1 <3.0.0"
   flutter: ">=2.8.0"

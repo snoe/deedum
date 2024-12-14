@@ -39,6 +39,7 @@ class AppState with ChangeNotifier {
 
     settings = {
       "homepage": (prefs.getString("homepage")),
+      "ansiColors": (prefs.getString("ansiColors") ?? "0"),
       "search":
           (prefs.getString("search") ?? "gemini://geminispace.info/search")
     };

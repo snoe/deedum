@@ -40,6 +40,7 @@ Uri resolveLink(Uri currentUri, String link) {
 }
 
 double get padding => 25.0;
+const baseFontSize = 16.0;
 
 extension CollectionUtil<T> on Iterable<T> {
   Iterable<E> mapIndexed<E>(E Function(int index, T item) transform) sync* {
@@ -231,7 +232,7 @@ String emojiEncode(String base64String) {
 
 String qrEncode(Uint8List der) {
   final qrCode =
-      QrCode.fromUint8List(data: der, errorCorrectLevel: QrErrorCorrectLevel.L);
+  QrCode.fromUint8List(data: der, errorCorrectLevel: QrErrorCorrectLevel.L);
   final qrImage = QrImage(qrCode);
 
   var result = "";

@@ -47,6 +47,11 @@ dependencies:
   riverpod: ^1.0.3
   fast_immutable_collections: ^7.1.2
   flutter_riverpod: ^1.0.3
+  toggle_switch: 2.0.1
+  terminal_color_parser:
+    git:
+      url: https://github.com/jchaves/terminal_color_parser_dart
+      ref: feature/lesser_deps
 
 dev_dependencies:
   flutter_test:
