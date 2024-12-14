@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:deedum/models/app_state.dart';
 import 'package:deedum/directory/directory_element.dart';
 import 'package:deedum/shared.dart';
