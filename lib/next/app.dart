@@ -63,6 +63,13 @@ class Home extends ConsumerWidget {
     List<Widget> actions = [];
     actions = [
       IconButton(
+        icon: Icon(Icons.refresh),
+          color: Colors.black,
+          onPressed: () =>{
+            appState.onLocation(appState.currentUri())
+          }
+      ),
+      IconButton(
         icon: SizedBox(
             width: 23,
             height: 23,
