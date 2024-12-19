@@ -1,12 +1,55 @@
 
 abstract class AnsiColor{
 
+   // 8-16 color basic support
+   static final Map<int, String> simpleColors = {
+      //fg
+      30 : "#000000",
+      31 : "#aa0000",
+      32 : "#00aa00",
+      33 : "#aa5500",
+      34 : "#0000aa",
+      35 : "#aa00aa",
+      36 : "#00aaaa",
+      37 : "#aaaaaa",
+      //bg
+      40 : "#000000",
+      41 : "#aa0000",
+      42 : "#00aa00",
+      43 : "#aa5500",
+      44 : "#0000aa",
+      45 : "#aa00aa",
+      46 : "#00aaaa",
+      47 : "#aaaaaa",
+
+      //fg "bright"
+      90 : "#555555",
+      91 : "#ff5555",
+      92 : "#55ff55",
+      93 : "#ffff55",
+      94 : "#5555ff",
+      95 : "#ff55ff",
+      96 : "#55ffff",
+      97 : "#ffffff",
+      //bg "bright"
+      100 : "#555555",
+      101 : "#ff5555",
+      102 : "#55ff55",
+      103 : "#ffff55",
+      104 : "#5555ff",
+      105 : "#ff55ff",
+      106 : "#55ffff",
+      107 : "#ffffff",
+   };
+
+
+
+
    // a list of colors taken from
    // https://github.com/woodward/color_palette/blob/main/lib/color_palette/data/ansi_color_codes.json
    // maybe i'll add the full json in a comment at the bottom, just in case
 
    //meant to be retrieved by array[index] where index is the ansi code
-
   static final colors = [
      "#000000",
      "#800000",

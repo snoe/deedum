@@ -51,7 +51,7 @@ dependencies:
   terminal_color_parser:
     git:
       url: https://github.com/jchaves/terminal_color_parser_dart
-      ref: feature/lesser_deps
+      ref: feature/rgb_support
 
 dev_dependencies:
   flutter_test:

@@ -54,41 +54,61 @@ class _AnsiPreTextState extends State<AnsiPreText> {
     for (final token in coloredText) {
 
       DefaultTextStyle defaultStyle = DefaultTextStyle.of(context);
-      TextStyle style;
-      if (widget.ansiLevel >2){
-         style = TextStyle(
-          fontFamily: "DejaVu Sans Mono",
-          decoration: token.underline ? TextDecoration.underline : TextDecoration.none ,
+      TextStyle style =  TextStyle(
+        fontFamily: "DejaVu Sans Mono",
+      );
+      if (widget.ansiLevel >2) {
+        style = TextStyle(
+          decoration: token.underline
+              ? TextDecoration.underline
+              : TextDecoration.none,
           fontWeight: token.bold ? FontWeight.bold : FontWeight.normal,
         );
-
-         style = style.merge(defaultStyle.style);
-
-        if (token.hasFgColor) {
-          style= style.merge( TextStyle(
-            color:   hexToColor(AnsiColor.colors[token.fgColor])));
-        }
-        if (token.hasBgColor){
-          style= style.merge( TextStyle(
-              backgroundColor:   hexToColor(AnsiColor.colors[token.bgColor])));
-        }
-      //
-      } else {
-        style =  TextStyle(
-          fontFamily: "DejaVu Sans Mono",
-        );
-        style = style.merge(defaultStyle.style);
-        if (token.hasFgColor) {
-          style= style.merge( TextStyle(
-             color:   hexToColor(AnsiColor.colors[token.fgColor])));
-        }
-          if (token.hasBgColor &&  widget.ansiLevel >1){
-            style= style.merge( TextStyle(
-                backgroundColor:   hexToColor(AnsiColor.colors[token.bgColor])));
-          }
-
-
       }
+        style = style.merge(defaultStyle.style);
+
+        if (token.hasFgColor) {
+          if ( token.xterm256) { // get from the 256 colors "model"
+            style = style.merge(TextStyle(
+                color: hexToColor(AnsiColor.colors[token.fgColor])));
+          }else{//8/16 colors
+            style= style.merge( TextStyle(
+                color: hexToColor(AnsiColor.simpleColors[token.fgColor].toString())));
+          }
+        }else if (token.rgbFg){
+          int r,g,b;
+          var rgbColors = token.rgbFgColor.split(';');
+          r = int.parse(rgbColors[0]);
+          g = int.parse(rgbColors[1]);
+          b = int.parse(rgbColors[1]);
+          style= style.merge( TextStyle(
+              color: Color.fromRGBO(r, g, b, 1)
+          ));
+        }
+        if (widget.ansiLevel >1) {
+          if (token.hasBgColor) {
+            if (token.xterm256) { // get from the 256 colors "model"
+              style = style.merge(TextStyle(
+                  backgroundColor: hexToColor(
+                      AnsiColor.colors[token.bgColor])));
+            }
+            else { //8/16 colors
+              style = style.merge(TextStyle(
+                  backgroundColor: hexToColor(
+                      AnsiColor.simpleColors[token.fgColor].toString())));
+            }
+          } else if (token.rgbBg) {
+            int r, g, b;
+            var rgbColors = token.rgbBgColor.split(';');
+            r = int.parse(rgbColors[0]);
+            g = int.parse(rgbColors[1]);
+            b = int.parse(rgbColors[1]);
+            style = style.merge(TextStyle(
+                backgroundColor: Color.fromRGBO(r, g, b, 1)
+            ));
+          }
+        }
+        //
       var span = TextSpan(text: token.text,
           style: style
       );
@@ -123,15 +143,15 @@ class _AnsiPreTextState extends State<AnsiPreText> {
       fit = FittedBox(
           fit: BoxFit.fill,
           child: SizedBox(
-            width: size,
-            child: finalText
+              width: size,
+              child: finalText
           )
-            // ExtendedText(widget.actualText,
-            //   softWrap: true,
-            //   style: const TextStyle(
-            //       fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
-            // ),
-          );
+        // ExtendedText(widget.actualText,
+        //   softWrap: true,
+        //   style: const TextStyle(
+        //       fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
+        // ),
+      );
     } else {
       fit = FittedBox(
           child: finalText,
