@@ -6,14 +6,17 @@ import 'package:deedum/contents/blockquote.dart';
 import 'package:deedum/contents/heading.dart';
 import 'package:deedum/contents/link.dart';
 import 'package:deedum/contents/list_item.dart';
+import 'package:deedum/contents/pre_text.dart';
 import 'package:deedum/contents/plain_text.dart';
 import 'package:deedum/models/content_data.dart';
 import 'package:deedum/parser.dart';
 import 'package:deedum/shared.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-const baseFontSize = 16.0;
+import 'contents/ansi_pre_text.dart';
+
 
 class Content extends StatefulWidget {
   const Content({
@@ -35,6 +38,21 @@ class Content extends StatefulWidget {
 
 class _ContentState extends State<Content> {
   var plainTextControls = false;
+  int ansiLevel = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    changeAnsi();
+  }
+
+  changeAnsi() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      ansiLevel = int.parse(prefs.getString('ansiColors') ?? '0');
+    });
+  }
+
 
   showControls(show) {
     setState(() {
@@ -84,11 +102,11 @@ class _ContentState extends State<Content> {
   Widget groupsToWidget(List<dynamic> groups) {
     return Column(
         mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final r in groups)
             if (r["type"] == "pre")
-              PreText(actualText: r["data"], maxLine: r["maxLine"])
+              getPreTextWidget(r)
             else if (r["type"] == "header")
               Heading(
                 content: r["data"],
@@ -108,112 +126,15 @@ class _ContentState extends State<Content> {
               PlainText(content: r["data"])
         ]);
   }
-}
 
-class PreText extends StatefulWidget {
-  final String actualText;
-  final int maxLine;
-
-  const PreText({Key? key, required this.actualText, required this.maxLine})
-      : super(key: key);
-
-  @override
-  _PreTextState createState() => _PreTextState();
-}
-
-class _PreTextState extends State<PreText> {
-  int? _scale;
-
-  @override
-  initState() {
-    super.initState();
-    if (widget.maxLine > 120) {
-      _scale = -1;
+  getPreTextWidget(r) {
+    changeAnsi();
+    if (ansiLevel == 0){
+      return PreText(actualText: r["data"], maxLine: r["maxLine"]);
     }
-    if (widget.maxLine <= 32) {
-      _scale = 32;
-    }
-  }
+    return AnsiPreText(actualText: r["data"],
+        maxLine: r["maxLine"],
+        ansiLevel: ansiLevel);
 
-  setScale(s) {
-    setState(() {
-      _scale = s;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    var availableWidth = MediaQuery.of(context).size.width - (padding * 2);
-    Widget fit;
-
-    if (_scale == -1) {
-      fit = SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ExtendedText(
-            widget.actualText,
-            selectionEnabled: true,
-            style: const TextStyle(
-              fontFamily: "DejaVu Sans Mono",
-              fontSize: baseFontSize,
-            ),
-          ));
-    } else if (_scale != null) {
-      double size = (TextPainter(
-              text: TextSpan(
-                text: "0".padLeft(_scale!),
-                style: const TextStyle(
-                  fontFamily: "DejaVu Sans Mono",
-                  fontSize: baseFontSize,
-                ),
-              ),
-              maxLines: 1,
-              textScaleFactor: MediaQuery.of(context).textScaleFactor,
-              textDirection: TextDirection.ltr)
-            ..layout())
-          .size
-          .width;
-
-      fit = FittedBox(
-          fit: BoxFit.fill,
-          child: SizedBox(
-              child: ExtendedText(widget.actualText,
-                  softWrap: true,
-                  style: const TextStyle(
-                      fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
-                  selectionEnabled: true),
-              width: size));
-    } else {
-      fit = FittedBox(
-          child: ExtendedText(widget.actualText,
-              selectionEnabled: true,
-              style: const TextStyle(
-                  fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
-          fit: BoxFit.fill);
-    }
-    var res = GestureDetector(
-        onDoubleTap: () async {
-          var picked = await showMenu(
-            items: <PopupMenuEntry>[
-                  CheckedPopupMenuItem(
-                      checked: _scale == null,
-                      value: null,
-                      child: const Text("Fit"))
-                ] +
-                [-1, 32, 40, 64, 80, 120]
-                    .map((i) => CheckedPopupMenuItem(
-                        checked: _scale == i,
-                        value: i,
-                        child: Text("${i == -1 ? "Scroll" : i}")))
-                    .toList(),
-            context: context,
-            position: const RelativeRect.fromLTRB(20, 100, 400, 200),
-          );
-          setScale(picked);
-        },
-        child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(width: availableWidth, child: fit)));
-
-    return res;
   }
 }

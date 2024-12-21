@@ -6,6 +6,7 @@ import 'package:deedum/content.dart';
 import 'package:deedum/models/content_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:deedum/shared.dart';
 
 class BrowserTab extends ConsumerWidget {
   const BrowserTab(
