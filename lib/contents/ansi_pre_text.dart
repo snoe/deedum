@@ -59,6 +59,7 @@ class _AnsiPreTextState extends State<AnsiPreText> {
       );
       if (widget.ansiLevel >2) {
         style = TextStyle(
+          fontFamily: "DejaVu Sans Mono",
           decoration: token.underline
               ? TextDecoration.underline
               : TextDecoration.none,
@@ -80,7 +81,7 @@ class _AnsiPreTextState extends State<AnsiPreText> {
           var rgbColors = token.rgbFgColor.split(';');
           r = int.parse(rgbColors[0]);
           g = int.parse(rgbColors[1]);
-          b = int.parse(rgbColors[1]);
+          b = int.parse(rgbColors[2]);
           style= style.merge( TextStyle(
               color: Color.fromRGBO(r, g, b, 1)
           ));
@@ -90,19 +91,19 @@ class _AnsiPreTextState extends State<AnsiPreText> {
             if (token.xterm256) { // get from the 256 colors "model"
               style = style.merge(TextStyle(
                   backgroundColor: hexToColor(
-                      AnsiColor.colors[token.bgColor])));
+                      AnsiColor.colors[token.bgColor].toString())));
             }
             else { //8/16 colors
               style = style.merge(TextStyle(
                   backgroundColor: hexToColor(
-                      AnsiColor.simpleColors[token.fgColor].toString())));
+                      AnsiColor.simpleColors[token.bgColor].toString())));
             }
           } else if (token.rgbBg) {
             int r, g, b;
             var rgbColors = token.rgbBgColor.split(';');
             r = int.parse(rgbColors[0]);
             g = int.parse(rgbColors[1]);
-            b = int.parse(rgbColors[1]);
+            b = int.parse(rgbColors[2]);
             style = style.merge(TextStyle(
                 backgroundColor: Color.fromRGBO(r, g, b, 1)
             ));

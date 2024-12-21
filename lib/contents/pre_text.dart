@@ -46,12 +46,14 @@ class _PreTextState extends State<PreText> {
           scrollDirection: Axis.horizontal,
           child: ExtendedText(
             widget.actualText,
+            selectionEnabled: true,
             style: const TextStyle(
               fontFamily: "DejaVu Sans Mono",
               fontSize: baseFontSize,
             ),
           ));
     } else if (_scale != null) {
+      //selectionEnabled: true, //not sure if this is allowed here
       double size = (TextPainter(
           text: TextSpan(
             text: "0".padLeft(_scale!),
@@ -72,6 +74,7 @@ class _PreTextState extends State<PreText> {
           child: SizedBox(
             width: size,
             child: ExtendedText(widget.actualText,
+              selectionEnabled: true,
               softWrap: true,
               style: const TextStyle(
                   fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize),
@@ -80,6 +83,7 @@ class _PreTextState extends State<PreText> {
     } else {
       fit = FittedBox(
           child: ExtendedText(widget.actualText,
+		      selectionEnabled: true,
               style: const TextStyle(
                   fontFamily: "DejaVu Sans Mono", fontSize: baseFontSize)),
           fit: BoxFit.fill);
