@@ -2,12 +2,18 @@
 
 A browser for the gemini protocol.
 
-
 A [Project Gemini](https://gemini.circumlunar.space/) browser.
 
 Gemini is a new, collaboratively designed internet protocol, which explores the space in between gopher and the web, striving to address (perceived) limitations of one while avoiding the (undeniable) pitfalls of the other.
 
 On android fdroid, play store, builds for ios.
+
+## Project update 2025-07-31
+
+While I still use this version everyday to read geminispace, I understand that there is some bitrot here. Keeping flutter for the project up to date completely sapped my motivation to maintain this project.
+
+Checkout https://github.com/jchaves/deedum who has been active in pushing this code base forward.
+
 ## Development
 
 Build should just require installing [flutter](https://flutter.dev/), connecting an android phone over usb (with developer mode turned on):
